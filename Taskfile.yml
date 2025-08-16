@@ -1,0 +1,17 @@
+version: '3'
+
+tasks:
+  default:
+    deps: [mock]
+    desc: Run default tasks
+
+  mock:
+    aliases: [m]
+    desc: Generate mock files
+    cmds:
+      - go install github.com/matryer/moq@latest
+      - moq -out pkg/domain/mock/interfaces.go -pkg mock ./pkg/domain/interfaces SlackClient
+    sources:
+      - pkg/domain/interfaces/*.go
+    generates:
+      - pkg/domain/mock/interfaces.go
