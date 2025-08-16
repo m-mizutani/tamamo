@@ -12,8 +12,6 @@ github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aN
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/m-mizutani/ctxlog v0.2.0 h1:9uS18pV/mb/90mc/DJp8no67pdOIlCai+L5hv/MkCso=
 github.com/m-mizutani/ctxlog v0.2.0/go.mod h1:BTVGSqZO4JJgKBUJWBNo+Yy2j2xTGCYeEQ65h2VBMXE=
-github.com/m-mizutani/goerr v1.0.0 h1:Qugt5SOgewtoE10r7of83ngbL9glRt+vSIxHcKfIfjo=
-github.com/m-mizutani/goerr v1.0.0/go.mod h1:OoNepSLW5oF3dQWWZ3D2lVOTbzRsePvc6LrqhXcff5Y=
 github.com/m-mizutani/goerr/v2 v2.0.0-beta.2 h1:3aA8RKFlWS6kX99+AJohdgIxiE5+Qwv6aIUD1QQXS2E=
 github.com/m-mizutani/goerr/v2 v2.0.0-beta.2/go.mod h1:K9+tBb0+0681yHpyHYqJmoijxn9qJf5grjRb9nMXevc=
 github.com/m-mizutani/gt v0.0.13 h1:v9frGFkagW6fBk24JP19usXKHfwrWw/drREI/AXib3w=
