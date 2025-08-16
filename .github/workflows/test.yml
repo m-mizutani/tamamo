@@ -1,0 +1,47 @@
+name: Unit test
+
+on:
+  push:
+    paths:
+      - 'pkg/**'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Taskfile.yml'
+      - '.github/workflows/test.yml'
+
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout upstream repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          cache: true
+          cache-dependency-path: go.sum
+
+      # Explicitly restore Go module cache (supplement when using go-version-file)
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      # Generate mock code if needed
+      - name: Generate code
+        run: |
+          go install github.com/matryer/moq@latest
+          go run github.com/go-task/task/v3/cmd/task@latest mock
+
+      # Run tests
+      - name: Run tests
+        run: go test ./...
