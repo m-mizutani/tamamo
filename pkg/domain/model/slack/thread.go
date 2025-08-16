@@ -41,8 +41,6 @@ func (t *Thread) Validate() error {
 	if t.ChannelID == "" {
 		return ErrEmptyChannelID
 	}
-	if t.ThreadTS == "" {
-		return ErrEmptyThreadTS
-	}
+	// ThreadTS can be empty for new threads starting from channel-level messages
 	return nil
 }

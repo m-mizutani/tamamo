@@ -34,7 +34,3 @@ func (f *Firestore) SetDefaults() {
 	}
 }
 
-// IsValid checks if the Firestore configuration is valid
-func (f *Firestore) IsValid() bool {
-	return f.ProjectID != "" && f.DatabaseID != ""
-}

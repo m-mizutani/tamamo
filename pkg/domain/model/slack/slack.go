@@ -48,11 +48,7 @@ func (x *Message) GetThreadTS() string {
 	if x.ThreadTS != "" {
 		return x.ThreadTS
 	}
-	// For persistence, use ThreadID
-	if x.ThreadID != "" {
-		return string(x.ThreadID)
-	}
-	// Fallback to message timestamp
+	// Fallback to message timestamp (for starting new threads)
 	return x.Timestamp
 }
 
