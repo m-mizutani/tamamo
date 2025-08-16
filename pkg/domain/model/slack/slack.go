@@ -2,8 +2,8 @@ package slack
 
 import (
 	"context"
-	"log/slog"
 
+	"github.com/m-mizutani/ctxlog"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -121,7 +121,7 @@ func NewMessage(ctx context.Context, ev *slackevents.EventsAPIEvent) *Message {
 		}
 
 	default:
-		slog.WarnContext(ctx, "unknown event type", "event", inEv)
+		ctxlog.From(ctx).Warn("unknown event type", "event", inEv)
 		return nil
 	}
 }

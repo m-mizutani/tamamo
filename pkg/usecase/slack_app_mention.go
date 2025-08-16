@@ -3,16 +3,19 @@ package usecase
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
-	"github.com/m-mizutani/goerr"
+	"github.com/m-mizutani/ctxlog"
+	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 )
 
 // HandleSlackAppMention handles a slack app mention event
 func (uc *Slack) HandleSlackAppMention(ctx context.Context, slackMsg slack.Message) error {
-	logger := slog.With("channel", slackMsg.ChannelID(), "thread", slackMsg.ThreadID())
-	logger.DebugContext(ctx, "slack app mention event", "mentions", slackMsg.Mention())
+	ctxlog.From(ctx).Debug("slack app mention event",
+		"channel", slackMsg.ChannelID(),
+		"thread", slackMsg.ThreadID(),
+		"mentions", slackMsg.Mention(),
+	)
 
 	if uc.slackClient == nil {
 		return goerr.New("slack client not configured")
@@ -40,7 +43,9 @@ func (uc *Slack) HandleSlackAppMention(ctx context.Context, slackMsg slack.Messa
 				return goerr.Wrap(err, "failed to post message to slack")
 			}
 
-			logger.InfoContext(ctx, "responded to slack mention",
+			ctxlog.From(ctx).Info("responded to slack mention",
+				"channel", slackMsg.ChannelID(),
+				"thread", slackMsg.ThreadID(),
 				"user", slackMsg.User(),
 				"message", mention.Message,
 			)
@@ -53,7 +58,10 @@ func (uc *Slack) HandleSlackAppMention(ctx context.Context, slackMsg slack.Messa
 // HandleSlackMessage handles a slack message event
 func (uc *Slack) HandleSlackMessage(ctx context.Context, slackMsg slack.Message) error {
 	// For now, we don't process regular messages, only mentions
-	logger := slog.With("channel", slackMsg.ChannelID(), "thread", slackMsg.ThreadID())
-	logger.DebugContext(ctx, "slack message event (ignored)", "text", slackMsg.Text())
+	ctxlog.From(ctx).Debug("slack message event (ignored)",
+		"channel", slackMsg.ChannelID(),
+		"thread", slackMsg.ThreadID(),
+		"text", slackMsg.Text(),
+	)
 	return nil
 }

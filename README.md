@@ -66,7 +66,7 @@ tamamo serve
    - Copy the Bot User OAuth Token
 3. Configure Event Subscriptions:
    - Enable Events
-   - Set Request URL to `http://your-server-address/hooks/slack/events`
+   - Set Request URL to `http://your-server-address/hooks/slack/event`
    - Subscribe to bot events (e.g., `app_mention`, `message.channels`)
 4. Copy the Signing Secret from Basic Information section
 

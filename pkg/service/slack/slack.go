@@ -2,9 +2,9 @@ package slack
 
 import (
 	"context"
-	"log/slog"
 
-	"github.com/m-mizutani/goerr"
+	"github.com/m-mizutani/ctxlog"
+	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	api "github.com/slack-go/slack"
 )
@@ -51,10 +51,10 @@ func (s *Service) PostMessage(ctx context.Context, channelID, threadTS, text str
 		options...,
 	)
 	if err != nil {
-		return goerr.Wrap(err, "failed to post message to slack").With("channel", channelID).With("thread", threadTS)
+		return goerr.Wrap(err, "failed to post message to slack", goerr.V("channel", channelID), goerr.V("thread", threadTS))
 	}
 
-	slog.DebugContext(ctx, "posted message to slack",
+	ctxlog.From(ctx).Debug("posted message to slack",
 		"channel", channelID,
 		"timestamp", timestamp,
 		"thread", threadTS,

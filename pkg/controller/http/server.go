@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/utils/safe"
 )
 
 // Server represents the HTTP server
@@ -62,7 +63,7 @@ func New(opts ...Options) *Server {
 	// Health check endpoint
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		safe.Write(r.Context(), w, []byte("OK"))
 	})
 
 	return s

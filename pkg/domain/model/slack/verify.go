@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/m-mizutani/goerr"
+	"github.com/m-mizutani/goerr/v2"
 )
 
 // PayloadVerifier is an interface for verifying Slack request signatures

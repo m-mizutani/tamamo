@@ -1,15 +1,15 @@
 package config
 
 import (
-	"github.com/m-mizutani/goerr"
+	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	slackSvc "github.com/m-mizutani/tamamo/pkg/service/slack"
 	"github.com/urfave/cli/v3"
 )
 
 type Slack struct {
-	OAuthToken    string
-	SigningSecret string
+	OAuthToken    string `masq:"secret"`
+	SigningSecret string `masq:"secret"`
 }
 
 func (x *Slack) Flags() []cli.Flag {

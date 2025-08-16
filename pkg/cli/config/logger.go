@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/m-mizutani/masq"
 	"github.com/urfave/cli/v3"
 )
 
@@ -23,7 +24,7 @@ func (x *Logger) Flags() []cli.Flag {
 	}
 }
 
-func (x *Logger) Configure() error {
+func (x *Logger) Configure() (*slog.Logger, error) {
 	var level slog.Level
 	switch x.Level {
 	case "debug":
@@ -40,10 +41,14 @@ func (x *Logger) Configure() error {
 
 	opts := &slog.HandlerOptions{
 		Level: level,
+
+		ReplaceAttr: masq.New(
+			masq.WithTag("secret"),
+		),
 	}
 	handler := slog.NewJSONHandler(os.Stdout, opts)
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 
-	return nil
+	return logger, nil
 }

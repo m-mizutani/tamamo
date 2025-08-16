@@ -15,3 +15,36 @@ tasks:
       - pkg/domain/interfaces/*.go
     generates:
       - pkg/domain/mock/interfaces.go
+
+  test:
+    aliases: [t]
+    desc: Run all tests
+    cmds:
+      - go test ./...
+
+  vet:
+    aliases: [v]
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  lint:
+    aliases: [l]
+    desc: Run golangci-lint
+    cmds:
+      - golangci-lint run ./...
+
+  gosec:
+    aliases: [s]
+    desc: Run gosec security scanner
+    cmds:
+      - gosec -exclude-generated -quiet ./...
+
+  check:
+    aliases: [c]
+    desc: Run all checks (test, vet, lint, gosec)
+    deps:
+      - test
+      - vet
+      - lint
+      - gosec

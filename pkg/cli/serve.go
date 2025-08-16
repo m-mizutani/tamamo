@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -10,7 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/m-mizutani/goerr"
+	"github.com/m-mizutani/ctxlog"
+	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/cli/config"
 	server "github.com/m-mizutani/tamamo/pkg/controller/http"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
@@ -42,7 +42,8 @@ func cmdServe() *cli.Command {
 		Usage:   "Run server",
 		Flags:   flags,
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			slog.InfoContext(ctx, "starting server",
+			logger := ctxlog.From(ctx)
+			logger.Info("starting server",
 				"addr", addr,
 				"slack", slackCfg,
 			)
@@ -80,7 +81,7 @@ func cmdServe() *cli.Command {
 			errCh := make(chan error, 1)
 			go func() {
 				defer close(errCh)
-				slog.InfoContext(ctx, "server started", "addr", addr)
+				ctxlog.From(ctx).Info("server started", "addr", addr)
 				if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 					errCh <- err
 				}
@@ -93,7 +94,7 @@ func cmdServe() *cli.Command {
 			case err := <-errCh:
 				return err
 			case <-sigCh:
-				slog.InfoContext(ctx, "shutting down server...")
+				ctxlog.From(ctx).Info("shutting down server...")
 				shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
 				return httpServer.Shutdown(shutdownCtx)

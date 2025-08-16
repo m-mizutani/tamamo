@@ -2,14 +2,16 @@ package http
 
 import (
 	"bytes"
+	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"runtime"
 	"time"
 
-	"github.com/m-mizutani/goerr"
+	"github.com/m-mizutani/ctxlog"
+	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/utils/errors"
 )
 
 // loggingMiddleware logs HTTP requests
@@ -23,7 +25,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(wrapped, r)
 
 		duration := time.Since(start)
-		slog.InfoContext(r.Context(), "http request",
+		ctxlog.From(r.Context()).Info("http request",
 			"method", r.Method,
 			"path", r.URL.Path,
 			"status", wrapped.statusCode,
@@ -41,10 +43,8 @@ func panicRecoveryMiddleware(next http.Handler) http.Handler {
 				// Get stack trace for debugging
 				buf := make([]byte, 4096)
 				n := runtime.Stack(buf, false)
-				slog.ErrorContext(r.Context(), "panic recovered",
-					"error", err,
-					"stack", string(buf[:n]),
-				)
+				panicErr := goerr.New(fmt.Sprintf("panic recovered: %v", err), goerr.V("stack", string(buf[:n])))
+				errors.Handle(r.Context(), panicErr)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}
 		}()
@@ -59,7 +59,9 @@ func verifySlackSignature(verifier slack.PayloadVerifier) func(http.Handler) htt
 			// Read body
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
-				handleError(w, r, goerr.Wrap(err, "failed to read request body"))
+				err = goerr.Wrap(err, "failed to read request body")
+				errors.Handle(r.Context(), err)
+				http.Error(w, "Bad Request", http.StatusBadRequest)
 				return
 			}
 			// Restore body for next handler
@@ -71,7 +73,8 @@ func verifySlackSignature(verifier slack.PayloadVerifier) func(http.Handler) htt
 
 			// Verify signature
 			if err := verifier.Verify(body, timestamp, signature); err != nil {
-				slog.WarnContext(r.Context(), "slack signature verification failed", "error", err)
+				err = goerr.Wrap(err, "slack signature verification failed", goerr.V("status", http.StatusUnauthorized))
+				errors.Handle(r.Context(), err)
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
