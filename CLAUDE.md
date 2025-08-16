@@ -37,6 +37,10 @@ All comment and character literal in source code must be in English
 - Test files should have `package {name}_test`. Do not use same package name
 - **🚨 CRITICAL RULE: Test MUST be included in same name test file. (e.g. test for `abc.go` must be in `abc_test.go`) 🚨**
 
+### Slack Responses
+- **All Slack responses MUST be sent as thread replies (with thread_ts)**
+- Never send messages to the channel directly unless explicitly required
+
 ## Common Development Commands
 
 ### Building and Testing
@@ -115,21 +119,3 @@ Test files follow Go conventions (`*_test.go`). The codebase includes:
 - Integration tests with mock dependencies
 - Mock generation using `moq` tool managed by Taskfile
 
-## Restrictions and Rules
-
-### Exposure policy
-- Do not export unnecessary methods, structs, and variables
-- Assume that exposed items will be changed. Never expose fields that would be problematic if changed
-- Use `export_test.go` for items that need to be exposed for testing purposes
-
-### Check
-When making changes, before finishing the task, always:
-- Run `go vet ./...`, `go fmt ./...` to format the code
-- Run tests to ensure no impact on other code
-
-### Language
-All comment and character literal in source code must be in English
-
-### Slack Responses
-- **All Slack responses MUST be sent as thread replies (with thread_ts)**
-- Never send messages to the channel directly unless explicitly required
