@@ -1,0 +1,86 @@
+package http
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+
+	"github.com/m-mizutani/ctxlog"
+	"github.com/m-mizutani/goerr/v2"
+	slack_ctrl "github.com/m-mizutani/tamamo/pkg/controller/slack"
+	"github.com/m-mizutani/tamamo/pkg/utils/errors"
+	"github.com/slack-go/slack/slackevents"
+)
+
+func slackEventHandler(ctrl *slack_ctrl.Controller) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Check if controller is nil
+		if ctrl == nil {
+			err := goerr.New("slack controller is nil")
+			errors.Handle(r.Context(), err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			err = goerr.Wrap(err, "failed to read request body")
+			errors.Handle(r.Context(), err)
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionNoVerifyToken())
+		if err != nil {
+			err = goerr.Wrap(err, "failed to parse slack event", goerr.V("body", string(body)))
+			errors.Handle(r.Context(), err)
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		switch eventsAPIEvent.Type {
+		case slackevents.URLVerification:
+			// Handle Slack challenge for URL verification
+			var response *slackevents.ChallengeResponse
+			err := json.Unmarshal([]byte(body), &response)
+			if err != nil {
+				err = goerr.Wrap(err, "failed to unmarshal slack challenge response", goerr.V("body", string(body)))
+				errors.Handle(r.Context(), err)
+				http.Error(w, "Bad Request", http.StatusBadRequest)
+				return
+			}
+			w.Header().Set("Content-Type", "text")
+			if _, err := w.Write([]byte(response.Challenge)); err != nil {
+				errors.Handle(r.Context(), goerr.Wrap(err, "failed to write challenge response"))
+			}
+			ctxlog.From(r.Context()).Info("slack URL verification succeeded")
+
+		case slackevents.CallbackEvent:
+			// Handle actual Slack events
+			innerEvent := eventsAPIEvent.InnerEvent
+
+			switch ev := innerEvent.Data.(type) {
+			case *slackevents.AppMentionEvent:
+				if err := ctrl.HandleSlackAppMention(r.Context(), &eventsAPIEvent, ev); err != nil {
+					errors.Handle(r.Context(), goerr.Wrap(err, "failed to handle app mention"))
+					// Return 200 to prevent Slack retry
+				}
+
+			case *slackevents.MessageEvent:
+				if err := ctrl.HandleSlackMessage(r.Context(), &eventsAPIEvent, ev); err != nil {
+					errors.Handle(r.Context(), goerr.Wrap(err, "failed to handle message"))
+					// Return 200 to prevent Slack retry
+				}
+
+			default:
+				ctxlog.From(r.Context()).Warn("unknown event type", "event", ev, "body", string(body))
+			}
+
+			// Always return 200 for callback events
+			w.WriteHeader(http.StatusOK)
+
+		default:
+			ctxlog.From(r.Context()).Warn("unknown slack event type", "type", eventsAPIEvent.Type)
+			w.WriteHeader(http.StatusOK)
+		}
+	}
+}
