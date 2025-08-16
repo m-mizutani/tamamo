@@ -14,14 +14,18 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/cli/config"
 	server "github.com/m-mizutani/tamamo/pkg/controller/http"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
+	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
+	"github.com/m-mizutani/tamamo/pkg/repository/database/firestore"
+	"github.com/m-mizutani/tamamo/pkg/repository/database/memory"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
 	"github.com/urfave/cli/v3"
 )
 
 func cmdServe() *cli.Command {
 	var (
-		addr     string
-		slackCfg config.Slack
+		addr         string
+		slackCfg     config.Slack
+		firestoreCfg config.Firestore
 	)
 
 	flags := []cli.Flag{
@@ -35,6 +39,7 @@ func cmdServe() *cli.Command {
 		},
 	}
 	flags = append(flags, slackCfg.Flags()...)
+	flags = append(flags, firestoreCfg.Flags()...)
 
 	return &cli.Command{
 		Name:    "serve",
@@ -43,6 +48,30 @@ func cmdServe() *cli.Command {
 		Flags:   flags,
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			logger := ctxlog.From(ctx)
+
+			// Configure repository
+			var repo interfaces.ThreadRepository
+			firestoreCfg.SetDefaults()
+
+			if firestoreCfg.ProjectID != "" {
+				// Use Firestore if project ID is provided
+				logger.Info("using Firestore repository",
+					"project_id", firestoreCfg.ProjectID,
+					"database_id", firestoreCfg.DatabaseID,
+				)
+
+				client, err := firestore.New(ctx, firestoreCfg.ProjectID, firestoreCfg.DatabaseID)
+				if err != nil {
+					return goerr.Wrap(err, "failed to create firestore client")
+				}
+				defer client.Close()
+				repo = client
+			} else {
+				// Use memory repository as fallback
+				logger.Warn("using in-memory repository (data will be lost on restart)")
+				repo = memory.New()
+			}
+
 			logger.Info("starting server",
 				"addr", addr,
 				"slack", slackCfg,
@@ -57,6 +86,7 @@ func cmdServe() *cli.Command {
 			// Create usecase
 			uc := usecase.New(
 				usecase.WithSlackClient(slackSvc),
+				usecase.WithRepository(repo),
 			)
 
 			// Create controllers

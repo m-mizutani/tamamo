@@ -2,122 +2,120 @@ package slack
 
 import (
 	"context"
+	"time"
 
 	"github.com/m-mizutani/ctxlog"
+	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/slack-go/slack/slackevents"
 )
 
-type Thread struct {
-	TeamID    string `json:"team_id"`
-	ChannelID string `json:"channel_id"`
-	ThreadID  string `json:"thread_id"`
-}
-
+// User represents a Slack user from events
 type User struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
+// Mention represents a mention in a Slack message
 type Mention struct {
-	UserID  string
-	Message string
+	UserID  string `json:"user_id"`
+	Message string `json:"message"`
 }
 
+// Message represents a Slack message (both from events and for persistence)
 type Message struct {
-	id       string
-	channel  string
-	threadID string
-	teamID   string
-	user     User
-	msg      string
-	ts       string
-	mentions []Mention
+	// Core message fields
+	ID        types.MessageID `json:"id"`
+	Text      string          `json:"text"`
+	UserID    string          `json:"user_id"`
+	UserName  string          `json:"user_name"`
+	Timestamp string          `json:"timestamp"`
+	CreatedAt time.Time       `json:"created_at"`
+
+	// Thread association (for persistence)
+	ThreadID types.ThreadID `json:"thread_id,omitempty"` // Only set for persistence
+
+	// Slack event fields
+	ThreadTS string    `json:"thread_ts,omitempty"` // From Slack events
+	Channel  string    `json:"channel,omitempty"`   // From Slack events
+	TeamID   string    `json:"team_id,omitempty"`   // From Slack events
+	Mentions []Mention `json:"mentions,omitempty"`  // From Slack events
 }
 
-func (x *Message) Thread() Thread {
-	th := Thread{
-		TeamID:    x.teamID,
-		ChannelID: x.channel,
-		ThreadID:  x.threadID,
+// GetThreadTS returns the thread timestamp for this message
+// If the message is not in a thread, returns the message timestamp
+func (x *Message) GetThreadTS() string {
+	// For Slack events, use ThreadTS if available
+	if x.ThreadTS != "" {
+		return x.ThreadTS
 	}
-	if th.ThreadID == "" {
-		th.ThreadID = x.id
+	// For persistence, use ThreadID
+	if x.ThreadID != "" {
+		return string(x.ThreadID)
 	}
-	return th
+	// Fallback to message timestamp
+	return x.Timestamp
 }
 
-func (x *Message) ID() string {
-	return x.id
-}
-
-func (x *Message) Mention() []Mention {
-	return x.mentions
-}
-
-func (x *Message) User() *User {
-	if x.user.ID == "" {
-		return nil
-	}
-	return &x.user
-}
-
-func (x *Message) Text() string {
-	return x.msg
-}
-
-func (x *Message) Timestamp() string {
-	return x.ts
-}
-
-func (x *Message) ChannelID() string {
-	return x.channel
-}
-
-func (x *Message) ThreadID() string {
-	if x.threadID == "" {
-		return x.id
-	}
-	return x.threadID
-}
-
-func (x *Message) TeamID() string {
-	return x.teamID
-}
-
+// InThread returns true if the message is in a thread
 func (x *Message) InThread() bool {
-	return x.threadID != ""
+	return x.ThreadTS != "" || x.ThreadID != ""
 }
 
+// Validate checks if the message has valid fields (for persistence)
+func (m *Message) Validate() error {
+	if m.ID == "" {
+		return ErrEmptyMessageID
+	}
+	if m.ID != "" && !m.ID.IsValid() {
+		return ErrInvalidMessageID
+	}
+	if m.ThreadID != "" && !m.ThreadID.IsValid() {
+		return ErrInvalidThreadID
+	}
+	if m.UserID == "" {
+		return ErrEmptyUserID
+	}
+	if m.Text == "" {
+		return ErrEmptyText
+	}
+	if m.Timestamp == "" {
+		return ErrEmptyTimestamp
+	}
+	return nil
+}
+
+// NewMessage creates a Message from Slack events
 func NewMessage(ctx context.Context, ev *slackevents.EventsAPIEvent) *Message {
+	// Generate MessageID for the message
+	msgID := types.NewMessageID(ctx)
+
 	switch inEv := ev.InnerEvent.Data.(type) {
 	case *slackevents.AppMentionEvent:
 		return &Message{
-			id:       inEv.TimeStamp,
-			channel:  inEv.Channel,
-			threadID: inEv.ThreadTimeStamp,
-			teamID:   ev.TeamID,
-			user: User{
-				ID:   inEv.User,
-				Name: inEv.User, // TODO: get user name from Slack API
-			},
-			msg:      inEv.Text,
-			ts:       inEv.TimeStamp,
-			mentions: ParseMention(inEv.Text),
+			ID:        msgID,
+			ThreadTS:  inEv.ThreadTimeStamp,
+			Channel:   inEv.Channel,
+			TeamID:    ev.TeamID,
+			UserID:    inEv.User,
+			UserName:  inEv.User, // TODO: get user name from Slack API
+			Text:      inEv.Text,
+			Timestamp: inEv.TimeStamp,
+			Mentions:  ParseMention(inEv.Text),
+			CreatedAt: time.Now(),
 		}
 
 	case *slackevents.MessageEvent:
 		return &Message{
-			id:       inEv.TimeStamp,
-			channel:  inEv.Channel,
-			threadID: inEv.ThreadTimeStamp,
-			teamID:   ev.TeamID,
-			user: User{
-				ID:   inEv.User,
-				Name: inEv.User, // TODO: get user name from Slack API
-			},
-			msg:      inEv.Text,
-			ts:       inEv.TimeStamp,
-			mentions: ParseMention(inEv.Text),
+			ID:        msgID,
+			ThreadTS:  inEv.ThreadTimeStamp,
+			Channel:   inEv.Channel,
+			TeamID:    ev.TeamID,
+			UserID:    inEv.User,
+			UserName:  inEv.User, // TODO: get user name from Slack API
+			Text:      inEv.Text,
+			Timestamp: inEv.TimeStamp,
+			Mentions:  ParseMention(inEv.Text),
+			CreatedAt: time.Now(),
 		}
 
 	default:

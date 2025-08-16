@@ -19,6 +19,13 @@ In principle, do not trust developers who use this library from outside
 - Do not export unnecessary methods, structs, and variables
 - Assume that exposed items will be changed. Never expose fields that would be problematic if changed
 - Use `export_test.go` for items that need to be exposed for testing purposes
+- **Exception**: Domain models (`pkg/domain/model/*`) can have exported fields as they represent data structures
+
+### Firestore Struct Tags
+
+- **NEVER use firestore struct tags on domain models**
+- Domain models should be pure Go structs without any persistence-specific annotations
+- This keeps the domain layer independent of the infrastructure layer
 
 ### Check
 
@@ -57,9 +64,9 @@ All comment and character literal in source code must be in English
 ## Important Development Guidelines
 
 ### Error Handling
-- Use `github.com/m-mizutani/goerr` for error handling
+- Use `github.com/m-mizutani/goerr/v2` for error handling
 - Must wrap errors with `goerr.Wrap` to maintain error context
-- Add helpful variables with `goerr.With` for debugging
+- Add helpful variables with `goerr.V` for debugging (e.g., `goerr.V("key", value)`)
 
 ### Testing
 - Use `github.com/m-mizutani/gt` package for type-safe testing
@@ -80,6 +87,7 @@ The application follows Domain-Driven Design (DDD) with clean architecture:
 - `pkg/service/` - Application services implementing business operations
 - `pkg/controller/` - Interface adapters (HTTP, Slack)
 - `pkg/usecase/` - Application use cases orchestrating domain operations
+- `pkg/repository/` - Data persistence layer (Firestore, Memory)
 - `pkg/cli/` - CLI command processing
 
 ### Key Components
@@ -104,6 +112,7 @@ The application follows Domain-Driven Design (DDD) with clean architecture:
 ### Key Interfaces
 - `interfaces.SlackClient` - Slack API client abstraction
 - `interfaces.SlackEventUseCases` - Slack event handling use cases
+- `interfaces.ThreadRepository` - Thread and message persistence abstraction
 
 ## Configuration
 
@@ -111,6 +120,13 @@ The application is configured via CLI flags or environment variables:
 - Slack OAuth token (`--slack-oauth-token` or `TAMAMO_SLACK_OAUTH_TOKEN`)
 - Slack signing secret (`--slack-signing-secret` or `TAMAMO_SLACK_SIGNING_SECRET`)
 - Server address (`--addr` or `TAMAMO_ADDR`)
+- Firestore Project ID (`--firestore-project-id` or `TAMAMO_FIRESTORE_PROJECT_ID`)
+- Firestore Database ID (`--firestore-database-id` or `TAMAMO_FIRESTORE_DATABASE_ID`)
+
+### Repository Selection
+- If Firestore Project ID is provided, Firestore will be used for persistence
+- Otherwise, in-memory repository will be used (data will be lost on restart)
+- Firestore uses Application Default Credentials (ADC) for authentication
 
 ## Testing
 
@@ -118,4 +134,12 @@ Test files follow Go conventions (`*_test.go`). The codebase includes:
 - Unit tests for individual components
 - Integration tests with mock dependencies
 - Mock generation using `moq` tool managed by Taskfile
+- Common test suite for repository implementations
+
+### Testing Repository Implementations
+For Firestore tests, set the following environment variables:
+```bash
+export TEST_FIRESTORE_PROJECT="your-test-project"
+export TEST_FIRESTORE_DATABASE="(default)"
+```
 
