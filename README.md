@@ -1,6 +1,10 @@
 # tamamo
 Generative AI Agent Manager for Slack
 
+<p align="center">
+  <img src="./docs/images/logo_v0.png" height="128" />
+</p>
+
 ## Getting Started
 
 ### Prerequisites
