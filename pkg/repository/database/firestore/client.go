@@ -58,8 +58,8 @@ func (c *Client) GetOrPutThread(ctx context.Context, teamID, channelID, threadTS
 	err := c.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Query for existing thread by channel and timestamp
 		query := c.client.Collection("threads").
-			Where("channel_id", "==", channelID).
-			Where("thread_ts", "==", threadTS).
+			Where("ChannelID", "==", channelID).
+			Where("ThreadTS", "==", threadTS).
 			Limit(1)
 
 		docs, err := tx.Documents(query).GetAll()
