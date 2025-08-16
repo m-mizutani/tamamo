@@ -10,7 +10,7 @@ tasks:
     desc: Generate mock files
     cmds:
       - go install github.com/matryer/moq@latest
-      - moq -out pkg/domain/mock/interfaces.go -pkg mock ./pkg/domain/interfaces SlackClient
+      - moq -out pkg/domain/mock/interfaces.go -pkg mock ./pkg/domain/interfaces SlackClient ThreadRepository
     sources:
       - pkg/domain/interfaces/*.go
     generates:

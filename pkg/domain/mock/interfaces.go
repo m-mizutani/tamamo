@@ -6,6 +6,8 @@ package mock
 import (
 	"context"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"sync"
 )
 
@@ -134,5 +136,301 @@ func (mock *SlackClientMock) PostMessageCalls() []struct {
 	mock.lockPostMessage.RLock()
 	calls = mock.calls.PostMessage
 	mock.lockPostMessage.RUnlock()
+	return calls
+}
+
+// Ensure, that ThreadRepositoryMock does implement interfaces.ThreadRepository.
+// If this is not the case, regenerate this file with moq.
+var _ interfaces.ThreadRepository = &ThreadRepositoryMock{}
+
+// ThreadRepositoryMock is a mock implementation of interfaces.ThreadRepository.
+//
+//	func TestSomethingThatUsesThreadRepository(t *testing.T) {
+//
+//		// make and configure a mocked interfaces.ThreadRepository
+//		mockedThreadRepository := &ThreadRepositoryMock{
+//			GetOrPutThreadFunc: func(ctx context.Context, teamID string, channelID string, threadTS string) (*slack.Thread, error) {
+//				panic("mock out the GetOrPutThread method")
+//			},
+//			GetThreadFunc: func(ctx context.Context, id types.ThreadID) (*slack.Thread, error) {
+//				panic("mock out the GetThread method")
+//			},
+//			GetThreadByTSFunc: func(ctx context.Context, channelID string, threadTS string) (*slack.Thread, error) {
+//				panic("mock out the GetThreadByTS method")
+//			},
+//			GetThreadMessagesFunc: func(ctx context.Context, threadID types.ThreadID) ([]*slack.Message, error) {
+//				panic("mock out the GetThreadMessages method")
+//			},
+//			PutThreadMessageFunc: func(ctx context.Context, threadID types.ThreadID, message *slack.Message) error {
+//				panic("mock out the PutThreadMessage method")
+//			},
+//		}
+//
+//		// use mockedThreadRepository in code that requires interfaces.ThreadRepository
+//		// and then make assertions.
+//
+//	}
+type ThreadRepositoryMock struct {
+	// GetOrPutThreadFunc mocks the GetOrPutThread method.
+	GetOrPutThreadFunc func(ctx context.Context, teamID string, channelID string, threadTS string) (*slack.Thread, error)
+
+	// GetThreadFunc mocks the GetThread method.
+	GetThreadFunc func(ctx context.Context, id types.ThreadID) (*slack.Thread, error)
+
+	// GetThreadByTSFunc mocks the GetThreadByTS method.
+	GetThreadByTSFunc func(ctx context.Context, channelID string, threadTS string) (*slack.Thread, error)
+
+	// GetThreadMessagesFunc mocks the GetThreadMessages method.
+	GetThreadMessagesFunc func(ctx context.Context, threadID types.ThreadID) ([]*slack.Message, error)
+
+	// PutThreadMessageFunc mocks the PutThreadMessage method.
+	PutThreadMessageFunc func(ctx context.Context, threadID types.ThreadID, message *slack.Message) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetOrPutThread holds details about calls to the GetOrPutThread method.
+		GetOrPutThread []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// TeamID is the teamID argument value.
+			TeamID string
+			// ChannelID is the channelID argument value.
+			ChannelID string
+			// ThreadTS is the threadTS argument value.
+			ThreadTS string
+		}
+		// GetThread holds details about calls to the GetThread method.
+		GetThread []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID types.ThreadID
+		}
+		// GetThreadByTS holds details about calls to the GetThreadByTS method.
+		GetThreadByTS []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ChannelID is the channelID argument value.
+			ChannelID string
+			// ThreadTS is the threadTS argument value.
+			ThreadTS string
+		}
+		// GetThreadMessages holds details about calls to the GetThreadMessages method.
+		GetThreadMessages []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ThreadID is the threadID argument value.
+			ThreadID types.ThreadID
+		}
+		// PutThreadMessage holds details about calls to the PutThreadMessage method.
+		PutThreadMessage []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ThreadID is the threadID argument value.
+			ThreadID types.ThreadID
+			// Message is the message argument value.
+			Message *slack.Message
+		}
+	}
+	lockGetOrPutThread    sync.RWMutex
+	lockGetThread         sync.RWMutex
+	lockGetThreadByTS     sync.RWMutex
+	lockGetThreadMessages sync.RWMutex
+	lockPutThreadMessage  sync.RWMutex
+}
+
+// GetOrPutThread calls GetOrPutThreadFunc.
+func (mock *ThreadRepositoryMock) GetOrPutThread(ctx context.Context, teamID string, channelID string, threadTS string) (*slack.Thread, error) {
+	if mock.GetOrPutThreadFunc == nil {
+		panic("ThreadRepositoryMock.GetOrPutThreadFunc: method is nil but ThreadRepository.GetOrPutThread was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		TeamID    string
+		ChannelID string
+		ThreadTS  string
+	}{
+		Ctx:       ctx,
+		TeamID:    teamID,
+		ChannelID: channelID,
+		ThreadTS:  threadTS,
+	}
+	mock.lockGetOrPutThread.Lock()
+	mock.calls.GetOrPutThread = append(mock.calls.GetOrPutThread, callInfo)
+	mock.lockGetOrPutThread.Unlock()
+	return mock.GetOrPutThreadFunc(ctx, teamID, channelID, threadTS)
+}
+
+// GetOrPutThreadCalls gets all the calls that were made to GetOrPutThread.
+// Check the length with:
+//
+//	len(mockedThreadRepository.GetOrPutThreadCalls())
+func (mock *ThreadRepositoryMock) GetOrPutThreadCalls() []struct {
+	Ctx       context.Context
+	TeamID    string
+	ChannelID string
+	ThreadTS  string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		TeamID    string
+		ChannelID string
+		ThreadTS  string
+	}
+	mock.lockGetOrPutThread.RLock()
+	calls = mock.calls.GetOrPutThread
+	mock.lockGetOrPutThread.RUnlock()
+	return calls
+}
+
+// GetThread calls GetThreadFunc.
+func (mock *ThreadRepositoryMock) GetThread(ctx context.Context, id types.ThreadID) (*slack.Thread, error) {
+	if mock.GetThreadFunc == nil {
+		panic("ThreadRepositoryMock.GetThreadFunc: method is nil but ThreadRepository.GetThread was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  types.ThreadID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetThread.Lock()
+	mock.calls.GetThread = append(mock.calls.GetThread, callInfo)
+	mock.lockGetThread.Unlock()
+	return mock.GetThreadFunc(ctx, id)
+}
+
+// GetThreadCalls gets all the calls that were made to GetThread.
+// Check the length with:
+//
+//	len(mockedThreadRepository.GetThreadCalls())
+func (mock *ThreadRepositoryMock) GetThreadCalls() []struct {
+	Ctx context.Context
+	ID  types.ThreadID
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  types.ThreadID
+	}
+	mock.lockGetThread.RLock()
+	calls = mock.calls.GetThread
+	mock.lockGetThread.RUnlock()
+	return calls
+}
+
+// GetThreadByTS calls GetThreadByTSFunc.
+func (mock *ThreadRepositoryMock) GetThreadByTS(ctx context.Context, channelID string, threadTS string) (*slack.Thread, error) {
+	if mock.GetThreadByTSFunc == nil {
+		panic("ThreadRepositoryMock.GetThreadByTSFunc: method is nil but ThreadRepository.GetThreadByTS was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		ChannelID string
+		ThreadTS  string
+	}{
+		Ctx:       ctx,
+		ChannelID: channelID,
+		ThreadTS:  threadTS,
+	}
+	mock.lockGetThreadByTS.Lock()
+	mock.calls.GetThreadByTS = append(mock.calls.GetThreadByTS, callInfo)
+	mock.lockGetThreadByTS.Unlock()
+	return mock.GetThreadByTSFunc(ctx, channelID, threadTS)
+}
+
+// GetThreadByTSCalls gets all the calls that were made to GetThreadByTS.
+// Check the length with:
+//
+//	len(mockedThreadRepository.GetThreadByTSCalls())
+func (mock *ThreadRepositoryMock) GetThreadByTSCalls() []struct {
+	Ctx       context.Context
+	ChannelID string
+	ThreadTS  string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		ChannelID string
+		ThreadTS  string
+	}
+	mock.lockGetThreadByTS.RLock()
+	calls = mock.calls.GetThreadByTS
+	mock.lockGetThreadByTS.RUnlock()
+	return calls
+}
+
+// GetThreadMessages calls GetThreadMessagesFunc.
+func (mock *ThreadRepositoryMock) GetThreadMessages(ctx context.Context, threadID types.ThreadID) ([]*slack.Message, error) {
+	if mock.GetThreadMessagesFunc == nil {
+		panic("ThreadRepositoryMock.GetThreadMessagesFunc: method is nil but ThreadRepository.GetThreadMessages was just called")
+	}
+	callInfo := struct {
+		Ctx      context.Context
+		ThreadID types.ThreadID
+	}{
+		Ctx:      ctx,
+		ThreadID: threadID,
+	}
+	mock.lockGetThreadMessages.Lock()
+	mock.calls.GetThreadMessages = append(mock.calls.GetThreadMessages, callInfo)
+	mock.lockGetThreadMessages.Unlock()
+	return mock.GetThreadMessagesFunc(ctx, threadID)
+}
+
+// GetThreadMessagesCalls gets all the calls that were made to GetThreadMessages.
+// Check the length with:
+//
+//	len(mockedThreadRepository.GetThreadMessagesCalls())
+func (mock *ThreadRepositoryMock) GetThreadMessagesCalls() []struct {
+	Ctx      context.Context
+	ThreadID types.ThreadID
+} {
+	var calls []struct {
+		Ctx      context.Context
+		ThreadID types.ThreadID
+	}
+	mock.lockGetThreadMessages.RLock()
+	calls = mock.calls.GetThreadMessages
+	mock.lockGetThreadMessages.RUnlock()
+	return calls
+}
+
+// PutThreadMessage calls PutThreadMessageFunc.
+func (mock *ThreadRepositoryMock) PutThreadMessage(ctx context.Context, threadID types.ThreadID, message *slack.Message) error {
+	if mock.PutThreadMessageFunc == nil {
+		panic("ThreadRepositoryMock.PutThreadMessageFunc: method is nil but ThreadRepository.PutThreadMessage was just called")
+	}
+	callInfo := struct {
+		Ctx      context.Context
+		ThreadID types.ThreadID
+		Message  *slack.Message
+	}{
+		Ctx:      ctx,
+		ThreadID: threadID,
+		Message:  message,
+	}
+	mock.lockPutThreadMessage.Lock()
+	mock.calls.PutThreadMessage = append(mock.calls.PutThreadMessage, callInfo)
+	mock.lockPutThreadMessage.Unlock()
+	return mock.PutThreadMessageFunc(ctx, threadID, message)
+}
+
+// PutThreadMessageCalls gets all the calls that were made to PutThreadMessage.
+// Check the length with:
+//
+//	len(mockedThreadRepository.PutThreadMessageCalls())
+func (mock *ThreadRepositoryMock) PutThreadMessageCalls() []struct {
+	Ctx      context.Context
+	ThreadID types.ThreadID
+	Message  *slack.Message
+} {
+	var calls []struct {
+		Ctx      context.Context
+		ThreadID types.ThreadID
+		Message  *slack.Message
+	}
+	mock.lockPutThreadMessage.RLock()
+	calls = mock.calls.PutThreadMessage
+	mock.lockPutThreadMessage.RUnlock()
 	return calls
 }

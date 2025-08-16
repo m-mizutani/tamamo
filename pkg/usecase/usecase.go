@@ -7,6 +7,7 @@ import (
 // Slack holds all use cases
 type Slack struct {
 	slackClient interfaces.SlackClient
+	repository  interfaces.ThreadRepository
 }
 
 // SlackOption is a functional option for Slack
@@ -16,6 +17,13 @@ type SlackOption func(*Slack)
 func WithSlackClient(client interfaces.SlackClient) SlackOption {
 	return func(uc *Slack) {
 		uc.slackClient = client
+	}
+}
+
+// WithRepository sets the repository
+func WithRepository(repo interfaces.ThreadRepository) SlackOption {
+	return func(uc *Slack) {
+		uc.repository = repo
 	}
 }
 
