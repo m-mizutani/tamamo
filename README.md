@@ -1,2 +1,2 @@
 # tamamo
-Generative AI Agent Manager
+Generative AI Agent Manager for Slack
