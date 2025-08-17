@@ -210,3 +210,84 @@ func TestMemoryClient_Concurrency(t *testing.T) {
 		gt.Equal(t, "Original text", freshMessages[0].Text)
 	})
 }
+
+func TestMemoryClient_History(t *testing.T) {
+	ctx := context.Background()
+	client := memory.New()
+
+	t.Run("PutAndGetHistory", func(t *testing.T) {
+		// Create a thread first
+		th, err := client.GetOrPutThread(ctx, "team123", "channel456", "1234567890.123456")
+		gt.NoError(t, err)
+
+		// Create history
+		history := slack.NewHistory(ctx, th.ID)
+
+		// Put history
+		err = client.PutHistory(ctx, history)
+		gt.NoError(t, err)
+
+		// Get history by ID
+		retrieved, err := client.GetHistoryByID(ctx, history.ID)
+		gt.NoError(t, err)
+		gt.Equal(t, history.ID, retrieved.ID)
+		gt.Equal(t, history.ThreadID, retrieved.ThreadID)
+		gt.Equal(t, history.CreatedAt, retrieved.CreatedAt)
+	})
+
+	t.Run("GetLatestHistory", func(t *testing.T) {
+		// Create a thread first
+		th, err := client.GetOrPutThread(ctx, "team456", "channel789", "1234567890.789012")
+		gt.NoError(t, err)
+
+		// Create multiple histories with different timestamps
+		history1 := slack.NewHistory(ctx, th.ID)
+		time.Sleep(1 * time.Millisecond) // Ensure different timestamps
+		history2 := slack.NewHistory(ctx, th.ID)
+		time.Sleep(1 * time.Millisecond)
+		history3 := slack.NewHistory(ctx, th.ID)
+
+		// Put histories
+		err = client.PutHistory(ctx, history1)
+		gt.NoError(t, err)
+		err = client.PutHistory(ctx, history2)
+		gt.NoError(t, err)
+		err = client.PutHistory(ctx, history3)
+		gt.NoError(t, err)
+
+		// Get latest history
+		latest, err := client.GetLatestHistory(ctx, th.ID)
+		gt.NoError(t, err)
+		gt.Equal(t, history3.ID, latest.ID)
+		gt.Equal(t, history3.ID, latest.ID)
+	})
+
+	t.Run("GetLatestHistoryForNonExistentThread", func(t *testing.T) {
+		nonExistentThreadID := types.NewThreadID(ctx)
+		_, err := client.GetLatestHistory(ctx, nonExistentThreadID)
+		gt.Error(t, err)
+	})
+
+	t.Run("GetLatestHistoryWhenNoHistoryExists", func(t *testing.T) {
+		// Create a thread but no history
+		th, err := client.GetOrPutThread(ctx, "team789", "channel012", "1234567890.012345")
+		gt.NoError(t, err)
+
+		_, err = client.GetLatestHistory(ctx, th.ID)
+		gt.Error(t, err)
+	})
+
+	t.Run("GetHistoryByNonExistentID", func(t *testing.T) {
+		nonExistentHistoryID := types.NewHistoryID(ctx)
+		_, err := client.GetHistoryByID(ctx, nonExistentHistoryID)
+		gt.Error(t, err)
+	})
+
+	t.Run("PutHistoryForNonExistentThread", func(t *testing.T) {
+		nonExistentThreadID := types.NewThreadID(ctx)
+		history := slack.NewHistory(ctx, nonExistentThreadID)
+
+		err := client.PutHistory(ctx, history)
+		gt.Error(t, err)
+	})
+}

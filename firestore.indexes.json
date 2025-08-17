@@ -1,0 +1,25 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "histories",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "CreatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "CreatedAt",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

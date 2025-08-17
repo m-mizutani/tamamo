@@ -149,6 +149,12 @@ var _ interfaces.ThreadRepository = &ThreadRepositoryMock{}
 //
 //		// make and configure a mocked interfaces.ThreadRepository
 //		mockedThreadRepository := &ThreadRepositoryMock{
+//			GetHistoryByIDFunc: func(ctx context.Context, id types.HistoryID) (*slack.History, error) {
+//				panic("mock out the GetHistoryByID method")
+//			},
+//			GetLatestHistoryFunc: func(ctx context.Context, threadID types.ThreadID) (*slack.History, error) {
+//				panic("mock out the GetLatestHistory method")
+//			},
 //			GetOrPutThreadFunc: func(ctx context.Context, teamID string, channelID string, threadTS string) (*slack.Thread, error) {
 //				panic("mock out the GetOrPutThread method")
 //			},
@@ -161,6 +167,9 @@ var _ interfaces.ThreadRepository = &ThreadRepositoryMock{}
 //			GetThreadMessagesFunc: func(ctx context.Context, threadID types.ThreadID) ([]*slack.Message, error) {
 //				panic("mock out the GetThreadMessages method")
 //			},
+//			PutHistoryFunc: func(ctx context.Context, history *slack.History) error {
+//				panic("mock out the PutHistory method")
+//			},
 //			PutThreadMessageFunc: func(ctx context.Context, threadID types.ThreadID, message *slack.Message) error {
 //				panic("mock out the PutThreadMessage method")
 //			},
@@ -171,6 +180,12 @@ var _ interfaces.ThreadRepository = &ThreadRepositoryMock{}
 //
 //	}
 type ThreadRepositoryMock struct {
+	// GetHistoryByIDFunc mocks the GetHistoryByID method.
+	GetHistoryByIDFunc func(ctx context.Context, id types.HistoryID) (*slack.History, error)
+
+	// GetLatestHistoryFunc mocks the GetLatestHistory method.
+	GetLatestHistoryFunc func(ctx context.Context, threadID types.ThreadID) (*slack.History, error)
+
 	// GetOrPutThreadFunc mocks the GetOrPutThread method.
 	GetOrPutThreadFunc func(ctx context.Context, teamID string, channelID string, threadTS string) (*slack.Thread, error)
 
@@ -183,11 +198,28 @@ type ThreadRepositoryMock struct {
 	// GetThreadMessagesFunc mocks the GetThreadMessages method.
 	GetThreadMessagesFunc func(ctx context.Context, threadID types.ThreadID) ([]*slack.Message, error)
 
+	// PutHistoryFunc mocks the PutHistory method.
+	PutHistoryFunc func(ctx context.Context, history *slack.History) error
+
 	// PutThreadMessageFunc mocks the PutThreadMessage method.
 	PutThreadMessageFunc func(ctx context.Context, threadID types.ThreadID, message *slack.Message) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetHistoryByID holds details about calls to the GetHistoryByID method.
+		GetHistoryByID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID types.HistoryID
+		}
+		// GetLatestHistory holds details about calls to the GetLatestHistory method.
+		GetLatestHistory []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ThreadID is the threadID argument value.
+			ThreadID types.ThreadID
+		}
 		// GetOrPutThread holds details about calls to the GetOrPutThread method.
 		GetOrPutThread []struct {
 			// Ctx is the ctx argument value.
@@ -222,6 +254,13 @@ type ThreadRepositoryMock struct {
 			// ThreadID is the threadID argument value.
 			ThreadID types.ThreadID
 		}
+		// PutHistory holds details about calls to the PutHistory method.
+		PutHistory []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// History is the history argument value.
+			History *slack.History
+		}
 		// PutThreadMessage holds details about calls to the PutThreadMessage method.
 		PutThreadMessage []struct {
 			// Ctx is the ctx argument value.
@@ -232,11 +271,86 @@ type ThreadRepositoryMock struct {
 			Message *slack.Message
 		}
 	}
+	lockGetHistoryByID    sync.RWMutex
+	lockGetLatestHistory  sync.RWMutex
 	lockGetOrPutThread    sync.RWMutex
 	lockGetThread         sync.RWMutex
 	lockGetThreadByTS     sync.RWMutex
 	lockGetThreadMessages sync.RWMutex
+	lockPutHistory        sync.RWMutex
 	lockPutThreadMessage  sync.RWMutex
+}
+
+// GetHistoryByID calls GetHistoryByIDFunc.
+func (mock *ThreadRepositoryMock) GetHistoryByID(ctx context.Context, id types.HistoryID) (*slack.History, error) {
+	if mock.GetHistoryByIDFunc == nil {
+		panic("ThreadRepositoryMock.GetHistoryByIDFunc: method is nil but ThreadRepository.GetHistoryByID was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  types.HistoryID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetHistoryByID.Lock()
+	mock.calls.GetHistoryByID = append(mock.calls.GetHistoryByID, callInfo)
+	mock.lockGetHistoryByID.Unlock()
+	return mock.GetHistoryByIDFunc(ctx, id)
+}
+
+// GetHistoryByIDCalls gets all the calls that were made to GetHistoryByID.
+// Check the length with:
+//
+//	len(mockedThreadRepository.GetHistoryByIDCalls())
+func (mock *ThreadRepositoryMock) GetHistoryByIDCalls() []struct {
+	Ctx context.Context
+	ID  types.HistoryID
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  types.HistoryID
+	}
+	mock.lockGetHistoryByID.RLock()
+	calls = mock.calls.GetHistoryByID
+	mock.lockGetHistoryByID.RUnlock()
+	return calls
+}
+
+// GetLatestHistory calls GetLatestHistoryFunc.
+func (mock *ThreadRepositoryMock) GetLatestHistory(ctx context.Context, threadID types.ThreadID) (*slack.History, error) {
+	if mock.GetLatestHistoryFunc == nil {
+		panic("ThreadRepositoryMock.GetLatestHistoryFunc: method is nil but ThreadRepository.GetLatestHistory was just called")
+	}
+	callInfo := struct {
+		Ctx      context.Context
+		ThreadID types.ThreadID
+	}{
+		Ctx:      ctx,
+		ThreadID: threadID,
+	}
+	mock.lockGetLatestHistory.Lock()
+	mock.calls.GetLatestHistory = append(mock.calls.GetLatestHistory, callInfo)
+	mock.lockGetLatestHistory.Unlock()
+	return mock.GetLatestHistoryFunc(ctx, threadID)
+}
+
+// GetLatestHistoryCalls gets all the calls that were made to GetLatestHistory.
+// Check the length with:
+//
+//	len(mockedThreadRepository.GetLatestHistoryCalls())
+func (mock *ThreadRepositoryMock) GetLatestHistoryCalls() []struct {
+	Ctx      context.Context
+	ThreadID types.ThreadID
+} {
+	var calls []struct {
+		Ctx      context.Context
+		ThreadID types.ThreadID
+	}
+	mock.lockGetLatestHistory.RLock()
+	calls = mock.calls.GetLatestHistory
+	mock.lockGetLatestHistory.RUnlock()
+	return calls
 }
 
 // GetOrPutThread calls GetOrPutThreadFunc.
@@ -395,6 +509,42 @@ func (mock *ThreadRepositoryMock) GetThreadMessagesCalls() []struct {
 	return calls
 }
 
+// PutHistory calls PutHistoryFunc.
+func (mock *ThreadRepositoryMock) PutHistory(ctx context.Context, history *slack.History) error {
+	if mock.PutHistoryFunc == nil {
+		panic("ThreadRepositoryMock.PutHistoryFunc: method is nil but ThreadRepository.PutHistory was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		History *slack.History
+	}{
+		Ctx:     ctx,
+		History: history,
+	}
+	mock.lockPutHistory.Lock()
+	mock.calls.PutHistory = append(mock.calls.PutHistory, callInfo)
+	mock.lockPutHistory.Unlock()
+	return mock.PutHistoryFunc(ctx, history)
+}
+
+// PutHistoryCalls gets all the calls that were made to PutHistory.
+// Check the length with:
+//
+//	len(mockedThreadRepository.PutHistoryCalls())
+func (mock *ThreadRepositoryMock) PutHistoryCalls() []struct {
+	Ctx     context.Context
+	History *slack.History
+} {
+	var calls []struct {
+		Ctx     context.Context
+		History *slack.History
+	}
+	mock.lockPutHistory.RLock()
+	calls = mock.calls.PutHistory
+	mock.lockPutHistory.RUnlock()
+	return calls
+}
+
 // PutThreadMessage calls PutThreadMessageFunc.
 func (mock *ThreadRepositoryMock) PutThreadMessage(ctx context.Context, threadID types.ThreadID, message *slack.Message) error {
 	if mock.PutThreadMessageFunc == nil {
@@ -432,5 +582,305 @@ func (mock *ThreadRepositoryMock) PutThreadMessageCalls() []struct {
 	mock.lockPutThreadMessage.RLock()
 	calls = mock.calls.PutThreadMessage
 	mock.lockPutThreadMessage.RUnlock()
+	return calls
+}
+
+// Ensure, that HistoryRepositoryMock does implement interfaces.HistoryRepository.
+// If this is not the case, regenerate this file with moq.
+var _ interfaces.HistoryRepository = &HistoryRepositoryMock{}
+
+// HistoryRepositoryMock is a mock implementation of interfaces.HistoryRepository.
+//
+//	func TestSomethingThatUsesHistoryRepository(t *testing.T) {
+//
+//		// make and configure a mocked interfaces.HistoryRepository
+//		mockedHistoryRepository := &HistoryRepositoryMock{
+//			GetHistoryByIDFunc: func(ctx context.Context, id types.HistoryID) (*slack.History, error) {
+//				panic("mock out the GetHistoryByID method")
+//			},
+//			GetLatestHistoryFunc: func(ctx context.Context, threadID types.ThreadID) (*slack.History, error) {
+//				panic("mock out the GetLatestHistory method")
+//			},
+//			PutHistoryFunc: func(ctx context.Context, history *slack.History) error {
+//				panic("mock out the PutHistory method")
+//			},
+//		}
+//
+//		// use mockedHistoryRepository in code that requires interfaces.HistoryRepository
+//		// and then make assertions.
+//
+//	}
+type HistoryRepositoryMock struct {
+	// GetHistoryByIDFunc mocks the GetHistoryByID method.
+	GetHistoryByIDFunc func(ctx context.Context, id types.HistoryID) (*slack.History, error)
+
+	// GetLatestHistoryFunc mocks the GetLatestHistory method.
+	GetLatestHistoryFunc func(ctx context.Context, threadID types.ThreadID) (*slack.History, error)
+
+	// PutHistoryFunc mocks the PutHistory method.
+	PutHistoryFunc func(ctx context.Context, history *slack.History) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetHistoryByID holds details about calls to the GetHistoryByID method.
+		GetHistoryByID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID types.HistoryID
+		}
+		// GetLatestHistory holds details about calls to the GetLatestHistory method.
+		GetLatestHistory []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ThreadID is the threadID argument value.
+			ThreadID types.ThreadID
+		}
+		// PutHistory holds details about calls to the PutHistory method.
+		PutHistory []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// History is the history argument value.
+			History *slack.History
+		}
+	}
+	lockGetHistoryByID   sync.RWMutex
+	lockGetLatestHistory sync.RWMutex
+	lockPutHistory       sync.RWMutex
+}
+
+// GetHistoryByID calls GetHistoryByIDFunc.
+func (mock *HistoryRepositoryMock) GetHistoryByID(ctx context.Context, id types.HistoryID) (*slack.History, error) {
+	if mock.GetHistoryByIDFunc == nil {
+		panic("HistoryRepositoryMock.GetHistoryByIDFunc: method is nil but HistoryRepository.GetHistoryByID was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  types.HistoryID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetHistoryByID.Lock()
+	mock.calls.GetHistoryByID = append(mock.calls.GetHistoryByID, callInfo)
+	mock.lockGetHistoryByID.Unlock()
+	return mock.GetHistoryByIDFunc(ctx, id)
+}
+
+// GetHistoryByIDCalls gets all the calls that were made to GetHistoryByID.
+// Check the length with:
+//
+//	len(mockedHistoryRepository.GetHistoryByIDCalls())
+func (mock *HistoryRepositoryMock) GetHistoryByIDCalls() []struct {
+	Ctx context.Context
+	ID  types.HistoryID
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  types.HistoryID
+	}
+	mock.lockGetHistoryByID.RLock()
+	calls = mock.calls.GetHistoryByID
+	mock.lockGetHistoryByID.RUnlock()
+	return calls
+}
+
+// GetLatestHistory calls GetLatestHistoryFunc.
+func (mock *HistoryRepositoryMock) GetLatestHistory(ctx context.Context, threadID types.ThreadID) (*slack.History, error) {
+	if mock.GetLatestHistoryFunc == nil {
+		panic("HistoryRepositoryMock.GetLatestHistoryFunc: method is nil but HistoryRepository.GetLatestHistory was just called")
+	}
+	callInfo := struct {
+		Ctx      context.Context
+		ThreadID types.ThreadID
+	}{
+		Ctx:      ctx,
+		ThreadID: threadID,
+	}
+	mock.lockGetLatestHistory.Lock()
+	mock.calls.GetLatestHistory = append(mock.calls.GetLatestHistory, callInfo)
+	mock.lockGetLatestHistory.Unlock()
+	return mock.GetLatestHistoryFunc(ctx, threadID)
+}
+
+// GetLatestHistoryCalls gets all the calls that were made to GetLatestHistory.
+// Check the length with:
+//
+//	len(mockedHistoryRepository.GetLatestHistoryCalls())
+func (mock *HistoryRepositoryMock) GetLatestHistoryCalls() []struct {
+	Ctx      context.Context
+	ThreadID types.ThreadID
+} {
+	var calls []struct {
+		Ctx      context.Context
+		ThreadID types.ThreadID
+	}
+	mock.lockGetLatestHistory.RLock()
+	calls = mock.calls.GetLatestHistory
+	mock.lockGetLatestHistory.RUnlock()
+	return calls
+}
+
+// PutHistory calls PutHistoryFunc.
+func (mock *HistoryRepositoryMock) PutHistory(ctx context.Context, history *slack.History) error {
+	if mock.PutHistoryFunc == nil {
+		panic("HistoryRepositoryMock.PutHistoryFunc: method is nil but HistoryRepository.PutHistory was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		History *slack.History
+	}{
+		Ctx:     ctx,
+		History: history,
+	}
+	mock.lockPutHistory.Lock()
+	mock.calls.PutHistory = append(mock.calls.PutHistory, callInfo)
+	mock.lockPutHistory.Unlock()
+	return mock.PutHistoryFunc(ctx, history)
+}
+
+// PutHistoryCalls gets all the calls that were made to PutHistory.
+// Check the length with:
+//
+//	len(mockedHistoryRepository.PutHistoryCalls())
+func (mock *HistoryRepositoryMock) PutHistoryCalls() []struct {
+	Ctx     context.Context
+	History *slack.History
+} {
+	var calls []struct {
+		Ctx     context.Context
+		History *slack.History
+	}
+	mock.lockPutHistory.RLock()
+	calls = mock.calls.PutHistory
+	mock.lockPutHistory.RUnlock()
+	return calls
+}
+
+// Ensure, that StorageAdapterMock does implement interfaces.StorageAdapter.
+// If this is not the case, regenerate this file with moq.
+var _ interfaces.StorageAdapter = &StorageAdapterMock{}
+
+// StorageAdapterMock is a mock implementation of interfaces.StorageAdapter.
+//
+//	func TestSomethingThatUsesStorageAdapter(t *testing.T) {
+//
+//		// make and configure a mocked interfaces.StorageAdapter
+//		mockedStorageAdapter := &StorageAdapterMock{
+//			GetFunc: func(ctx context.Context, key string) ([]byte, error) {
+//				panic("mock out the Get method")
+//			},
+//			PutFunc: func(ctx context.Context, key string, data []byte) error {
+//				panic("mock out the Put method")
+//			},
+//		}
+//
+//		// use mockedStorageAdapter in code that requires interfaces.StorageAdapter
+//		// and then make assertions.
+//
+//	}
+type StorageAdapterMock struct {
+	// GetFunc mocks the Get method.
+	GetFunc func(ctx context.Context, key string) ([]byte, error)
+
+	// PutFunc mocks the Put method.
+	PutFunc func(ctx context.Context, key string, data []byte) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// Get holds details about calls to the Get method.
+		Get []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Key is the key argument value.
+			Key string
+		}
+		// Put holds details about calls to the Put method.
+		Put []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Key is the key argument value.
+			Key string
+			// Data is the data argument value.
+			Data []byte
+		}
+	}
+	lockGet sync.RWMutex
+	lockPut sync.RWMutex
+}
+
+// Get calls GetFunc.
+func (mock *StorageAdapterMock) Get(ctx context.Context, key string) ([]byte, error) {
+	if mock.GetFunc == nil {
+		panic("StorageAdapterMock.GetFunc: method is nil but StorageAdapter.Get was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Key string
+	}{
+		Ctx: ctx,
+		Key: key,
+	}
+	mock.lockGet.Lock()
+	mock.calls.Get = append(mock.calls.Get, callInfo)
+	mock.lockGet.Unlock()
+	return mock.GetFunc(ctx, key)
+}
+
+// GetCalls gets all the calls that were made to Get.
+// Check the length with:
+//
+//	len(mockedStorageAdapter.GetCalls())
+func (mock *StorageAdapterMock) GetCalls() []struct {
+	Ctx context.Context
+	Key string
+} {
+	var calls []struct {
+		Ctx context.Context
+		Key string
+	}
+	mock.lockGet.RLock()
+	calls = mock.calls.Get
+	mock.lockGet.RUnlock()
+	return calls
+}
+
+// Put calls PutFunc.
+func (mock *StorageAdapterMock) Put(ctx context.Context, key string, data []byte) error {
+	if mock.PutFunc == nil {
+		panic("StorageAdapterMock.PutFunc: method is nil but StorageAdapter.Put was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Key  string
+		Data []byte
+	}{
+		Ctx:  ctx,
+		Key:  key,
+		Data: data,
+	}
+	mock.lockPut.Lock()
+	mock.calls.Put = append(mock.calls.Put, callInfo)
+	mock.lockPut.Unlock()
+	return mock.PutFunc(ctx, key, data)
+}
+
+// PutCalls gets all the calls that were made to Put.
+// Check the length with:
+//
+//	len(mockedStorageAdapter.PutCalls())
+func (mock *StorageAdapterMock) PutCalls() []struct {
+	Ctx  context.Context
+	Key  string
+	Data []byte
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Key  string
+		Data []byte
+	}
+	mock.lockPut.RLock()
+	calls = mock.calls.Put
+	mock.lockPut.RUnlock()
 	return calls
 }

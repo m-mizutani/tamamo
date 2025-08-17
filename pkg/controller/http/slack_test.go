@@ -20,6 +20,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/mock"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
+	"github.com/m-mizutani/tamamo/pkg/utils/async"
 )
 
 func TestSlackEventHandler(t *testing.T) {
@@ -101,6 +102,8 @@ func TestSlackEventHandler(t *testing.T) {
 		gt.NoError(t, err)
 
 		req := httptest.NewRequest("POST", "/hooks/slack/event", bytes.NewReader(bodyBytes))
+		// Enable sync mode for testing
+		req = req.WithContext(async.WithSyncMode(req.Context()))
 		rec := httptest.NewRecorder()
 
 		// Execute
@@ -109,7 +112,7 @@ func TestSlackEventHandler(t *testing.T) {
 		// Verify response
 		gt.Equal(t, rec.Code, http.StatusOK)
 
-		// Verify mock was called
+		// Verify mock was called (no wait needed in sync mode)
 		calls := mockClient.PostMessageCalls()
 		gt.Equal(t, len(calls), 1)
 		if len(calls) > 0 {
@@ -167,6 +170,8 @@ func TestSlackEventHandler(t *testing.T) {
 			signature := "v0=" + hex.EncodeToString(h.Sum(nil))
 
 			req := httptest.NewRequest("POST", "/hooks/slack/event", bytes.NewReader(bodyBytes))
+			// Enable sync mode for testing
+			req = req.WithContext(async.WithSyncMode(req.Context()))
 			req.Header.Set("X-Slack-Request-Timestamp", timestamp)
 			req.Header.Set("X-Slack-Signature", signature)
 			rec := httptest.NewRecorder()
@@ -175,6 +180,7 @@ func TestSlackEventHandler(t *testing.T) {
 
 			// Should accept and process the request
 			gt.Equal(t, rec.Code, http.StatusOK)
+
 			gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
 		})
 
