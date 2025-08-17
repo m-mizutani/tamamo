@@ -12,6 +12,13 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	// Collection names
+	collectionThreads   = "threads"
+	collectionMessages  = "messages"
+	collectionHistories = "histories"
+)
+
 // Client is a Firestore implementation of ThreadRepository and HistoryRepository
 type Client struct {
 	client     *firestore.Client
@@ -57,7 +64,7 @@ func (c *Client) GetOrPutThread(ctx context.Context, teamID, channelID, threadTS
 
 	err := c.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Query for existing thread by channel and timestamp
-		query := c.client.Collection("threads").
+		query := c.client.Collection(collectionThreads).
 			Where("ChannelID", "==", channelID).
 			Where("ThreadTS", "==", threadTS).
 			Limit(1)
@@ -84,7 +91,7 @@ func (c *Client) GetOrPutThread(ctx context.Context, teamID, channelID, threadTS
 		}
 
 		// Store the new thread
-		if err := tx.Set(c.client.Collection("threads").Doc(t.ID.String()), t); err != nil {
+		if err := tx.Set(c.client.Collection(collectionThreads).Doc(t.ID.String()), t); err != nil {
 			return goerr.Wrap(err, "failed to create thread", goerr.V("thread_id", t.ID))
 		}
 
@@ -104,7 +111,7 @@ func (c *Client) GetOrPutThread(ctx context.Context, teamID, channelID, threadTS
 
 // GetThread retrieves a thread from Firestore
 func (c *Client) GetThread(ctx context.Context, id types.ThreadID) (*slack.Thread, error) {
-	doc, err := c.client.Collection("threads").Doc(id.String()).Get(ctx)
+	doc, err := c.client.Collection(collectionThreads).Doc(id.String()).Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			return nil, goerr.Wrap(slack.ErrThreadNotFound, "thread not found",
@@ -129,7 +136,7 @@ func (c *Client) GetThread(ctx context.Context, id types.ThreadID) (*slack.Threa
 // GetThreadByTS retrieves a thread by channel ID and thread timestamp from Firestore
 func (c *Client) GetThreadByTS(ctx context.Context, channelID, threadTS string) (*slack.Thread, error) {
 	// Query for thread by ChannelID and ThreadTS
-	iter := c.client.Collection("threads").
+	iter := c.client.Collection(collectionThreads).
 		Where("ChannelID", "==", channelID).
 		Where("ThreadTS", "==", threadTS).
 		Documents(ctx)
@@ -175,8 +182,8 @@ func (c *Client) PutThreadMessage(ctx context.Context, threadID types.ThreadID, 
 	}
 
 	// Store message in subcollection
-	_, err = c.client.Collection("threads").Doc(threadID.String()).
-		Collection("messages").Doc(msg.ID.String()).Set(ctx, msg)
+	_, err = c.client.Collection(collectionThreads).Doc(threadID.String()).
+		Collection(collectionMessages).Doc(msg.ID.String()).Set(ctx, msg)
 	if err != nil {
 		return goerr.Wrap(err, "failed to put message",
 			goerr.V("thread_id", threadID),
@@ -196,8 +203,8 @@ func (c *Client) GetThreadMessages(ctx context.Context, threadID types.ThreadID)
 	}
 
 	// Get messages from subcollection, ordered by CreatedAt
-	iter := c.client.Collection("threads").Doc(threadID.String()).
-		Collection("messages").OrderBy("CreatedAt", firestore.Asc).Documents(ctx)
+	iter := c.client.Collection(collectionThreads).Doc(threadID.String()).
+		Collection(collectionMessages).OrderBy("CreatedAt", firestore.Asc).Documents(ctx)
 	defer iter.Stop()
 
 	var messages []*slack.Message
@@ -238,8 +245,8 @@ func (c *Client) PutHistory(ctx context.Context, history *slack.History) error {
 	}
 
 	// Store history record as subcollection of thread
-	_, err = c.client.Collection("threads").Doc(history.ThreadID.String()).
-		Collection("histories").Doc(history.ID.String()).Set(ctx, history)
+	_, err = c.client.Collection(collectionThreads).Doc(history.ThreadID.String()).
+		Collection(collectionHistories).Doc(history.ID.String()).Set(ctx, history)
 	if err != nil {
 		return goerr.Wrap(err, "failed to put history",
 			goerr.V("history_id", history.ID),
@@ -259,8 +266,8 @@ func (c *Client) GetLatestHistory(ctx context.Context, threadID types.ThreadID) 
 	}
 
 	// Query for the latest history record in thread's subcollection
-	iter := c.client.Collection("threads").Doc(threadID.String()).
-		Collection("histories").
+	iter := c.client.Collection(collectionThreads).Doc(threadID.String()).
+		Collection(collectionHistories).
 		OrderBy("CreatedAt", firestore.Desc).
 		Limit(1).
 		Documents(ctx)
@@ -291,48 +298,42 @@ func (c *Client) GetLatestHistory(ctx context.Context, threadID types.ThreadID) 
 }
 
 // GetHistoryByID retrieves a specific history record by ID
-// Note: This requires iterating through all threads since we don't know which thread contains this history
+// Uses collection group query to search across all histories subcollections under threads
 func (c *Client) GetHistoryByID(ctx context.Context, id types.HistoryID) (*slack.History, error) {
-	// This is inefficient but necessary without knowing the thread ID
-	// In practice, this method might not be used frequently
-	threadsIter := c.client.Collection("threads").Documents(ctx)
-	defer threadsIter.Stop()
+	// Collection group query searches across all "histories" subcollections
+	// that exist under any "threads" document
+	iter := c.client.CollectionGroup(collectionHistories).
+		Where("ID", "==", id.String()).
+		Limit(1).
+		Documents(ctx)
+	defer iter.Stop()
 
-	for {
-		threadDoc, err := threadsIter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, goerr.Wrap(err, "failed to iterate threads",
-				goerr.V("history_id", id),
-				goerr.V("repository", "firestore"))
-		}
-
-		doc, err := c.client.Collection("threads").Doc(threadDoc.Ref.ID).
-			Collection("histories").Doc(id.String()).Get(ctx)
-		if err == nil {
-			// Found the history
-			var history slack.History
-			if err := doc.DataTo(&history); err != nil {
-				return nil, goerr.Wrap(err, "failed to unmarshal history",
-					goerr.V("history_id", id),
-					goerr.V("repository", "firestore"))
-			}
-			return &history, nil
-		}
-		// Continue searching in other threads
+	doc, err := iter.Next()
+	if err == iterator.Done {
+		return nil, goerr.Wrap(slack.ErrHistoryNotFound, "history not found",
+			goerr.V("history_id", id),
+			goerr.V("repository", "firestore"))
+	}
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to query history by id",
+			goerr.V("history_id", id),
+			goerr.V("repository", "firestore"))
 	}
 
-	return nil, goerr.Wrap(slack.ErrHistoryNotFound, "history not found",
-		goerr.V("history_id", id),
-		goerr.V("repository", "firestore"))
+	var h slack.History
+	if err := doc.DataTo(&h); err != nil {
+		return nil, goerr.Wrap(err, "failed to unmarshal history",
+			goerr.V("history_id", id),
+			goerr.V("repository", "firestore"))
+	}
+
+	return &h, nil
 }
 
 // GetHistoryByIDWithThread is a more efficient version when thread ID is known
 func (c *Client) GetHistoryByIDWithThread(ctx context.Context, threadID types.ThreadID, id types.HistoryID) (*slack.History, error) {
-	doc, err := c.client.Collection("threads").Doc(threadID.String()).
-		Collection("histories").Doc(id.String()).Get(ctx)
+	doc, err := c.client.Collection(collectionThreads).Doc(threadID.String()).
+		Collection(collectionHistories).Doc(id.String()).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		return nil, goerr.Wrap(slack.ErrHistoryNotFound, "history not found",
 			goerr.V("history_id", id),

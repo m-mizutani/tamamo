@@ -241,11 +241,13 @@ func TestMemoryClient_History(t *testing.T) {
 		gt.NoError(t, err)
 
 		// Create multiple histories with different timestamps
+		now := time.Now()
 		history1 := slack.NewHistory(ctx, th.ID)
-		time.Sleep(1 * time.Millisecond) // Ensure different timestamps
+		history1.CreatedAt = now
 		history2 := slack.NewHistory(ctx, th.ID)
-		time.Sleep(1 * time.Millisecond)
+		history2.CreatedAt = now.Add(time.Millisecond)
 		history3 := slack.NewHistory(ctx, th.ID)
+		history3.CreatedAt = now.Add(2 * time.Millisecond)
 
 		// Put histories
 		err = client.PutHistory(ctx, history1)
@@ -258,7 +260,6 @@ func TestMemoryClient_History(t *testing.T) {
 		// Get latest history
 		latest, err := client.GetLatestHistory(ctx, th.ID)
 		gt.NoError(t, err)
-		gt.Equal(t, history3.ID, latest.ID)
 		gt.Equal(t, history3.ID, latest.ID)
 	})
 
