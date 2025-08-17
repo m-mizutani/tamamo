@@ -48,7 +48,10 @@ func New(ctx context.Context, bucketName string, opts ...Option) (*Client, error
 
 // Close closes the Cloud Storage client
 func (c *Client) Close() error {
-	return c.client.Close()
+	if c != nil && c.client != nil {
+		return c.client.Close()
+	}
+	return nil
 }
 
 // buildPath constructs the full path with prefix
