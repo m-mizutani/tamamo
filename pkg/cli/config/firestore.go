@@ -33,4 +33,3 @@ func (f *Firestore) SetDefaults() {
 		f.DatabaseID = "(default)"
 	}
 }
-

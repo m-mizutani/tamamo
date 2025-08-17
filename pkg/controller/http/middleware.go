@@ -8,16 +8,30 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/m-mizutani/ctxlog"
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/utils/errors"
 )
 
-// loggingMiddleware logs HTTP requests
+// loggingMiddleware logs HTTP requests and adds request ID to context
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+
+		// Generate request ID
+		requestID := uuid.New().String()
+
+		// Create logger with request ID
+		logger := ctxlog.From(r.Context()).With("request_id", requestID)
+
+		// Embed logger into context
+		ctx := ctxlog.With(r.Context(), logger)
+		r = r.WithContext(ctx)
+
+		// Add request ID to response header
+		w.Header().Set("X-Request-ID", requestID)
 
 		// Wrap response writer to capture status code
 		wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
@@ -25,7 +39,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(wrapped, r)
 
 		duration := time.Since(start)
-		ctxlog.From(r.Context()).Info("http request",
+		logger.Info("http request",
 			"method", r.Method,
 			"path", r.URL.Path,
 			"status", wrapped.statusCode,

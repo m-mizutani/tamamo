@@ -9,18 +9,20 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
 
-// Client is an in-memory implementation of ThreadRepository
+// Client is an in-memory implementation of ThreadRepository and HistoryRepository
 type Client struct {
-	mu       sync.RWMutex
-	threads  map[types.ThreadID]*slack.Thread
-	messages map[types.ThreadID][]*slack.Message
+	mu        sync.RWMutex
+	threads   map[types.ThreadID]*slack.Thread
+	messages  map[types.ThreadID][]*slack.Message
+	histories map[types.HistoryID]*slack.History
 }
 
 // New creates a new in-memory client
 func New() *Client {
 	return &Client{
-		threads:  make(map[types.ThreadID]*slack.Thread),
-		messages: make(map[types.ThreadID][]*slack.Message),
+		threads:   make(map[types.ThreadID]*slack.Thread),
+		messages:  make(map[types.ThreadID][]*slack.Message),
+		histories: make(map[types.HistoryID]*slack.History),
 	}
 }
 
@@ -128,4 +130,68 @@ func (c *Client) GetThreadMessages(ctx context.Context, threadID types.ThreadID)
 	}
 
 	return result, nil
+}
+
+// PutHistory stores a history record
+func (c *Client) PutHistory(ctx context.Context, history *slack.History) error {
+	if err := history.Validate(); err != nil {
+		return goerr.Wrap(err, "invalid history", goerr.V("history_id", history.ID))
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Check if thread exists
+	if _, exists := c.threads[history.ThreadID]; !exists {
+		return goerr.Wrap(slack.ErrThreadNotFound, "thread not found", goerr.V("thread_id", history.ThreadID))
+	}
+
+	// Deep copy to avoid external modifications
+	historyCopy := *history
+	c.histories[history.ID] = &historyCopy
+
+	return nil
+}
+
+// GetLatestHistory retrieves the most recent history for a thread
+func (c *Client) GetLatestHistory(ctx context.Context, threadID types.ThreadID) (*slack.History, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	// Check if thread exists
+	if _, exists := c.threads[threadID]; !exists {
+		return nil, goerr.Wrap(slack.ErrThreadNotFound, "thread not found", goerr.V("thread_id", threadID))
+	}
+
+	var latestHistory *slack.History
+	for _, h := range c.histories {
+		if h.ThreadID == threadID {
+			if latestHistory == nil || h.CreatedAt.After(latestHistory.CreatedAt) {
+				latestHistory = h
+			}
+		}
+	}
+
+	if latestHistory == nil {
+		return nil, goerr.Wrap(slack.ErrHistoryNotFound, "no history found for thread", goerr.V("thread_id", threadID))
+	}
+
+	// Return a copy to avoid external modifications
+	historyCopy := *latestHistory
+	return &historyCopy, nil
+}
+
+// GetHistoryByID retrieves a specific history record by ID
+func (c *Client) GetHistoryByID(ctx context.Context, id types.HistoryID) (*slack.History, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	h, exists := c.histories[id]
+	if !exists {
+		return nil, goerr.Wrap(slack.ErrHistoryNotFound, "history not found", goerr.V("history_id", id))
+	}
+
+	// Return a copy to avoid external modifications
+	historyCopy := *h
+	return &historyCopy, nil
 }

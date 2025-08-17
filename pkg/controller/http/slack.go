@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"github.com/m-mizutani/ctxlog"
 	"github.com/m-mizutani/goerr/v2"
 	slack_ctrl "github.com/m-mizutani/tamamo/pkg/controller/slack"
+	"github.com/m-mizutani/tamamo/pkg/utils/async"
 	"github.com/m-mizutani/tamamo/pkg/utils/errors"
 	"github.com/slack-go/slack/slackevents"
 )
@@ -55,27 +57,31 @@ func slackEventHandler(ctrl *slack_ctrl.Controller) http.HandlerFunc {
 			ctxlog.From(r.Context()).Info("slack URL verification succeeded")
 
 		case slackevents.CallbackEvent:
-			// Handle actual Slack events
+			// Handle actual Slack events asynchronously
 			innerEvent := eventsAPIEvent.InnerEvent
 
 			switch ev := innerEvent.Data.(type) {
 			case *slackevents.AppMentionEvent:
-				if err := ctrl.HandleSlackAppMention(r.Context(), &eventsAPIEvent, ev); err != nil {
-					errors.Handle(r.Context(), goerr.Wrap(err, "failed to handle app mention"))
-					// Return 200 to prevent Slack retry
-				}
+				// Process app mention asynchronously
+				eventsCopy := eventsAPIEvent
+				evCopy := *ev
+				async.Dispatch(r.Context(), func(ctx context.Context) error {
+					return ctrl.HandleSlackAppMention(ctx, &eventsCopy, &evCopy)
+				})
 
 			case *slackevents.MessageEvent:
-				if err := ctrl.HandleSlackMessage(r.Context(), &eventsAPIEvent, ev); err != nil {
-					errors.Handle(r.Context(), goerr.Wrap(err, "failed to handle message"))
-					// Return 200 to prevent Slack retry
-				}
+				// Process message asynchronously
+				eventsCopy := eventsAPIEvent
+				evCopy := *ev
+				async.Dispatch(r.Context(), func(ctx context.Context) error {
+					return ctrl.HandleSlackMessage(ctx, &eventsCopy, &evCopy)
+				})
 
 			default:
 				ctxlog.From(r.Context()).Warn("unknown event type", "event", ev, "body", string(body))
 			}
 
-			// Always return 200 for callback events
+			// Immediately return 200 for callback events
 			w.WriteHeader(http.StatusOK)
 
 		default:

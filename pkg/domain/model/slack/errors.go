@@ -18,4 +18,9 @@ var (
 
 	// Repository errors
 	ErrThreadNotFound = errors.New("thread not found")
+
+	// History errors
+	ErrInvalidHistoryID = errors.New("invalid history ID")
+	ErrHistoryNotFound  = errors.New("history not found")
+	ErrLLMUnavailable   = errors.New("LLM service is unavailable")
 )

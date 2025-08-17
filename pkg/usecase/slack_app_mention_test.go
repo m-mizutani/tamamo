@@ -5,12 +5,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/m-mizutani/goerr/v2"
+	"github.com/m-mizutani/gollem"
 	"github.com/m-mizutani/gt"
+	mem_storage "github.com/m-mizutani/tamamo/pkg/adapters/memory"
 	"github.com/m-mizutani/tamamo/pkg/domain/mock"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/repository/database/memory"
+	"github.com/m-mizutani/tamamo/pkg/repository/storage"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
+	"github.com/sashabaranov/go-openai"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -491,5 +496,278 @@ func TestHandleSlackAppMentionWithRepository(t *testing.T) {
 		// Verify no thread was created
 		threads := repo.GetAllThreadsForTest()
 		gt.A(t, threads).Length(0)
+	})
+}
+
+// MockSession implements gollem.Session for testing
+type MockSession struct {
+	history             *gollem.History
+	generateContentFunc func(ctx context.Context, input ...gollem.Input) (*gollem.Response, error)
+	messageCount        int // Track how many messages have been generated
+}
+
+func (m *MockSession) GenerateContent(ctx context.Context, input ...gollem.Input) (*gollem.Response, error) {
+	// Increment message count to simulate history growth
+	m.messageCount++
+
+	if m.generateContentFunc != nil {
+		return m.generateContentFunc(ctx, input...)
+	}
+	return &gollem.Response{
+		Texts: []string{"Mock response"},
+	}, nil
+}
+
+func (m *MockSession) GenerateStream(ctx context.Context, input ...gollem.Input) (<-chan *gollem.Response, error) {
+	ch := make(chan *gollem.Response, 1)
+	resp, err := m.GenerateContent(ctx, input...)
+	if err != nil {
+		close(ch)
+		return ch, err
+	}
+	ch <- resp
+	close(ch)
+	return ch, nil
+}
+
+func (m *MockSession) History() *gollem.History {
+	if m.history == nil {
+		// Create empty Gemini history
+		m.history = &gollem.History{
+			LLType:  "Gemini",
+			Version: 1,
+		}
+	}
+
+	// Simulate that history has been populated based on message count
+	// For testing, we just need ToCount() to return > 0
+	if m.messageCount > 0 {
+		// Set a dummy OpenAI history to make ToCount() return non-zero
+		m.history.OpenAI = []openai.ChatCompletionMessage{
+			{Role: "user", Content: "test"},
+			{Role: "assistant", Content: "response"},
+		}
+	}
+
+	return m.history
+}
+
+func TestHandleSlackAppMentionWithLLM(t *testing.T) {
+	botUserID := "U12345BOT"
+	userID := "U67890USER"
+	channelID := "C11111"
+	teamID := "T12345"
+
+	t.Run("responds with LLM when configured", func(t *testing.T) {
+		// Create mock LLM client
+		mockSession := &MockSession{
+			generateContentFunc: func(ctx context.Context, input ...gollem.Input) (*gollem.Response, error) {
+				return &gollem.Response{
+					Texts: []string{"This is an AI-powered response"},
+				}, nil
+			},
+		}
+
+		mockLLMClient := &mock.LLMClientMock{
+			NewSessionFunc: func(ctx context.Context, options ...gollem.SessionOption) (gollem.Session, error) {
+				return mockSession, nil
+			},
+		}
+
+		// Setup mock Slack client
+		var capturedResponse string
+		mockSlackClient := &mock.SlackClientMock{
+			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
+				capturedResponse = text
+				return nil
+			},
+			IsBotUserFunc: func(uid string) bool {
+				return uid == botUserID
+			},
+		}
+
+		// Create repositories
+		repo := memory.New()
+		storageAdapter := mem_storage.New()
+		storageRepo := storage.New(storageAdapter)
+
+		// Create usecase with LLM
+		uc := usecase.New(
+			usecase.WithSlackClient(mockSlackClient),
+			usecase.WithRepository(repo),
+			usecase.WithStorageRepository(storageRepo),
+			usecase.WithGeminiClient(mockLLMClient),
+		)
+
+		// Create test message
+		ev := &slackevents.EventsAPIEvent{
+			TeamID: teamID,
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Data: &slackevents.AppMentionEvent{
+					User:            userID,
+					Text:            "<@U12345BOT> explain quantum computing",
+					TimeStamp:       "1234567890.123456",
+					Channel:         channelID,
+					ThreadTimeStamp: "1234567890.100000",
+				},
+			},
+		}
+		msg := slack.NewMessage(context.Background(), ev)
+
+		// Execute
+		err := uc.HandleSlackAppMention(context.Background(), *msg)
+		gt.NoError(t, err)
+
+		// Verify LLM was called (through Session)
+		gt.Equal(t, len(mockLLMClient.NewSessionCalls()), 1)
+
+		// Verify response was posted
+		gt.Equal(t, len(mockSlackClient.PostMessageCalls()), 1)
+		gt.S(t, capturedResponse).Contains("AI-powered response")
+	})
+
+	t.Run("maintains conversation history", func(t *testing.T) {
+		// Track history updates - simulate that history is populated on each call
+		mockSession := &MockSession{
+			history: &gollem.History{
+				LLType:  "Gemini",
+				Version: 1,
+			},
+			generateContentFunc: func(ctx context.Context, input ...gollem.Input) (*gollem.Response, error) {
+				return &gollem.Response{
+					Texts: []string{"Response with history"},
+				}, nil
+			},
+		}
+
+		mockLLMClient := &mock.LLMClientMock{
+			NewSessionFunc: func(ctx context.Context, options ...gollem.SessionOption) (gollem.Session, error) {
+				return mockSession, nil
+			},
+		}
+
+		// Setup mock Slack client
+		mockSlackClient := &mock.SlackClientMock{
+			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
+				return nil
+			},
+			IsBotUserFunc: func(uid string) bool {
+				return uid == botUserID
+			},
+		}
+
+		// Create repositories
+		repo := memory.New()
+		storageAdapter := mem_storage.New()
+		storageRepo := storage.New(storageAdapter)
+
+		// Create usecase with LLM
+		uc := usecase.New(
+			usecase.WithSlackClient(mockSlackClient),
+			usecase.WithRepository(repo),
+			usecase.WithStorageRepository(storageRepo),
+			usecase.WithGeminiClient(mockLLMClient),
+		)
+
+		// First message
+		ev1 := &slackevents.EventsAPIEvent{
+			TeamID: teamID,
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Data: &slackevents.AppMentionEvent{
+					User:            userID,
+					Text:            "<@U12345BOT> first question",
+					TimeStamp:       "1234567890.123456",
+					Channel:         channelID,
+					ThreadTimeStamp: "1234567890.100000",
+				},
+			},
+		}
+		msg1 := slack.NewMessage(context.Background(), ev1)
+
+		err := uc.HandleSlackAppMention(context.Background(), *msg1)
+		gt.NoError(t, err)
+
+		// Check that history was saved by attempting to get latest history
+		thread, err := repo.GetThreadByTS(context.Background(), channelID, "1234567890.100000")
+		gt.NoError(t, err)
+		latestHistory, err := repo.GetLatestHistory(context.Background(), thread.ID)
+		gt.NoError(t, err)
+		gt.NotNil(t, latestHistory)
+
+		// Second message in same thread
+		ev2 := &slackevents.EventsAPIEvent{
+			TeamID: teamID,
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Data: &slackevents.AppMentionEvent{
+					User:            userID,
+					Text:            "<@U12345BOT> follow-up question",
+					TimeStamp:       "1234567890.234567",
+					Channel:         channelID,
+					ThreadTimeStamp: "1234567890.100000", // Same thread
+				},
+			},
+		}
+		msg2 := slack.NewMessage(context.Background(), ev2)
+
+		err = uc.HandleSlackAppMention(context.Background(), *msg2)
+		gt.NoError(t, err)
+
+		// History should be updated - check we can get it
+		latestHistory2, err := repo.GetLatestHistory(context.Background(), thread.ID)
+		gt.NoError(t, err)
+		gt.NotNil(t, latestHistory2)
+		// The ID should be different from the first one
+		gt.NotEqual(t, latestHistory.ID, latestHistory2.ID)
+	})
+
+	t.Run("falls back gracefully when LLM fails", func(t *testing.T) {
+		// Mock LLM that fails
+		mockLLMClient := &mock.LLMClientMock{
+			NewSessionFunc: func(ctx context.Context, options ...gollem.SessionOption) (gollem.Session, error) {
+				return nil, goerr.New("LLM service unavailable")
+			},
+		}
+
+		// Setup mock Slack client
+		var capturedResponse string
+		mockSlackClient := &mock.SlackClientMock{
+			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
+				capturedResponse = text
+				return nil
+			},
+			IsBotUserFunc: func(uid string) bool {
+				return uid == botUserID
+			},
+		}
+
+		// Create usecase with failing LLM
+		uc := usecase.New(
+			usecase.WithSlackClient(mockSlackClient),
+			usecase.WithGeminiClient(mockLLMClient),
+		)
+
+		// Create test message
+		ev := &slackevents.EventsAPIEvent{
+			TeamID: teamID,
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Data: &slackevents.AppMentionEvent{
+					User:            userID,
+					Text:            "<@U12345BOT> test",
+					TimeStamp:       "1234567890.123456",
+					Channel:         channelID,
+					ThreadTimeStamp: "",
+				},
+			},
+		}
+		msg := slack.NewMessage(context.Background(), ev)
+
+		// Execute - should return error but also send fallback response
+		err := uc.HandleSlackAppMention(context.Background(), *msg)
+		gt.Error(t, err) // Now we expect an error to be returned
+		gt.S(t, err.Error()).Contains("failed to create LLM session")
+
+		// Verify fallback message was sent to user
+		gt.Equal(t, len(mockSlackClient.PostMessageCalls()), 1)
+		gt.S(t, capturedResponse).Contains("experiencing issues")
 	})
 }
