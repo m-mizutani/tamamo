@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/m-mizutani/ctxlog"
@@ -9,7 +10,7 @@ import (
 	"github.com/m-mizutani/gollem"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
-	"github.com/m-mizutani/tamamo/pkg/utils/errors"
+	pkgErrors "github.com/m-mizutani/tamamo/pkg/utils/errors"
 )
 
 // HandleSlackAppMention handles a slack app mention event with LLM integration
@@ -59,7 +60,7 @@ func (uc *Slack) processBotMention(ctx context.Context, slackMsg slack.Message, 
 	// Start chat conversation
 	if err := uc.chat(ctx, slackMsg, threadID, mention.Message); err != nil {
 		// Log the error with context
-		errors.Handle(ctx, err)
+		pkgErrors.Handle(ctx, err)
 
 		// Notify user about the error
 		errMsg := "I apologize, but I'm experiencing issues processing your request. Please try again later."
@@ -155,11 +156,18 @@ func (uc *Slack) chat(ctx context.Context, slackMsg slack.Message, threadID type
 		// Get the latest history for this thread
 		latestHistory, err := uc.repository.GetLatestHistory(ctx, threadID)
 		if err != nil {
-			// It's normal for new threads to not have history yet
-			logger.Debug("no existing history for thread (this is normal for new threads)",
-				"error", err,
-				"thread_id", threadID,
-			)
+			if errors.Is(err, slack.ErrHistoryNotFound) {
+				// It's normal for new threads to not have history yet
+				logger.Debug("no existing history for thread",
+					"thread_id", threadID,
+				)
+			} else {
+				// Log other errors as warnings, as this might indicate a problem
+				logger.Warn("failed to get latest history, starting new conversation",
+					"error", err,
+					"thread_id", threadID,
+				)
+			}
 		} else if latestHistory == nil {
 			logger.Debug("no history found for thread",
 				"thread_id", threadID,
