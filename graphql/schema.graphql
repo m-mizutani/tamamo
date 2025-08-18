@@ -1,0 +1,24 @@
+scalar Time
+
+type Thread {
+  id: ID!
+  teamId: String!
+  channelId: String!
+  threadTs: String!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type ThreadsResponse {
+  threads: [Thread!]!
+  totalCount: Int!
+}
+
+type Query {
+  thread(id: ID!): Thread
+  threads(offset: Int, limit: Int): ThreadsResponse!
+}
+
+schema {
+  query: Query
+}
