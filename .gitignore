@@ -29,7 +29,8 @@ go.work.sum
 
 # Frontend
 frontend/node_modules/
-frontend/dist/
+frontend/dist/*
+!frontend/dist/.gitkeep
 frontend/.vite/
 frontend/coverage/
 frontend/*.log
