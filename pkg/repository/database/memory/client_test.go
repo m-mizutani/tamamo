@@ -292,3 +292,113 @@ func TestMemoryClient_History(t *testing.T) {
 		gt.Error(t, err)
 	})
 }
+
+func TestMemoryClient_ListThreads(t *testing.T) {
+	ctx := context.Background()
+	client := memory.New()
+
+	t.Run("ListEmptyRepository", func(t *testing.T) {
+		threads, totalCount, err := client.ListThreads(ctx, 0, 10)
+		gt.NoError(t, err)
+		gt.Equal(t, len(threads), 0)
+		gt.Equal(t, totalCount, 0)
+	})
+
+	t.Run("ListThreadsWithData", func(t *testing.T) {
+		// Create multiple threads with different timestamps
+		now := time.Now()
+		
+		th1, err := client.GetOrPutThread(ctx, "T1", "C1", "ts1")
+		gt.NoError(t, err)
+		// Manually set creation time for predictable ordering
+		th1.CreatedAt = now.Add(-2 * time.Hour)
+		
+		th2, err := client.GetOrPutThread(ctx, "T2", "C2", "ts2")
+		gt.NoError(t, err)
+		th2.CreatedAt = now.Add(-1 * time.Hour)
+		
+		th3, err := client.GetOrPutThread(ctx, "T3", "C3", "ts3")
+		gt.NoError(t, err)
+		th3.CreatedAt = now
+
+		// List all threads
+		threads, totalCount, err := client.ListThreads(ctx, 0, 10)
+		gt.NoError(t, err)
+		gt.Equal(t, len(threads), 3)
+		gt.Equal(t, totalCount, 3)
+
+		// Verify ordering (newest first)
+		gt.Equal(t, threads[0].ID, th3.ID) // Most recent
+		gt.Equal(t, threads[1].ID, th2.ID) // Middle
+		gt.Equal(t, threads[2].ID, th1.ID) // Oldest
+	})
+
+	t.Run("ListThreadsWithPagination", func(t *testing.T) {
+		// Clear repository for clean test
+		client = memory.New()
+		
+		// Create 5 threads
+		var createdThreads []*slack.Thread
+		for i := 0; i < 5; i++ {
+			th, err := client.GetOrPutThread(ctx, fmt.Sprintf("T%d", i), fmt.Sprintf("C%d", i), fmt.Sprintf("ts%d", i))
+			gt.NoError(t, err)
+			createdThreads = append(createdThreads, th)
+		}
+
+		// Test pagination
+		threads, totalCount, err := client.ListThreads(ctx, 0, 3)
+		gt.NoError(t, err)
+		gt.Equal(t, len(threads), 3)
+		gt.Equal(t, totalCount, 5)
+
+		// Test second page
+		threads, totalCount, err = client.ListThreads(ctx, 3, 3)
+		gt.NoError(t, err)
+		gt.Equal(t, len(threads), 2) // Only 2 remaining
+		gt.Equal(t, totalCount, 5)
+
+		// Test offset beyond total
+		threads, totalCount, err = client.ListThreads(ctx, 10, 3)
+		gt.NoError(t, err)
+		gt.Equal(t, len(threads), 0)
+		gt.Equal(t, totalCount, 5)
+	})
+
+	t.Run("ListThreadsWithLimitZero", func(t *testing.T) {
+		// Create test thread
+		client.GetOrPutThread(ctx, "T1", "C1", "ts1")
+
+		// Limit of 0 should return all threads
+		threads, totalCount, err := client.ListThreads(ctx, 0, 0)
+		gt.NoError(t, err)
+		gt.V(t, len(threads) > 0).Equal(true)
+		gt.Equal(t, totalCount, len(threads))
+	})
+
+	t.Run("ListThreadsInvalidParameters", func(t *testing.T) {
+		// Negative offset
+		_, _, err := client.ListThreads(ctx, -1, 10)
+		gt.Error(t, err)
+
+		// Negative limit
+		_, _, err = client.ListThreads(ctx, 0, -1)
+		gt.Error(t, err)
+	})
+
+	t.Run("ListThreadsDataIsolation", func(t *testing.T) {
+		// Get threads
+		threads, _, err := client.ListThreads(ctx, 0, 10)
+		gt.NoError(t, err)
+
+		if len(threads) > 0 {
+			// Modify returned thread
+			originalTeamID := threads[0].TeamID
+			threads[0].TeamID = "MODIFIED"
+
+			// Get threads again and verify no modification
+			freshThreads, _, err := client.ListThreads(ctx, 0, 10)
+			gt.NoError(t, err)
+			gt.Equal(t, freshThreads[0].TeamID, originalTeamID)
+		}
+	})
+}

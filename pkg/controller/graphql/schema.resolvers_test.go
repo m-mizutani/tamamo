@@ -95,27 +95,6 @@ func TestQueryResolver_Thread_RepositoryError(t *testing.T) {
 	// Error message contains wrapped error details
 }
 
-func TestQueryResolver_Threads_PlaceholderImplementation(t *testing.T) {
-	ctx := context.Background()
-
-	// Setup mock
-	mockRepo := &mock.ThreadRepositoryMock{}
-
-	// Create resolver
-	resolver := graphql.NewResolver(mockRepo)
-	queryResolver := resolver.Query()
-
-	// Execute test
-	offset := 0
-	limit := 10
-	result, err := queryResolver.Threads(ctx, &offset, &limit)
-
-	// Verify results (placeholder implementation)
-	gt.NoError(t, err)
-	gt.V(t, result).NotNil()
-	gt.Equal(t, len(result.Threads), 0)
-	gt.Equal(t, result.TotalCount, 0)
-}
 
 func TestThreadResolver_ID(t *testing.T) {
 	ctx := context.Background()
@@ -215,7 +194,12 @@ func TestQueryResolver_Threads_WithNilParameters(t *testing.T) {
 	ctx := context.Background()
 	
 	// Setup mock
-	mockRepo := &mock.ThreadRepositoryMock{}
+	mockRepo := &mock.ThreadRepositoryMock{
+		ListThreadsFunc: func(ctx context.Context, offset, limit int) ([]*slack.Thread, int, error) {
+			// Return empty result for this test
+			return []*slack.Thread{}, 0, nil
+		},
+	}
 	
 	// Create resolver
 	resolver := graphql.NewResolver(mockRepo)
@@ -224,18 +208,40 @@ func TestQueryResolver_Threads_WithNilParameters(t *testing.T) {
 	// Execute test with nil parameters
 	result, err := queryResolver.Threads(ctx, nil, nil)
 	
-	// Verify results (placeholder implementation should handle nil gracefully)
+	// Verify results (should handle nil gracefully with defaults)
 	gt.NoError(t, err)
 	gt.V(t, result).NotNil()
 	gt.Equal(t, len(result.Threads), 0)
 	gt.Equal(t, result.TotalCount, 0)
+	
+	// Verify mock was called with defaults
+	calls := mockRepo.ListThreadsCalls()
+	gt.Equal(t, len(calls), 1)
+	gt.Equal(t, calls[0].Offset, 0)  // Default offset
+	gt.Equal(t, calls[0].Limit, 50)  // Default limit
 }
 
 func TestQueryResolver_Threads_WithValidParameters(t *testing.T) {
 	ctx := context.Background()
 	
+	// Setup test data
+	testThreads := []*slack.Thread{
+		{
+			ID:        types.NewThreadID(ctx),
+			TeamID:    "T123456",
+			ChannelID: "C123456",
+			ThreadTS:  "1234567890.123456",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+	
 	// Setup mock
-	mockRepo := &mock.ThreadRepositoryMock{}
+	mockRepo := &mock.ThreadRepositoryMock{
+		ListThreadsFunc: func(ctx context.Context, offset, limit int) ([]*slack.Thread, int, error) {
+			return testThreads, len(testThreads), nil
+		},
+	}
 	
 	// Create resolver
 	resolver := graphql.NewResolver(mockRepo)
@@ -246,9 +252,69 @@ func TestQueryResolver_Threads_WithValidParameters(t *testing.T) {
 	limit := 15
 	result, err := queryResolver.Threads(ctx, &offset, &limit)
 	
-	// Verify results (placeholder implementation)
+	// Verify results
 	gt.NoError(t, err)
 	gt.V(t, result).NotNil()
-	gt.Equal(t, len(result.Threads), 0)
-	gt.Equal(t, result.TotalCount, 0)
+	gt.Equal(t, len(result.Threads), 1)
+	gt.Equal(t, result.TotalCount, 1)
+	
+	// Verify mock was called with correct parameters
+	calls := mockRepo.ListThreadsCalls()
+	gt.Equal(t, len(calls), 1)
+	gt.Equal(t, calls[0].Offset, 5)
+	gt.Equal(t, calls[0].Limit, 15)
+}
+
+func TestQueryResolver_Threads_RepositoryError(t *testing.T) {
+	ctx := context.Background()
+	
+	// Setup mock to return error
+	mockRepo := &mock.ThreadRepositoryMock{
+		ListThreadsFunc: func(ctx context.Context, offset, limit int) ([]*slack.Thread, int, error) {
+			return nil, 0, errors.New("repository error")
+		},
+	}
+	
+	// Create resolver
+	resolver := graphql.NewResolver(mockRepo)
+	queryResolver := resolver.Query()
+	
+	// Execute test
+	offset := 0
+	limit := 10
+	result, err := queryResolver.Threads(ctx, &offset, &limit)
+	
+	// Verify results
+	gt.Error(t, err)
+	gt.V(t, result).Nil()
+}
+
+func TestQueryResolver_Threads_LimitCapping(t *testing.T) {
+	ctx := context.Background()
+	
+	// Setup mock
+	mockRepo := &mock.ThreadRepositoryMock{
+		ListThreadsFunc: func(ctx context.Context, offset, limit int) ([]*slack.Thread, int, error) {
+			return []*slack.Thread{}, 0, nil
+		},
+	}
+	
+	// Create resolver
+	resolver := graphql.NewResolver(mockRepo)
+	queryResolver := resolver.Query()
+	
+	// Execute test with excessive limit
+	offset := 0
+	limit := 5000 // Should be capped to 1000
+	result, err := queryResolver.Threads(ctx, &offset, &limit)
+	
+	// Verify results
+	gt.NoError(t, err)
+	gt.V(t, result).NotNil()
+	
+	// Verify mock was called with capped limit
+	calls := mockRepo.ListThreadsCalls()
+	gt.Equal(t, len(calls), 1)
+	gt.Equal(t, calls[0].Offset, 0)
+	gt.Equal(t, calls[0].Limit, 1000) // Should be capped
 }

@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"sort"
 	"sync"
 
 	"github.com/m-mizutani/goerr/v2"
@@ -84,6 +85,48 @@ func (c *Client) GetThreadByTS(ctx context.Context, channelID, threadTS string) 
 	return nil, goerr.Wrap(slack.ErrThreadNotFound, "thread not found",
 		goerr.V("channel_id", channelID),
 		goerr.V("thread_ts", threadTS))
+}
+
+// ListThreads retrieves a paginated list of threads sorted by creation time (newest first)
+func (c *Client) ListThreads(ctx context.Context, offset, limit int) ([]*slack.Thread, int, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	// Validate parameters
+	if offset < 0 {
+		return nil, 0, goerr.New("offset must be non-negative", goerr.V("offset", offset))
+	}
+	if limit < 0 {
+		return nil, 0, goerr.New("limit must be non-negative", goerr.V("limit", limit))
+	}
+
+	// Convert map to slice for sorting
+	threads := make([]*slack.Thread, 0, len(c.threads))
+	for _, t := range c.threads {
+		// Deep copy to avoid external modifications
+		threadCopy := *t
+		threads = append(threads, &threadCopy)
+	}
+
+	// Sort by creation time (newest first)
+	sort.Slice(threads, func(i, j int) bool {
+		return threads[i].CreatedAt.After(threads[j].CreatedAt)
+	})
+
+	totalCount := len(threads)
+
+	// Apply pagination
+	if offset >= totalCount {
+		return []*slack.Thread{}, totalCount, nil
+	}
+
+	end := offset + limit
+	if limit == 0 || end > totalCount {
+		end = totalCount
+	}
+
+	result := threads[offset:end]
+	return result, totalCount, nil
 }
 
 // PutThreadMessage stores a message in a thread

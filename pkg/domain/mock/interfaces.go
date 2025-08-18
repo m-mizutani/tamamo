@@ -167,6 +167,9 @@ var _ interfaces.ThreadRepository = &ThreadRepositoryMock{}
 //			GetThreadMessagesFunc: func(ctx context.Context, threadID types.ThreadID) ([]*slack.Message, error) {
 //				panic("mock out the GetThreadMessages method")
 //			},
+//			ListThreadsFunc: func(ctx context.Context, offset int, limit int) ([]*slack.Thread, int, error) {
+//				panic("mock out the ListThreads method")
+//			},
 //			PutHistoryFunc: func(ctx context.Context, history *slack.History) error {
 //				panic("mock out the PutHistory method")
 //			},
@@ -197,6 +200,9 @@ type ThreadRepositoryMock struct {
 
 	// GetThreadMessagesFunc mocks the GetThreadMessages method.
 	GetThreadMessagesFunc func(ctx context.Context, threadID types.ThreadID) ([]*slack.Message, error)
+
+	// ListThreadsFunc mocks the ListThreads method.
+	ListThreadsFunc func(ctx context.Context, offset int, limit int) ([]*slack.Thread, int, error)
 
 	// PutHistoryFunc mocks the PutHistory method.
 	PutHistoryFunc func(ctx context.Context, history *slack.History) error
@@ -254,6 +260,15 @@ type ThreadRepositoryMock struct {
 			// ThreadID is the threadID argument value.
 			ThreadID types.ThreadID
 		}
+		// ListThreads holds details about calls to the ListThreads method.
+		ListThreads []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
 		// PutHistory holds details about calls to the PutHistory method.
 		PutHistory []struct {
 			// Ctx is the ctx argument value.
@@ -277,6 +292,7 @@ type ThreadRepositoryMock struct {
 	lockGetThread         sync.RWMutex
 	lockGetThreadByTS     sync.RWMutex
 	lockGetThreadMessages sync.RWMutex
+	lockListThreads       sync.RWMutex
 	lockPutHistory        sync.RWMutex
 	lockPutThreadMessage  sync.RWMutex
 }
@@ -506,6 +522,46 @@ func (mock *ThreadRepositoryMock) GetThreadMessagesCalls() []struct {
 	mock.lockGetThreadMessages.RLock()
 	calls = mock.calls.GetThreadMessages
 	mock.lockGetThreadMessages.RUnlock()
+	return calls
+}
+
+// ListThreads calls ListThreadsFunc.
+func (mock *ThreadRepositoryMock) ListThreads(ctx context.Context, offset int, limit int) ([]*slack.Thread, int, error) {
+	if mock.ListThreadsFunc == nil {
+		panic("ThreadRepositoryMock.ListThreadsFunc: method is nil but ThreadRepository.ListThreads was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Offset int
+		Limit  int
+	}{
+		Ctx:    ctx,
+		Offset: offset,
+		Limit:  limit,
+	}
+	mock.lockListThreads.Lock()
+	mock.calls.ListThreads = append(mock.calls.ListThreads, callInfo)
+	mock.lockListThreads.Unlock()
+	return mock.ListThreadsFunc(ctx, offset, limit)
+}
+
+// ListThreadsCalls gets all the calls that were made to ListThreads.
+// Check the length with:
+//
+//	len(mockedThreadRepository.ListThreadsCalls())
+func (mock *ThreadRepositoryMock) ListThreadsCalls() []struct {
+	Ctx    context.Context
+	Offset int
+	Limit  int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Offset int
+		Limit  int
+	}
+	mock.lockListThreads.RLock()
+	calls = mock.calls.ListThreads
+	mock.lockListThreads.RUnlock()
 	return calls
 }
 

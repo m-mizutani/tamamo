@@ -167,6 +167,66 @@ func (c *Client) GetThreadByTS(ctx context.Context, channelID, threadTS string) 
 	return &t, nil
 }
 
+// ListThreads retrieves a paginated list of threads sorted by creation time (newest first)
+func (c *Client) ListThreads(ctx context.Context, offset, limit int) ([]*slack.Thread, int, error) {
+	// Validate parameters
+	if offset < 0 {
+		return nil, 0, goerr.New("offset must be non-negative", goerr.V("offset", offset))
+	}
+	if limit < 0 {
+		return nil, 0, goerr.New("limit must be non-negative", goerr.V("limit", limit))
+	}
+
+	// First, get total count
+	countQuery := c.client.Collection(collectionThreads)
+	totalDocs, err := countQuery.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, 0, goerr.Wrap(err, "failed to get total thread count",
+			goerr.V("repository", "firestore"))
+	}
+	totalCount := len(totalDocs)
+
+	// If offset is beyond total count, return empty result
+	if offset >= totalCount {
+		return []*slack.Thread{}, totalCount, nil
+	}
+
+	// Build query with pagination
+	query := c.client.Collection(collectionThreads).
+		OrderBy("CreatedAt", firestore.Desc). // Newest first
+		Offset(offset)
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+
+	// Execute query
+	iter := query.Documents(ctx)
+	defer iter.Stop()
+
+	var threads []*slack.Thread
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, 0, goerr.Wrap(err, "failed to iterate threads",
+				goerr.V("repository", "firestore"))
+		}
+
+		var thread slack.Thread
+		if err := doc.DataTo(&thread); err != nil {
+			return nil, 0, goerr.Wrap(err, "failed to unmarshal thread",
+				goerr.V("thread_id", doc.Ref.ID),
+				goerr.V("repository", "firestore"))
+		}
+		threads = append(threads, &thread)
+	}
+
+	return threads, totalCount, nil
+}
+
 // PutThreadMessage stores a message in a thread's subcollection
 func (c *Client) PutThreadMessage(ctx context.Context, threadID types.ThreadID, msg *slack.Message) error {
 	if err := msg.Validate(); err != nil {

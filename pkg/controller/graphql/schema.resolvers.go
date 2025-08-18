@@ -31,12 +31,31 @@ func (r *queryResolver) Thread(ctx context.Context, id string) (*slack.Thread, e
 
 // Threads is the resolver for the threads field.
 func (r *queryResolver) Threads(ctx context.Context, offset *int, limit *int) (*graphql1.ThreadsResponse, error) {
-	// TODO: Implement thread listing functionality
-	// Currently ThreadRepository doesn't have a list method
-	// This is a placeholder implementation
+	// Set default values for pagination
+	actualOffset := 0
+	if offset != nil && *offset > 0 {
+		actualOffset = *offset
+	}
+
+	actualLimit := 50 // Default page size
+	if limit != nil && *limit > 0 {
+		// Cap maximum limit to prevent abuse
+		if *limit > 1000 {
+			actualLimit = 1000
+		} else {
+			actualLimit = *limit
+		}
+	}
+
+	// Get threads from repository
+	threads, totalCount, err := r.threadRepo.ListThreads(ctx, actualOffset, actualLimit)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to list threads")
+	}
+
 	return &graphql1.ThreadsResponse{
-		Threads:    []*slack.Thread{},
-		TotalCount: 0,
+		Threads:    threads,
+		TotalCount: totalCount,
 	}, nil
 }
 

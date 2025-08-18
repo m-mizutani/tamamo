@@ -51,8 +51,15 @@ func TestServer_GraphQLEndpoint(t *testing.T) {
 }
 
 func TestServer_GraphQLQuery_Threads(t *testing.T) {
-	// Setup memory repository
+	// Setup memory repository with test data
 	memRepo := memory.New()
+	
+	// Create test threads
+	ctx := context.Background()
+	testThread1, err := memRepo.GetOrPutThread(ctx, "T123456", "C123456", "1234567890.123456")
+	gt.NoError(t, err)
+	testThread2, err := memRepo.GetOrPutThread(ctx, "T123456", "C123456", "1234567891.123456")
+	gt.NoError(t, err)
 
 	// Create GraphQL controller
 	graphqlCtrl := graphql_controller.NewResolver(memRepo)
@@ -103,6 +110,20 @@ func TestServer_GraphQLQuery_Threads(t *testing.T) {
 	// Verify GraphQL response structure
 	gt.V(t, response.Data).NotNil()
 	gt.Equal(t, len(response.Errors), 0)
+	
+	// Verify data content
+	data := response.Data.(map[string]any)
+	threadsData := data["threads"].(map[string]any)
+	threads := threadsData["threads"].([]any)
+	totalCount := threadsData["totalCount"].(float64)
+	
+	gt.Equal(t, len(threads), 2)
+	gt.Equal(t, int(totalCount), 2)
+	
+	// Verify first thread data (order may vary due to sorting)
+	thread1 := threads[0].(map[string]any)
+	thread1ID := thread1["id"].(string)
+	gt.V(t, thread1ID == string(testThread1.ID) || thread1ID == string(testThread2.ID)).Equal(true)
 }
 
 func TestServer_GraphQLQuery_Thread_Success(t *testing.T) {
