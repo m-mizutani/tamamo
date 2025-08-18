@@ -1,9 +1,11 @@
 package http
 
 import (
+	"io/fs"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/m-mizutani/tamamo/frontend"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/utils/safe"
@@ -65,6 +67,12 @@ func New(opts ...Options) *Server {
 		w.WriteHeader(http.StatusOK)
 		safe.Write(r.Context(), w, []byte("OK"))
 	})
+
+	// Serve frontend static files
+	distFS, err := fs.Sub(frontend.StaticFiles, "dist")
+	if err == nil {
+		r.Handle("/*", http.FileServer(http.FS(distFS)))
+	}
 
 	return s
 }

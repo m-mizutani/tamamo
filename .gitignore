@@ -27,6 +27,17 @@ go.work.sum
 # env file
 .env
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.DS_Store
+
 # Editor/IDE
 # .idea/
 # .vscode/
