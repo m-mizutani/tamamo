@@ -1,11 +1,16 @@
 package http
 
 import (
+	"context"
+	"io/fs"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/m-mizutani/goerr/v2"
+	"github.com/m-mizutani/tamamo/frontend"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/utils/errors"
 	"github.com/m-mizutani/tamamo/pkg/utils/safe"
 )
 
@@ -65,6 +70,21 @@ func New(opts ...Options) *Server {
 		w.WriteHeader(http.StatusOK)
 		safe.Write(r.Context(), w, []byte("OK"))
 	})
+
+	// Serve frontend static files
+	distFS, err := fs.Sub(frontend.StaticFiles, "dist")
+	if err != nil {
+		// Log error but continue without serving frontend
+		// In production, frontend should be built and embedded
+		wrappedErr := goerr.Wrap(err, "failed to load frontend static files")
+		errors.Handle(context.Background(), wrappedErr)
+		r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			safe.Write(r.Context(), w, []byte("Frontend not available"))
+		})
+	} else {
+		r.Handle("/*", http.FileServer(http.FS(distFS)))
+	}
 
 	return s
 }
