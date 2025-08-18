@@ -36,12 +36,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      # Generate mock code if needed
-      - name: Generate code
-        run: |
-          go install github.com/matryer/moq@latest
-          go run github.com/go-task/task/v3/cmd/task@latest mock
-
       # Run tests
       - name: Run tests
         run: go test ./...
