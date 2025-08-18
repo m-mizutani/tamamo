@@ -338,11 +338,9 @@ func TestMemoryClient_ListThreads(t *testing.T) {
 		client = memory.New()
 		
 		// Create 5 threads
-		var createdThreads []*slack.Thread
 		for i := 0; i < 5; i++ {
-			th, err := client.GetOrPutThread(ctx, fmt.Sprintf("T%d", i), fmt.Sprintf("C%d", i), fmt.Sprintf("ts%d", i))
+			_, err := client.GetOrPutThread(ctx, fmt.Sprintf("T%d", i), fmt.Sprintf("C%d", i), fmt.Sprintf("ts%d", i))
 			gt.NoError(t, err)
-			createdThreads = append(createdThreads, th)
 		}
 
 		// Test pagination
@@ -366,7 +364,8 @@ func TestMemoryClient_ListThreads(t *testing.T) {
 
 	t.Run("ListThreadsWithLimitZero", func(t *testing.T) {
 		// Create test thread
-		client.GetOrPutThread(ctx, "T1", "C1", "ts1")
+		_, err := client.GetOrPutThread(ctx, "T1", "C1", "ts1")
+		gt.NoError(t, err)
 
 		// Limit of 0 should return all threads
 		threads, totalCount, err := client.ListThreads(ctx, 0, 0)
