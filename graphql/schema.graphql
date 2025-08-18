@@ -1,10 +1,12 @@
+scalar Time
+
 type Thread {
   id: ID!
   teamId: String!
   channelId: String!
   threadTs: String!
-  createdAt: String!
-  updatedAt: String!
+  createdAt: Time!
+  updatedAt: Time!
 }
 
 type ThreadsResponse {

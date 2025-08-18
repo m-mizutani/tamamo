@@ -307,16 +307,16 @@ func TestMemoryClient_ListThreads(t *testing.T) {
 	t.Run("ListThreadsWithData", func(t *testing.T) {
 		// Create multiple threads with different timestamps
 		now := time.Now()
-		
+
 		th1, err := client.GetOrPutThread(ctx, "T1", "C1", "ts1")
 		gt.NoError(t, err)
 		// Manually set creation time for predictable ordering
 		th1.CreatedAt = now.Add(-2 * time.Hour)
-		
+
 		th2, err := client.GetOrPutThread(ctx, "T2", "C2", "ts2")
 		gt.NoError(t, err)
 		th2.CreatedAt = now.Add(-1 * time.Hour)
-		
+
 		th3, err := client.GetOrPutThread(ctx, "T3", "C3", "ts3")
 		gt.NoError(t, err)
 		th3.CreatedAt = now
@@ -336,7 +336,7 @@ func TestMemoryClient_ListThreads(t *testing.T) {
 	t.Run("ListThreadsWithPagination", func(t *testing.T) {
 		// Clear repository for clean test
 		client = memory.New()
-		
+
 		// Create 5 threads
 		for i := 0; i < 5; i++ {
 			_, err := client.GetOrPutThread(ctx, fmt.Sprintf("T%d", i), fmt.Sprintf("C%d", i), fmt.Sprintf("ts%d", i))

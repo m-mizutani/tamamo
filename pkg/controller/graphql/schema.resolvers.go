@@ -6,7 +6,6 @@ package graphql
 
 import (
 	"context"
-	"time"
 
 	goerr "github.com/m-mizutani/goerr/v2"
 	graphql1 "github.com/m-mizutani/tamamo/pkg/domain/model/graphql"
@@ -62,16 +61,6 @@ func (r *queryResolver) Threads(ctx context.Context, offset *int, limit *int) (*
 // ID is the resolver for the id field.
 func (r *threadResolver) ID(ctx context.Context, obj *slack.Thread) (string, error) {
 	return string(obj.ID), nil
-}
-
-// CreatedAt is the resolver for the createdAt field.
-func (r *threadResolver) CreatedAt(ctx context.Context, obj *slack.Thread) (string, error) {
-	return obj.CreatedAt.Format(time.RFC3339), nil
-}
-
-// UpdatedAt is the resolver for the updatedAt field.
-func (r *threadResolver) UpdatedAt(ctx context.Context, obj *slack.Thread) (string, error) {
-	return obj.UpdatedAt.Format(time.RFC3339), nil
 }
 
 // Query returns QueryResolver implementation.

@@ -53,7 +53,7 @@ func TestServer_GraphQLEndpoint(t *testing.T) {
 func TestServer_GraphQLQuery_Threads(t *testing.T) {
 	// Setup memory repository with test data
 	memRepo := memory.New()
-	
+
 	// Create test threads
 	ctx := context.Background()
 	testThread1, err := memRepo.GetOrPutThread(ctx, "T123456", "C123456", "1234567890.123456")
@@ -110,16 +110,16 @@ func TestServer_GraphQLQuery_Threads(t *testing.T) {
 	// Verify GraphQL response structure
 	gt.V(t, response.Data).NotNil()
 	gt.Equal(t, len(response.Errors), 0)
-	
+
 	// Verify data content
 	data := response.Data.(map[string]any)
 	threadsData := data["threads"].(map[string]any)
 	threads := threadsData["threads"].([]any)
 	totalCount := threadsData["totalCount"].(float64)
-	
+
 	gt.Equal(t, len(threads), 2)
 	gt.Equal(t, int(totalCount), 2)
-	
+
 	// Verify first thread data (order may vary due to sorting)
 	thread1 := threads[0].(map[string]any)
 	thread1ID := thread1["id"].(string)
@@ -129,20 +129,20 @@ func TestServer_GraphQLQuery_Threads(t *testing.T) {
 func TestServer_GraphQLQuery_Thread_Success(t *testing.T) {
 	// Setup memory repository with test data
 	memRepo := memory.New()
-	
+
 	// Create a test thread
 	ctx := context.Background()
 	testThread, err := memRepo.GetOrPutThread(ctx, "T123456", "C123456", "1234567890.123456")
 	gt.NoError(t, err)
-	
+
 	// Create GraphQL controller
 	graphqlCtrl := graphql_controller.NewResolver(memRepo)
-	
+
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
 		server.WithGraphQLController(graphqlCtrl),
 	)
-	
+
 	// Prepare GraphQL query for specific thread
 	query := GraphQLRequest{
 		Query: fmt.Sprintf(`{
@@ -156,32 +156,32 @@ func TestServer_GraphQLQuery_Thread_Success(t *testing.T) {
 			}
 		}`, testThread.ID),
 	}
-	
+
 	// Marshal query to JSON
 	queryBytes, err := json.Marshal(query)
 	gt.NoError(t, err)
-	
+
 	// Create HTTP request
 	req := httptest.NewRequest("POST", "/graphql", bytes.NewReader(queryBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	
+
 	// Execute request
 	httpServer.ServeHTTP(rec, req)
-	
+
 	// Verify response
 	gt.Equal(t, rec.Code, http.StatusOK)
 	gt.V(t, rec.Header().Get("Content-Type")).Equal("application/json")
-	
+
 	// Parse response
 	var response GraphQLResponse
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	gt.NoError(t, err)
-	
+
 	// Verify GraphQL response structure
 	gt.V(t, response.Data).NotNil()
 	gt.Equal(t, len(response.Errors), 0)
-	
+
 	// Verify thread data in response
 	data := response.Data.(map[string]any)
 	thread := data["thread"].(map[string]any)
@@ -467,7 +467,7 @@ func TestServer_GraphQLQuery_UnsupportedHTTPMethod(t *testing.T) {
 func TestServer_GraphQLQuery_ConcurrentRequests(t *testing.T) {
 	// Setup memory repository with test data
 	memRepo := memory.New()
-	
+
 	// Create multiple test threads
 	ctx := context.Background()
 	var testThreads []*slack.Thread
@@ -476,23 +476,23 @@ func TestServer_GraphQLQuery_ConcurrentRequests(t *testing.T) {
 		gt.NoError(t, err)
 		testThreads = append(testThreads, thread)
 	}
-	
+
 	// Create GraphQL controller
 	graphqlCtrl := graphql_controller.NewResolver(memRepo)
-	
+
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
 		server.WithGraphQLController(graphqlCtrl),
 	)
-	
+
 	// Execute concurrent requests
 	const concurrentRequests = 10
 	ch := make(chan error, concurrentRequests)
-	
+
 	for i := 0; i < concurrentRequests; i++ {
 		go func(threadIndex int) {
 			thread := testThreads[threadIndex%len(testThreads)]
-			
+
 			// Prepare GraphQL query
 			query := GraphQLRequest{
 				Query: fmt.Sprintf(`{
@@ -504,28 +504,28 @@ func TestServer_GraphQLQuery_ConcurrentRequests(t *testing.T) {
 					}
 				}`, thread.ID),
 			}
-			
+
 			// Marshal query to JSON
 			queryBytes, err := json.Marshal(query)
 			if err != nil {
 				ch <- err
 				return
 			}
-			
+
 			// Create HTTP request
 			req := httptest.NewRequest("POST", "/graphql", bytes.NewReader(queryBytes))
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
-			
+
 			// Execute request
 			httpServer.ServeHTTP(rec, req)
-			
+
 			// Verify response
 			if rec.Code != http.StatusOK {
 				ch <- fmt.Errorf("expected status 200, got %d", rec.Code)
 				return
 			}
-			
+
 			// Parse response
 			var response GraphQLResponse
 			err = json.Unmarshal(rec.Body.Bytes(), &response)
@@ -533,22 +533,22 @@ func TestServer_GraphQLQuery_ConcurrentRequests(t *testing.T) {
 				ch <- err
 				return
 			}
-			
+
 			// Verify response structure
 			if response.Data == nil {
 				ch <- fmt.Errorf("response data is nil")
 				return
 			}
-			
+
 			if len(response.Errors) > 0 {
 				ch <- fmt.Errorf("unexpected GraphQL errors: %v", response.Errors)
 				return
 			}
-			
+
 			ch <- nil
 		}(i)
 	}
-	
+
 	// Wait for all requests to complete
 	for i := 0; i < concurrentRequests; i++ {
 		err := <-ch
