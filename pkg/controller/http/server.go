@@ -5,9 +5,12 @@ import (
 	"io/fs"
 	"net/http"
 
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/frontend"
+	graphql_controller "github.com/m-mizutani/tamamo/pkg/controller/graphql"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/utils/errors"
@@ -16,9 +19,11 @@ import (
 
 // Server represents the HTTP server
 type Server struct {
-	router        *chi.Mux
-	slackCtrl     *slack_controller.Controller
-	slackVerifier slack.PayloadVerifier
+	router         *chi.Mux
+	slackCtrl      *slack_controller.Controller
+	graphqlCtrl    *graphql_controller.Resolver
+	enableGraphiQL bool
+	slackVerifier  slack.PayloadVerifier
 }
 
 // Options is a functional option for Server
@@ -35,6 +40,20 @@ func WithSlackController(ctrl *slack_controller.Controller) Options {
 func WithSlackVerifier(verifier slack.PayloadVerifier) Options {
 	return func(s *Server) {
 		s.slackVerifier = verifier
+	}
+}
+
+// WithGraphQLController sets the GraphQL controller
+func WithGraphQLController(ctrl *graphql_controller.Resolver) Options {
+	return func(s *Server) {
+		s.graphqlCtrl = ctrl
+	}
+}
+
+// WithGraphiQL enables GraphiQL IDE
+func WithGraphiQL(enable bool) Options {
+	return func(s *Server) {
+		s.enableGraphiQL = enable
 	}
 }
 
@@ -64,6 +83,23 @@ func New(opts ...Options) *Server {
 			// Future: r.Post("/interaction", slackInteractionHandler(s.slackCtrl))
 		})
 	})
+
+	// GraphQL endpoints
+	if s.graphqlCtrl != nil {
+		srv := handler.NewDefaultServer(
+			graphql_controller.NewExecutableSchema(
+				graphql_controller.Config{
+					Resolvers: s.graphqlCtrl,
+				},
+			),
+		)
+		r.Handle("/graphql", srv)
+
+		// GraphiQL IDE (optional)
+		if s.enableGraphiQL {
+			r.Handle("/graphiql", playground.Handler("GraphQL playground", "/graphql"))
+		}
+	}
 
 	// Health check endpoint
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {

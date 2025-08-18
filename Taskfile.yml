@@ -2,7 +2,7 @@ version: '3'
 
 tasks:
   default:
-    deps: [mock]
+    deps: [mock, graphql]
     desc: Run default tasks
 
   mock:
@@ -15,6 +15,20 @@ tasks:
       - pkg/domain/interfaces/*.go
     generates:
       - pkg/domain/mock/interfaces.go
+
+  graphql:
+    aliases: [g]
+    desc: Generate GraphQL code
+    cmds:
+      - go install github.com/99designs/gqlgen@latest
+      - go run github.com/99designs/gqlgen generate
+    sources:
+      - gqlgen.yml
+      - graphql/*.graphql
+    generates:
+      - pkg/controller/graphql/generated.go
+      - pkg/domain/model/graphql/models_gen.go
+      - pkg/controller/graphql/schema.resolvers.go
 
   test:
     aliases: [t]

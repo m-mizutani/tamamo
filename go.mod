@@ -5,6 +5,7 @@ go 1.24.2
 require (
 	cloud.google.com/go/firestore v1.18.0
 	cloud.google.com/go/storage v1.56.0
+	github.com/99designs/gqlgen v0.17.78
 	github.com/fatih/color v1.18.0
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/google/uuid v1.6.0
@@ -17,6 +18,7 @@ require (
 	github.com/sashabaranov/go-openai v1.40.1
 	github.com/slack-go/slack v0.17.3
 	github.com/urfave/cli/v3 v3.4.1
+	github.com/vektah/gqlparser/v2 v2.5.30
 	google.golang.org/api v0.247.0
 	google.golang.org/grpc v1.74.2
 )
@@ -35,6 +37,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.27.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.53.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.53.0 // indirect
+	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/anthropics/anthropic-sdk-go v1.5.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443 // indirect
@@ -44,16 +47,19 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.15.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/k0kubun/pp/v3 v3.4.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/secmon-lab/warren v0.0.1 // indirect
+	github.com/sosodev/duration v1.3.1 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect

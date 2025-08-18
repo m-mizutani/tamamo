@@ -15,6 +15,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/adapters/cs"
 	mem_adapter "github.com/m-mizutani/tamamo/pkg/adapters/memory"
 	"github.com/m-mizutani/tamamo/pkg/cli/config"
+	graphql_controller "github.com/m-mizutani/tamamo/pkg/controller/graphql"
 	server "github.com/m-mizutani/tamamo/pkg/controller/http"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
@@ -35,6 +36,7 @@ func cmdServe() *cli.Command {
 		geminiLocation string
 		storageBucket  string
 		storagePrefix  string
+		enableGraphiQL bool
 	)
 
 	flags := []cli.Flag{
@@ -78,6 +80,12 @@ func cmdServe() *cli.Command {
 			Sources:     cli.EnvVars("TAMAMO_STORAGE_PREFIX"),
 			Usage:       "Prefix for Cloud Storage objects",
 			Destination: &storagePrefix,
+		},
+		&cli.BoolFlag{
+			Name:        "enable-graphiql",
+			Sources:     cli.EnvVars("TAMAMO_ENABLE_GRAPHIQL"),
+			Usage:       "Enable GraphiQL IDE for development",
+			Destination: &enableGraphiQL,
 		},
 	}
 	flags = append(flags, slackCfg.Flags()...)
@@ -181,10 +189,13 @@ func cmdServe() *cli.Command {
 
 			// Create controllers
 			slackCtrl := slack_controller.New(uc)
+			graphqlCtrl := graphql_controller.NewResolver(repo)
 
 			// Build HTTP server options
 			serverOptions := []server.Options{
 				server.WithSlackController(slackCtrl),
+				server.WithGraphQLController(graphqlCtrl),
+				server.WithGraphiQL(enableGraphiQL),
 				server.WithSlackVerifier(slackCfg.Verifier()),
 			}
 
