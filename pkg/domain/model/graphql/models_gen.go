@@ -47,8 +47,8 @@ type AgentVersion struct {
 type CreateAgentInput struct {
 	AgentID      string      `json:"agentId"`
 	Name         string      `json:"name"`
-	Description  string      `json:"description"`
-	SystemPrompt string      `json:"systemPrompt"`
+	Description  *string     `json:"description,omitempty"`
+	SystemPrompt *string     `json:"systemPrompt,omitempty"`
 	LlmProvider  LLMProvider `json:"llmProvider"`
 	LlmModel     string      `json:"llmModel"`
 	Version      *string     `json:"version,omitempty"`
@@ -57,7 +57,7 @@ type CreateAgentInput struct {
 type CreateAgentVersionInput struct {
 	AgentUUID    string      `json:"agentUuid"`
 	Version      string      `json:"version"`
-	SystemPrompt string      `json:"systemPrompt"`
+	SystemPrompt *string     `json:"systemPrompt,omitempty"`
 	LlmProvider  LLMProvider `json:"llmProvider"`
 	LlmModel     string      `json:"llmModel"`
 }
@@ -74,9 +74,12 @@ type ThreadsResponse struct {
 }
 
 type UpdateAgentInput struct {
-	AgentID     *string `json:"agentId,omitempty"`
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
+	AgentID      *string      `json:"agentId,omitempty"`
+	Name         *string      `json:"name,omitempty"`
+	Description  *string      `json:"description,omitempty"`
+	SystemPrompt *string      `json:"systemPrompt,omitempty"`
+	LlmProvider  *LLMProvider `json:"llmProvider,omitempty"`
+	LlmModel     *string      `json:"llmModel,omitempty"`
 }
 
 type LLMProvider string

@@ -106,8 +106,25 @@ export function CreateAgentPage() {
       setLoading(true)
       setError(null)
       
+      // Prepare input, omitting empty optional fields
+      const input: CreateAgentInput = {
+        agentId: formData.agentId,
+        name: formData.name,
+        llmProvider: formData.llmProvider,
+        llmModel: formData.llmModel,
+        version: formData.version
+      }
+      
+      // Add optional fields only if they have values
+      if (formData.description?.trim()) {
+        input.description = formData.description.trim()
+      }
+      if (formData.systemPrompt?.trim()) {
+        input.systemPrompt = formData.systemPrompt.trim()
+      }
+
       const response = await graphqlRequest<{ createAgent: any }>(CREATE_AGENT, {
-        input: formData
+        input
       })
       
       // Navigate to the created agent's detail page
@@ -123,8 +140,6 @@ export function CreateAgentPage() {
   const isFormValid = 
     formData.agentId &&
     formData.name &&
-    formData.description &&
-    formData.systemPrompt &&
     formData.llmProvider &&
     formData.llmModel &&
     agentIdStatus.availability?.available
@@ -170,7 +185,7 @@ export function CreateAgentPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="agentId">Agent ID</Label>
+              <Label htmlFor="agentId">Agent ID *</Label>
               <div className="relative">
                 <Input
                   id="agentId"
@@ -217,7 +232,7 @@ export function CreateAgentPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
                 placeholder="Customer Support Agent"
@@ -249,7 +264,7 @@ export function CreateAgentPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="provider">LLM Provider</Label>
+                <Label htmlFor="provider">LLM Provider *</Label>
                 <Select value={formData.llmProvider} onValueChange={handleProviderChange}>
                   <SelectTrigger>
                     <SelectValue />
@@ -265,7 +280,7 @@ export function CreateAgentPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="model">Model</Label>
+                <Label htmlFor="model">Model *</Label>
                 <Select 
                   value={formData.llmModel} 
                   onValueChange={(value: string) => setFormData(prev => ({ ...prev, llmModel: value }))}

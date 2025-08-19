@@ -96,11 +96,21 @@ func convertCreateAgentInputToRequest(input graphql1.CreateAgentInput) *interfac
 
 // convertUpdateAgentInputToRequest converts GraphQL input to use case request
 func convertUpdateAgentInputToRequest(input graphql1.UpdateAgentInput) *interfaces.UpdateAgentRequest {
-	return &interfaces.UpdateAgentRequest{
+	req := &interfaces.UpdateAgentRequest{
 		AgentID:     input.AgentID,
 		Name:        input.Name,
 		Description: input.Description,
+		SystemPrompt: input.SystemPrompt,
+		LLMModel:    input.LlmModel,
 	}
+	
+	// Convert LLM provider if provided
+	if input.LlmProvider != nil {
+		domainProvider := convertGraphQLLLMProviderToDomain(*input.LlmProvider)
+		req.LLMProvider = &domainProvider
+	}
+	
+	return req
 }
 
 // convertCreateAgentVersionInputToRequest converts GraphQL input to use case request

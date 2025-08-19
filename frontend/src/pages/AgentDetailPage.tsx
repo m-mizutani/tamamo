@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   ArrowLeft, 
   Save, 
@@ -31,6 +32,18 @@ import {
 import { AgentDeleteDialog } from '@/components/agents/AgentDeleteDialog'
 import { CreateVersionDialog } from '@/components/agents/CreateVersionDialog'
 
+const LLM_PROVIDERS = [
+  { value: 'OPENAI', label: 'OpenAI' },
+  { value: 'CLAUDE', label: 'Claude' },
+  { value: 'GEMINI', label: 'Gemini' },
+] as const
+
+const COMMON_MODELS = {
+  OPENAI: ['gpt-4o', 'gpt-4o-mini', 'gpt-4', 'gpt-3.5-turbo'],
+  CLAUDE: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'],
+  GEMINI: ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+} as const
+
 
 export function AgentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -48,7 +61,10 @@ export function AgentDetailPage() {
   const [editForm, setEditForm] = useState({
     agentId: '',
     name: '',
-    description: ''
+    description: '',
+    systemPrompt: '',
+    llmProvider: 'OPENAI' as 'OPENAI' | 'CLAUDE' | 'GEMINI',
+    llmModel: ''
   })
   
   const [agentIdStatus, setAgentIdStatus] = useState<{
@@ -67,7 +83,10 @@ export function AgentDetailPage() {
       setEditForm({
         agentId: response.agent.agentId,
         name: response.agent.name,
-        description: response.agent.description
+        description: response.agent.description,
+        systemPrompt: response.agent.latestVersion?.systemPrompt || '',
+        llmProvider: (response.agent.latestVersion?.llmProvider || 'OPENAI') as 'OPENAI' | 'CLAUDE' | 'GEMINI',
+        llmModel: response.agent.latestVersion?.llmModel || ''
       })
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
@@ -122,7 +141,10 @@ export function AgentDetailPage() {
       setEditForm({
         agentId: agent.agentId,
         name: agent.name,
-        description: agent.description
+        description: agent.description,
+        systemPrompt: agent.latestVersion?.systemPrompt || '',
+        llmProvider: (agent.latestVersion?.llmProvider || 'OPENAI') as 'OPENAI' | 'CLAUDE' | 'GEMINI',
+        llmModel: agent.latestVersion?.llmModel || ''
       })
     }
     setAgentIdStatus({ checking: false, availability: null })
@@ -140,6 +162,17 @@ export function AgentDetailPage() {
       if (editForm.name !== agent.name) input.name = editForm.name
       if (editForm.description !== agent.description) input.description = editForm.description
       
+      // Check for version-related changes
+      if (editForm.systemPrompt !== (agent.latestVersion?.systemPrompt || '')) {
+        input.systemPrompt = editForm.systemPrompt
+      }
+      if (editForm.llmProvider !== (agent.latestVersion?.llmProvider || 'OPENAI')) {
+        input.llmProvider = editForm.llmProvider
+      }
+      if (editForm.llmModel !== (agent.latestVersion?.llmModel || '')) {
+        input.llmModel = editForm.llmModel
+      }
+      
       // Only update if there are changes
       if (Object.keys(input).length > 0) {
         const response = await graphqlRequest<{ updateAgent: Agent }>(UPDATE_AGENT, {
@@ -147,6 +180,9 @@ export function AgentDetailPage() {
           input
         })
         setAgent(response.updateAgent)
+        
+        // Refresh agent data to get updated version info
+        await fetchAgent()
       }
       
       setIsEditing(false)
@@ -167,6 +203,14 @@ export function AgentDetailPage() {
     }, 500)
     
     return () => clearTimeout(timeoutId)
+  }
+
+  const handleProviderChange = (provider: 'OPENAI' | 'CLAUDE' | 'GEMINI') => {
+    setEditForm(prev => ({
+      ...prev,
+      llmProvider: provider,
+      llmModel: COMMON_MODELS[provider][0] // Set first model as default
+    }))
   }
 
   if (loading) {
@@ -379,22 +423,68 @@ export function AgentDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>LLM Provider</Label>
-                    <p className="px-3 py-2 bg-muted rounded-md">{agent.latestVersion.llmProvider}</p>
+                    {isEditing ? (
+                      <Select 
+                        value={editForm.llmProvider} 
+                        onValueChange={handleProviderChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {LLM_PROVIDERS.map(provider => (
+                            <SelectItem key={provider.value} value={provider.value}>
+                              {provider.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="px-3 py-2 bg-muted rounded-md">{agent.latestVersion.llmProvider}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Model</Label>
-                    <p className="px-3 py-2 bg-muted rounded-md">{agent.latestVersion.llmModel}</p>
+                    {isEditing ? (
+                      <Select 
+                        value={editForm.llmModel} 
+                        onValueChange={(value: string) => setEditForm(prev => ({ ...prev, llmModel: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COMMON_MODELS[editForm.llmProvider].map(model => (
+                            <SelectItem key={model} value={model}>
+                              {model}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="px-3 py-2 bg-muted rounded-md">{agent.latestVersion.llmModel}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>System Prompt</Label>
-                  <Textarea
-                    value={agent.latestVersion.systemPrompt}
-                    readOnly
-                    rows={6}
-                    className="font-mono bg-muted"
-                  />
+                  {isEditing ? (
+                    <Textarea
+                      value={editForm.systemPrompt}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, systemPrompt: e.target.value }))}
+                      rows={6}
+                      className="font-mono"
+                      placeholder="Enter the system prompt for this agent..."
+                    />
+                  ) : (
+                    <Textarea
+                      value={agent.latestVersion.systemPrompt}
+                      readOnly
+                      rows={6}
+                      className="font-mono bg-muted"
+                    />
+                  )}
                 </div>
               </CardContent>
             </Card>

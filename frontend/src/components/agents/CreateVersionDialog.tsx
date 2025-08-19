@@ -76,11 +76,9 @@ export function CreateVersionDialog({
       errors.version = 'Version must follow semantic versioning (e.g., 1.0.0)'
     }
 
-    // System prompt validation
-    if (!formData.systemPrompt.trim()) {
-      errors.systemPrompt = 'System prompt is required'
-    } else if (formData.systemPrompt.trim().length < 10) {
-      errors.systemPrompt = 'System prompt must be at least 10 characters'
+    // System prompt validation (optional)
+    if (formData.systemPrompt.trim() && formData.systemPrompt.trim().length < 10) {
+      errors.systemPrompt = 'System prompt must be at least 10 characters if provided'
     }
 
     // Model validation
@@ -105,7 +103,7 @@ export function CreateVersionDialog({
       const input: CreateAgentVersionInput = {
         agentUuid: agent.id,
         version: formData.version.trim(),
-        systemPrompt: formData.systemPrompt.trim(),
+        systemPrompt: formData.systemPrompt.trim() || undefined,
         llmProvider: formData.llmProvider,
         llmModel: formData.llmModel.trim()
       }
@@ -249,7 +247,7 @@ export function CreateVersionDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="systemPrompt">System Prompt *</Label>
+            <Label htmlFor="systemPrompt">System Prompt</Label>
             <Textarea
               id="systemPrompt"
               value={formData.systemPrompt}

@@ -644,8 +644,8 @@ type AgentIdAvailability {
 input CreateAgentInput {
   agentId: String!
   name: String!
-  description: String!
-  systemPrompt: String!
+  description: String
+  systemPrompt: String
   llmProvider: LLMProvider!
   llmModel: String!
   version: String
@@ -660,7 +660,7 @@ input UpdateAgentInput {
 input CreateAgentVersionInput {
   agentUuid: ID!
   version: String!
-  systemPrompt: String!
+  systemPrompt: String
   llmProvider: LLMProvider!
   llmModel: String!
 }
@@ -5024,14 +5024,14 @@ func (ec *executionContext) unmarshalInputCreateAgentInput(ctx context.Context, 
 			it.Name = data
 		case "description":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Description = data
 		case "systemPrompt":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("systemPrompt"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5093,7 +5093,7 @@ func (ec *executionContext) unmarshalInputCreateAgentVersionInput(ctx context.Co
 			it.Version = data
 		case "systemPrompt":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("systemPrompt"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

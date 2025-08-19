@@ -55,8 +55,8 @@ type AgentIdAvailability {
 input CreateAgentInput {
   agentId: String!
   name: String!
-  description: String!
-  systemPrompt: String!
+  description: String
+  systemPrompt: String
   llmProvider: LLMProvider!
   llmModel: String!
   version: String
@@ -66,12 +66,15 @@ input UpdateAgentInput {
   agentId: String
   name: String
   description: String
+  systemPrompt: String
+  llmProvider: LLMProvider
+  llmModel: String
 }
 
 input CreateAgentVersionInput {
   agentUuid: ID!
   version: String!
-  systemPrompt: String!
+  systemPrompt: String
   llmProvider: LLMProvider!
   llmModel: String!
 }

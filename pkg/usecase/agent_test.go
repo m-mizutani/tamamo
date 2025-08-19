@@ -13,6 +13,11 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/usecase"
 )
 
+// Helper function to convert string to *string
+func stringPtr(s string) *string {
+	return &s
+}
+
 func setupAgentTest(t *testing.T) (interfaces.AgentUseCases, interfaces.AgentRepository) {
 	t.Helper()
 	repo := memory.NewAgentMemoryClient()
@@ -27,8 +32,8 @@ func TestCreateAgent(t *testing.T) {
 	req := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent for testing purposes",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent for testing purposes"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -39,7 +44,7 @@ func TestCreateAgent(t *testing.T) {
 	gt.V(t, createdAgent).NotNil()
 	gt.Equal(t, createdAgent.AgentID, req.AgentID)
 	gt.Equal(t, createdAgent.Name, req.Name)
-	gt.Equal(t, createdAgent.Description, req.Description)
+	gt.Equal(t, createdAgent.Description, *req.Description)
 	gt.Equal(t, createdAgent.Latest, req.Version)
 	// Note: LatestVersion is not returned in CreateAgent, only in GetAgent
 }
@@ -52,8 +57,8 @@ func TestCreateAgent_InvalidAgentID(t *testing.T) {
 	req := &interfaces.CreateAgentRequest{
 		AgentID:      "invalid agent id",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -71,8 +76,8 @@ func TestCreateAgent_InvalidVersion(t *testing.T) {
 	req := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "invalid-version",
@@ -89,8 +94,8 @@ func TestCreateAgent_DuplicateAgentID(t *testing.T) {
 	req := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -113,8 +118,8 @@ func TestGetAgent(t *testing.T) {
 	req := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -152,8 +157,8 @@ func TestListAgents(t *testing.T) {
 		req := &interfaces.CreateAgentRequest{
 			AgentID:      "test-agent-" + strconv.Itoa(i),
 			Name:         "Test Agent " + strconv.Itoa(i),
-			Description:  "A test agent",
-			SystemPrompt: "You are a helpful assistant.",
+			Description:  stringPtr("A test agent"),
+			SystemPrompt: stringPtr("You are a helpful assistant."),
 			LLMProvider:  agent.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			Version:      "1.0.0",
@@ -178,8 +183,8 @@ func TestListAgents_Pagination(t *testing.T) {
 		req := &interfaces.CreateAgentRequest{
 			AgentID:      "test-agent-" + strconv.Itoa(i),
 			Name:         "Test Agent " + strconv.Itoa(i),
-			Description:  "A test agent",
-			SystemPrompt: "You are a helpful assistant.",
+			Description:  stringPtr("A test agent"),
+			SystemPrompt: stringPtr("You are a helpful assistant."),
 			LLMProvider:  agent.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			Version:      "1.0.0",
@@ -203,8 +208,8 @@ func TestUpdateAgent(t *testing.T) {
 	req := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -235,8 +240,8 @@ func TestUpdateAgent_AgentID(t *testing.T) {
 	req := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -278,8 +283,8 @@ func TestDeleteAgent(t *testing.T) {
 	req := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -321,8 +326,8 @@ func TestCheckAgentIDAvailability(t *testing.T) {
 	req := &interfaces.CreateAgentRequest{
 		AgentID:      "taken-agent-id",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -346,8 +351,8 @@ func TestCreateAgentVersion(t *testing.T) {
 	createReq := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -360,7 +365,7 @@ func TestCreateAgentVersion(t *testing.T) {
 	versionReq := &interfaces.CreateVersionRequest{
 		AgentUUID:    createdAgent.ID,
 		Version:      "1.1.0",
-		SystemPrompt: "You are an improved helpful assistant.",
+		SystemPrompt: stringPtr("You are an improved helpful assistant."),
 		LLMProvider:  agent.LLMProviderClaude,
 		LLMModel:     "claude-3-opus",
 	}
@@ -370,7 +375,7 @@ func TestCreateAgentVersion(t *testing.T) {
 	gt.V(t, agentVersion).NotNil()
 	gt.Equal(t, agentVersion.AgentUUID, createdAgent.ID)
 	gt.Equal(t, agentVersion.Version, versionReq.Version)
-	gt.Equal(t, agentVersion.SystemPrompt, versionReq.SystemPrompt)
+	gt.Equal(t, agentVersion.SystemPrompt, *versionReq.SystemPrompt)
 	gt.Equal(t, agentVersion.LLMProvider, versionReq.LLMProvider)
 	gt.Equal(t, agentVersion.LLMModel, versionReq.LLMModel)
 }
@@ -383,8 +388,8 @@ func TestCreateAgentVersion_InvalidVersion(t *testing.T) {
 	createReq := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -397,7 +402,7 @@ func TestCreateAgentVersion_InvalidVersion(t *testing.T) {
 	versionReq := &interfaces.CreateVersionRequest{
 		AgentUUID:    createdAgent.ID,
 		Version:      "invalid-version",
-		SystemPrompt: "You are an improved helpful assistant.",
+		SystemPrompt: stringPtr("You are an improved helpful assistant."),
 		LLMProvider:  agent.LLMProviderClaude,
 		LLMModel:     "claude-3-opus",
 	}
@@ -414,8 +419,8 @@ func TestGetAgentVersions(t *testing.T) {
 	createReq := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LLMProvider:  agent.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
@@ -430,7 +435,7 @@ func TestGetAgentVersions(t *testing.T) {
 		versionReq := &interfaces.CreateVersionRequest{
 			AgentUUID:    createdAgent.ID,
 			Version:      version,
-			SystemPrompt: "Updated system prompt for " + version,
+			SystemPrompt: stringPtr("Updated system prompt for " + version),
 			LLMProvider:  agent.LLMProviderClaude,
 			LLMModel:     "claude-3-opus",
 		}
@@ -460,7 +465,3 @@ func TestGetAgentVersions_NotFound(t *testing.T) {
 	gt.Error(t, err)
 }
 
-// Helper function to create string pointers
-func stringPtr(s string) *string {
-	return &s
-}

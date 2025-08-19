@@ -16,6 +16,11 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
 
+// Helper function to convert string to *string
+func stringPtr(s string) *string {
+	return &s
+}
+
 func TestQueryResolver_Thread_Success(t *testing.T) {
 	ctx := context.Background()
 
@@ -324,8 +329,8 @@ func TestMutationResolver_CreateAgent_Success(t *testing.T) {
 	input := graphqlmodel.CreateAgentInput{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LlmProvider:  graphqlmodel.LLMProviderOpenai,
 		LlmModel:     "gpt-4",
 	}
@@ -362,8 +367,8 @@ func TestMutationResolver_CreateAgent_UseCaseError(t *testing.T) {
 	input := graphqlmodel.CreateAgentInput{
 		AgentID:      "test-agent",
 		Name:         "Test Agent",
-		Description:  "A test agent",
-		SystemPrompt: "You are a helpful assistant.",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
 		LlmProvider:  graphqlmodel.LLMProviderOpenai,
 		LlmModel:     "gpt-4",
 	}
@@ -543,7 +548,7 @@ func TestMutationResolver_CreateAgentVersion_Success(t *testing.T) {
 	input := graphqlmodel.CreateAgentVersionInput{
 		AgentUUID:    testVersion.AgentUUID.String(),
 		Version:      "1.1.0",
-		SystemPrompt: "You are an improved helpful assistant.",
+		SystemPrompt: stringPtr("You are an improved helpful assistant."),
 		LlmProvider:  graphqlmodel.LLMProviderClaude,
 		LlmModel:     "claude-3-opus",
 	}

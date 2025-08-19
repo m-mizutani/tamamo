@@ -162,8 +162,8 @@ export interface AgentIdAvailability {
 export interface CreateAgentInput {
   agentId: string;
   name: string;
-  description: string;
-  systemPrompt: string;
+  description?: string;
+  systemPrompt?: string;
   llmProvider: 'OPENAI' | 'CLAUDE' | 'GEMINI';
   llmModel: string;
   version?: string;
@@ -173,12 +173,15 @@ export interface UpdateAgentInput {
   agentId?: string;
   name?: string;
   description?: string;
+  systemPrompt?: string;
+  llmProvider?: 'OPENAI' | 'CLAUDE' | 'GEMINI';
+  llmModel?: string;
 }
 
 export interface CreateAgentVersionInput {
   agentUuid: string;
   version: string;
-  systemPrompt: string;
+  systemPrompt?: string;
   llmProvider: 'OPENAI' | 'CLAUDE' | 'GEMINI';
   llmModel: string;
 }

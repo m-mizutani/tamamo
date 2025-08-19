@@ -17,23 +17,26 @@ type SlackEventUseCases interface {
 type CreateAgentRequest struct {
 	AgentID      string            `json:"agent_id"`
 	Name         string            `json:"name"`
-	Description  string            `json:"description"`
-	SystemPrompt string            `json:"system_prompt"`
+	Description  *string           `json:"description,omitempty"`
+	SystemPrompt *string           `json:"system_prompt,omitempty"`
 	LLMProvider  agent.LLMProvider `json:"llm_provider"`
 	LLMModel     string            `json:"llm_model"`
 	Version      string            `json:"version"` // Initial version, defaults to "1.0.0"
 }
 
 type UpdateAgentRequest struct {
-	AgentID     *string `json:"agent_id,omitempty"`
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
+	AgentID      *string           `json:"agent_id,omitempty"`
+	Name         *string           `json:"name,omitempty"`
+	Description  *string           `json:"description,omitempty"`
+	SystemPrompt *string           `json:"system_prompt,omitempty"`
+	LLMProvider  *agent.LLMProvider `json:"llm_provider,omitempty"`
+	LLMModel     *string           `json:"llm_model,omitempty"`
 }
 
 type CreateVersionRequest struct {
 	AgentUUID    types.UUID        `json:"agent_uuid"`
 	Version      string            `json:"version"`
-	SystemPrompt string            `json:"system_prompt"`
+	SystemPrompt *string           `json:"system_prompt,omitempty"`
 	LLMProvider  agent.LLMProvider `json:"llm_provider"`
 	LLMModel     string            `json:"llm_model"`
 }
