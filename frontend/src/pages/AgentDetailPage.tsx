@@ -56,13 +56,13 @@ export function AgentDetailPage() {
     availability: AgentIdAvailability | null
   }>({ checking: false, availability: null })
 
-  const fetchAgent = async () => {
+  const fetchAgent = async (signal?: AbortSignal) => {
     if (!id) return
     
     try {
       setLoading(true)
       setError(null)
-      const response = await graphqlRequest<{ agent: Agent }>(GET_AGENT, { id })
+      const response = await graphqlRequest<{ agent: Agent }>(GET_AGENT, { id }, signal)
       setAgent(response.agent)
       setEditForm({
         agentId: response.agent.agentId,
@@ -70,6 +70,9 @@ export function AgentDetailPage() {
         description: response.agent.description
       })
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return
+      }
       console.error('Failed to fetch agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to load agent')
     } finally {
@@ -78,7 +81,12 @@ export function AgentDetailPage() {
   }
 
   useEffect(() => {
-    fetchAgent()
+    const controller = new AbortController()
+    fetchAgent(controller.signal)
+    
+    return () => {
+      controller.abort()
+    }
   }, [id])
 
   const checkAgentIdAvailability = async (agentId: string) => {
@@ -192,7 +200,7 @@ export function AgentDetailPage() {
             <p className="text-lg font-medium">Failed to load agent</p>
             <p className="text-sm text-muted-foreground">{error}</p>
           </div>
-          <Button onClick={fetchAgent} variant="outline">
+          <Button onClick={() => fetchAgent()} variant="outline">
             Retry
           </Button>
         </div>

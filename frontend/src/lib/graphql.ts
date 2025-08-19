@@ -186,7 +186,8 @@ export interface CreateAgentVersionInput {
 // GraphQL client utility
 export async function graphqlRequest<T>(
   query: string,
-  variables?: Record<string, any>
+  variables?: Record<string, any>,
+  signal?: AbortSignal
 ): Promise<T> {
   const response = await fetch('/graphql', {
     method: 'POST',
@@ -197,6 +198,7 @@ export async function graphqlRequest<T>(
       query,
       variables,
     }),
+    signal,
   });
 
   if (!response.ok) {

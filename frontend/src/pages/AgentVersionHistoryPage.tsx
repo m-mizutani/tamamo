@@ -13,15 +13,18 @@ export function AgentVersionHistoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchAgent = async () => {
+  const fetchAgent = async (signal?: AbortSignal) => {
     if (!id) return
     
     try {
       setLoading(true)
       setError(null)
-      const response = await graphqlRequest<{ agent: Agent }>(GET_AGENT, { id })
+      const response = await graphqlRequest<{ agent: Agent }>(GET_AGENT, { id }, signal)
       setAgent(response.agent)
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return
+      }
       console.error('Failed to fetch agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to load agent')
     } finally {
@@ -30,7 +33,12 @@ export function AgentVersionHistoryPage() {
   }
 
   useEffect(() => {
-    fetchAgent()
+    const controller = new AbortController()
+    fetchAgent(controller.signal)
+    
+    return () => {
+      controller.abort()
+    }
   }, [id])
 
   if (loading) {
@@ -64,7 +72,7 @@ export function AgentVersionHistoryPage() {
             <AlertCircle className="h-8 w-8 mx-auto mb-2" />
             <p className="text-lg font-medium">{error || 'Agent not found'}</p>
           </div>
-          <Button onClick={fetchAgent} variant="outline">
+          <Button onClick={() => fetchAgent()} variant="outline">
             Retry
           </Button>
         </div>

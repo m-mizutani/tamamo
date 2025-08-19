@@ -12,17 +12,21 @@ export function AgentsPage() {
   const [totalCount, setTotalCount] = useState(0)
   const navigate = useNavigate()
 
-  const fetchAgents = async () => {
+  const fetchAgents = async (signal?: AbortSignal) => {
     try {
       setLoading(true)
       setError(null)
       const response = await graphqlRequest<{ agents: AgentListResponse }>(GET_AGENTS, {
         offset: 0,
         limit: 50
-      })
+      }, signal)
       setAgents(response.agents.agents)
       setTotalCount(response.agents.totalCount)
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // Request was cancelled, don't update state
+        return
+      }
       console.error('Failed to fetch agents:', err)
       setError(err instanceof Error ? err.message : 'Failed to load agents')
     } finally {
@@ -31,7 +35,12 @@ export function AgentsPage() {
   }
 
   useEffect(() => {
-    fetchAgents()
+    const controller = new AbortController()
+    fetchAgents(controller.signal)
+
+    return () => {
+      controller.abort()
+    }
   }, [])
 
   const handleCreateAgent = () => {
