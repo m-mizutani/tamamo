@@ -43,6 +43,9 @@ type AgentRepository interface {
 	ListAgentVersions(ctx context.Context, agentUUID types.UUID) ([]*agent.AgentVersion, error)
 	UpdateAgentVersion(ctx context.Context, version *agent.AgentVersion) error
 
+	// Efficient queries for performance optimization
+	ListAgentsWithLatestVersions(ctx context.Context, offset, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error)
+
 	// Utilities
 	AgentIDExists(ctx context.Context, agentID string) (bool, error)
 }

@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	goerr "github.com/m-mizutani/goerr/v2"
-	agentmodel "github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	graphql1 "github.com/m-mizutani/tamamo/pkg/domain/model/graphql"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
@@ -24,18 +23,15 @@ func (r *mutationResolver) CreateAgent(ctx context.Context, input graphql1.Creat
 		return nil, goerr.Wrap(err, "failed to create agent")
 	}
 
-	// Get the latest version for the response
-	latestVersion, err := r.agentUseCase.GetAgentVersions(ctx, agent.ID)
+	// Get the agent with its latest version for the response
+	agentWithVersion, err := r.agentUseCase.GetAgent(ctx, agent.ID)
 	if err != nil {
-		return nil, goerr.Wrap(err, "failed to get agent versions")
+		// Although the agent was created, we can't return the full response.
+		// This might indicate a problem, so returning an error is appropriate.
+		return nil, goerr.Wrap(err, "failed to retrieve newly created agent with version")
 	}
 
-	var latest *agentmodel.AgentVersion
-	if len(latestVersion) > 0 {
-		latest = latestVersion[0] // First one should be the latest
-	}
-
-	return convertAgentToGraphQL(agent, latest), nil
+	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil
 }
 
 // UpdateAgent is the resolver for the updateAgent field.

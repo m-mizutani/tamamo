@@ -305,9 +305,12 @@ func TestMutationResolver_CreateAgent_Success(t *testing.T) {
 		CreateAgentFunc: func(ctx context.Context, req *interfaces.CreateAgentRequest) (*agentmodel.Agent, error) {
 			return testAgent, nil
 		},
-		GetAgentVersionsFunc: func(ctx context.Context, agentUUID types.UUID) ([]*agentmodel.AgentVersion, error) {
-			if agentUUID == testAgent.ID {
-				return []*agentmodel.AgentVersion{testVersion}, nil
+		GetAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
+			if id == testAgent.ID {
+				return &interfaces.AgentWithVersion{
+					Agent:         testAgent,
+					LatestVersion: testVersion,
+				}, nil
 			}
 			return nil, errors.New("agent not found")
 		},

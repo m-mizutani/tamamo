@@ -203,20 +203,18 @@ func (u *agentUseCaseImpl) ListAgents(ctx context.Context, offset, limit int) (*
 		return nil, goerr.New("offset and limit must be non-negative")
 	}
 
-	// Get agents from repository
-	agents, totalCount, err := u.agentRepo.ListAgents(ctx, offset, limit)
+	// Use optimized method to get agents and their latest versions in one operation
+	agents, versions, totalCount, err := u.agentRepo.ListAgentsWithLatestVersions(ctx, offset, limit)
 	if err != nil {
-		return nil, goerr.Wrap(err, "failed to list agents")
+		return nil, goerr.Wrap(err, "failed to list agents with latest versions")
 	}
 
-	// Get latest versions for each agent
+	// Combine agents with their versions
 	agentsWithVersions := make([]*interfaces.AgentWithVersion, 0, len(agents))
-	for _, agentObj := range agents {
-		latestVersion, err := u.agentRepo.GetLatestAgentVersion(ctx, agentObj.ID)
-		if err != nil {
-			// Log the error but continue with other agents
-			// In production, you might want to use a proper logger here
-			continue
+	for i, agentObj := range agents {
+		var latestVersion *agent.AgentVersion
+		if i < len(versions) {
+			latestVersion = versions[i]
 		}
 
 		agentsWithVersions = append(agentsWithVersions, &interfaces.AgentWithVersion{

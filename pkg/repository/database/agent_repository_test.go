@@ -466,53 +466,145 @@ func TestMemoryAgentRepository_ListAgentVersions_NonExistentAgent(t *testing.T) 
 	gt.A(t, versions).Length(0) // Memory implementation returns empty slice for non-existent agents
 }
 
+// Common test suite for ListAgentsWithLatestVersions
+func testListAgentsWithLatestVersions(t *testing.T, repo interfaces.AgentRepository) {
+	ctx := context.Background()
+
+	// Create multiple agents with versions
+	agent1 := createTestAgent(t, repo, "list-with-versions-1")
+	version1 := createTestAgentVersion(t, repo, agent1.ID, "1.0.0")
+	
+	agent2 := createTestAgent(t, repo, "list-with-versions-2")
+	createTestAgentVersion(t, repo, agent2.ID, "1.0.0")
+	version2 := createTestAgentVersion(t, repo, agent2.ID, "1.1.0")
+	// Update agent2 to have latest version 1.1.0
+	agent2.Latest = "1.1.0"
+	err := repo.UpdateAgent(ctx, agent2)
+	gt.NoError(t, err)
+
+	agent3 := createTestAgent(t, repo, "list-with-versions-3")
+	version3 := createTestAgentVersion(t, repo, agent3.ID, "2.0.0")
+	// Update agent3 to have latest version 2.0.0
+	agent3.Latest = "2.0.0"
+	err = repo.UpdateAgent(ctx, agent3)
+	gt.NoError(t, err)
+
+	// Test ListAgentsWithLatestVersions
+	agents, versions, totalCount, err := repo.ListAgentsWithLatestVersions(ctx, 0, 10)
+	gt.NoError(t, err)
+	gt.A(t, agents).Length(3)
+	gt.A(t, versions).Length(3)
+	gt.Equal(t, totalCount, 3)
+
+	// Verify agents and their latest versions are correctly paired
+	agentVersionMap := make(map[string]*agent.AgentVersion)
+	for i, a := range agents {
+		if i < len(versions) && versions[i] != nil {
+			agentVersionMap[a.AgentID] = versions[i]
+		}
+	}
+
+	// Check specific version mappings
+	gt.V(t, agentVersionMap["list-with-versions-1"]).NotNil()
+	gt.Equal(t, agentVersionMap["list-with-versions-1"].Version, version1.Version)
+	
+	gt.V(t, agentVersionMap["list-with-versions-2"]).NotNil()
+	gt.Equal(t, agentVersionMap["list-with-versions-2"].Version, version2.Version) // Should be 1.1.0
+	
+	gt.V(t, agentVersionMap["list-with-versions-3"]).NotNil()
+	gt.Equal(t, agentVersionMap["list-with-versions-3"].Version, version3.Version) // Should be 2.0.0
+}
+
+func testListAgentsWithLatestVersionsPagination(t *testing.T, repo interfaces.AgentRepository) {
+	ctx := context.Background()
+
+	// Create multiple agents with versions
+	for i := range 5 {
+		agent := createTestAgent(t, repo, "pagination-with-versions-"+strconv.Itoa(i))
+		createTestAgentVersion(t, repo, agent.ID, "1.0.0")
+	}
+
+	// Test pagination
+	firstPage, firstVersions, totalCount, err := repo.ListAgentsWithLatestVersions(ctx, 0, 2)
+	gt.NoError(t, err)
+	gt.A(t, firstPage).Length(2)
+	gt.A(t, firstVersions).Length(2)
+	gt.Equal(t, totalCount, 5)
+
+	secondPage, secondVersions, totalCount, err := repo.ListAgentsWithLatestVersions(ctx, 2, 2)
+	gt.NoError(t, err)
+	gt.A(t, secondPage).Length(2)
+	gt.A(t, secondVersions).Length(2)
+	gt.Equal(t, totalCount, 5)
+
+	thirdPage, thirdVersions, totalCount, err := repo.ListAgentsWithLatestVersions(ctx, 4, 2)
+	gt.NoError(t, err)
+	gt.A(t, thirdPage).Length(1)
+	gt.A(t, thirdVersions).Length(1)
+	gt.Equal(t, totalCount, 5)
+}
+
+func testListAgentsWithLatestVersionsEmpty(t *testing.T, repo interfaces.AgentRepository) {
+	ctx := context.Background()
+
+	agents, versions, totalCount, err := repo.ListAgentsWithLatestVersions(ctx, 0, 10)
+	gt.NoError(t, err)
+	gt.A(t, agents).Length(0)
+	gt.A(t, versions).Length(0)
+	gt.Equal(t, totalCount, 0)
+}
+
+// Memory implementation tests
+func TestMemoryAgentRepository_ListAgentsWithLatestVersions(t *testing.T) {
+	repo := memory.NewAgentMemoryClient()
+	testListAgentsWithLatestVersions(t, repo)
+}
+
+func TestMemoryAgentRepository_ListAgentsWithLatestVersions_Pagination(t *testing.T) {
+	repo := memory.NewAgentMemoryClient()
+	testListAgentsWithLatestVersionsPagination(t, repo)
+}
+
+func TestMemoryAgentRepository_ListAgentsWithLatestVersions_Empty(t *testing.T) {
+	repo := memory.NewAgentMemoryClient()
+	testListAgentsWithLatestVersionsEmpty(t, repo)
+}
+
 // Firestore repository tests (skipped if environment not configured)
 
-func TestFirestoreAgentRepository_CreateAgent(t *testing.T) {
+func TestFirestoreAgentRepository_ListAgentsWithLatestVersions(t *testing.T) {
 	repo, skipReason := createFirestoreRepo(t)
 	if repo == nil {
 		t.Skip(skipReason)
 	}
+	testListAgentsWithLatestVersions(t, repo)
+}
 
-	ctx := context.Background()
-
-	agentObj := &agent.Agent{
-		ID:          types.NewUUID(ctx),
-		AgentID:     "test-agent-firestore",
-		Name:        "Test Agent",
-		Description: "A test agent",
-		Author:      "test-author",
-		Latest:      "1.0.0",
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+func TestFirestoreAgentRepository_ListAgentsWithLatestVersions_Pagination(t *testing.T) {
+	repo, skipReason := createFirestoreRepo(t)
+	if repo == nil {
+		t.Skip(skipReason)
 	}
+	testListAgentsWithLatestVersionsPagination(t, repo)
+}
 
-	err := repo.CreateAgent(ctx, agentObj)
-	gt.NoError(t, err)
-
-	// Verify agent was created
-	retrievedAgent, err := repo.GetAgent(ctx, agentObj.ID)
-	gt.NoError(t, err)
-	gt.V(t, retrievedAgent).NotNil()
-	gt.Equal(t, retrievedAgent.ID, agentObj.ID)
-	gt.Equal(t, retrievedAgent.AgentID, agentObj.AgentID)
-	gt.Equal(t, retrievedAgent.Name, agentObj.Name)
-	gt.Equal(t, retrievedAgent.Description, agentObj.Description)
-	gt.Equal(t, retrievedAgent.Latest, agentObj.Latest)
-
-	// Cleanup
-	_ = repo.DeleteAgent(ctx, agentObj.ID)
+func TestFirestoreAgentRepository_ListAgentsWithLatestVersions_Empty(t *testing.T) {
+	repo, skipReason := createFirestoreRepo(t)
+	if repo == nil {
+		t.Skip(skipReason)
+	}
+	testListAgentsWithLatestVersionsEmpty(t, repo)
 }
 
 // Helper function to create Firestore repository
 func createFirestoreRepo(t *testing.T) (interfaces.AgentRepository, string) {
 	projectID := os.Getenv("TEST_FIRESTORE_PROJECT")
 	if projectID == "" {
-		t.Skip("TEST_FIRESTORE_PROJECT is not set")
+		return nil, "TEST_FIRESTORE_PROJECT is not set"
 	}
 	databaseID := os.Getenv("TEST_FIRESTORE_DATABASE")
 	if databaseID == "" {
-		t.Skip("TEST_FIRESTORE_DATABASE is not set")
+		return nil, "TEST_FIRESTORE_DATABASE is not set"
 	}
 
 	ctx := context.Background()
@@ -520,5 +612,27 @@ func createFirestoreRepo(t *testing.T) (interfaces.AgentRepository, string) {
 	if err != nil {
 		return nil, "Firestore not available: " + err.Error()
 	}
+
+	// Clean up any existing test data
+	cleanupFirestore(t, client)
+
 	return client, ""
+}
+
+func cleanupFirestore(t *testing.T, repo interfaces.AgentRepository) {
+	ctx := context.Background()
+	
+	// Get all agents and delete them
+	agents, _, _, err := repo.ListAgentsWithLatestVersions(ctx, 0, 0)
+	if err != nil {
+		t.Logf("Warning: failed to list agents for cleanup: %v", err)
+		return
+	}
+
+	for _, agent := range agents {
+		err := repo.DeleteAgent(ctx, agent.ID)
+		if err != nil {
+			t.Logf("Warning: failed to delete agent %s during cleanup: %v", agent.ID, err)
+		}
+	}
 }

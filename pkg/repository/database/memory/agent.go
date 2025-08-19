@@ -349,6 +349,72 @@ func (c *AgentMemoryClient) UpdateAgentVersion(ctx context.Context, version *age
 	return nil
 }
 
+// ListAgentsWithLatestVersions efficiently retrieves agents and their latest versions
+func (c *AgentMemoryClient) ListAgentsWithLatestVersions(ctx context.Context, offset, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
+	if offset < 0 || limit < 0 {
+		return nil, nil, 0, goerr.New("offset and limit must be non-negative")
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	// Convert to slice and sort by creation time (newest first)
+	agents := make([]*agent.Agent, 0, len(c.agents))
+	for _, agent := range c.agents {
+		// Create a copy to avoid external modifications
+		agentCopy := *agent
+		agents = append(agents, &agentCopy)
+	}
+
+	sort.Slice(agents, func(i, j int) bool {
+		return agents[i].CreatedAt.After(agents[j].CreatedAt)
+	})
+
+	totalCount := len(agents)
+
+	// Apply pagination
+	start := offset
+	if start > totalCount {
+		start = totalCount
+	}
+
+	end := start + limit
+	if limit == 0 || end > totalCount {
+		end = totalCount
+	}
+
+	if start >= totalCount {
+		return []*agent.Agent{}, []*agent.AgentVersion{}, totalCount, nil
+	}
+
+	paginatedAgents := agents[start:end]
+
+	// Get latest versions for the paginated agents
+	versions := make([]*agent.AgentVersion, 0, len(paginatedAgents))
+	for _, agentObj := range paginatedAgents {
+		agentVersions, exists := c.versions[agentObj.ID]
+		if !exists || len(agentVersions) == 0 {
+			// No versions found for this agent
+			versions = append(versions, nil)
+			continue
+		}
+
+		// Find the latest version
+		latestVersion, exists := agentVersions[agentObj.Latest]
+		if !exists {
+			// Latest version not found
+			versions = append(versions, nil)
+			continue
+		}
+
+		// Create a copy to avoid external modifications
+		versionCopy := *latestVersion
+		versions = append(versions, &versionCopy)
+	}
+
+	return paginatedAgents, versions, totalCount, nil
+}
+
 // AgentIDExists checks if an agent ID already exists
 func (c *AgentMemoryClient) AgentIDExists(ctx context.Context, agentID string) (bool, error) {
 	if agentID == "" {
