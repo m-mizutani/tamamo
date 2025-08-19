@@ -25,12 +25,12 @@ type CreateAgentRequest struct {
 }
 
 type UpdateAgentRequest struct {
-	AgentID      *string           `json:"agent_id,omitempty"`
-	Name         *string           `json:"name,omitempty"`
-	Description  *string           `json:"description,omitempty"`
-	SystemPrompt *string           `json:"system_prompt,omitempty"`
+	AgentID      *string            `json:"agent_id,omitempty"`
+	Name         *string            `json:"name,omitempty"`
+	Description  *string            `json:"description,omitempty"`
+	SystemPrompt *string            `json:"system_prompt,omitempty"`
 	LLMProvider  *agent.LLMProvider `json:"llm_provider,omitempty"`
-	LLMModel     *string           `json:"llm_model,omitempty"`
+	LLMModel     *string            `json:"llm_model,omitempty"`
 }
 
 type CreateVersionRequest struct {

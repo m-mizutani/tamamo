@@ -127,9 +127,9 @@ func New(opts ...Options) *Server {
 		if _, err := staticFS.Open("index.html"); err == nil {
 			// Dedicated favicon handlers for better reliability
 			r.Get("/favicon.ico", faviconHandler(staticFS, "favicon.ico", "image/x-icon"))
-			
+
 			// Serve static files and handle SPA routing
-			r.HandleFunc("/*", spaHandler(staticFS))
+			r.HandleFunc("/*", spaHandler(staticFS, s.enableGraphiQL))
 		}
 	} else {
 		// Log error but continue without serving frontend
@@ -161,16 +161,25 @@ func faviconHandler(staticFS fs.FS, filename, contentType string) http.HandlerFu
 
 		w.Header().Set("Content-Type", contentType)
 		w.Header().Set("Cache-Control", "public, max-age=31536000") // Cache for 1 year
-		io.Copy(w, file)
+		if _, err := io.Copy(w, file); err != nil {
+			http.Error(w, "Failed to serve file", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
 // spaHandler handles SPA routing by serving static files and falling back to index.html
-func spaHandler(staticFS fs.FS) http.HandlerFunc {
+func spaHandler(staticFS fs.FS, enableGraphiQL bool) http.HandlerFunc {
 	fileServer := http.FileServer(http.FS(staticFS))
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		urlPath := strings.TrimPrefix(r.URL.Path, "/")
+
+		// Check for GraphiQL endpoint when it's disabled
+		if urlPath == "graphiql" && !enableGraphiQL {
+			http.NotFound(w, r)
+			return
+		}
 
 		// If the path is empty, serve index.html
 		if urlPath == "" {
@@ -206,7 +215,10 @@ func spaHandler(staticFS fs.FS) http.HandlerFunc {
 			if indexFile, err := staticFS.Open("index.html"); err == nil {
 				defer indexFile.Close()
 				w.Header().Set("Content-Type", "text/html")
-				io.Copy(w, indexFile)
+				if _, err := io.Copy(w, indexFile); err != nil {
+					http.Error(w, "Failed to serve index.html", http.StatusInternalServerError)
+					return
+				}
 				return
 			}
 
@@ -215,7 +227,7 @@ func spaHandler(staticFS fs.FS) http.HandlerFunc {
 			return
 		} else {
 			// File exists, close it and let fileServer handle it
-			file.Close()
+			_ = file.Close() // Ignore error as file descriptor will be cleaned up by GC
 		}
 
 		// Set appropriate Content-Type for favicon files

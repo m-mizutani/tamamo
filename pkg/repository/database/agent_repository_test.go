@@ -476,7 +476,7 @@ func testListAgentsWithLatestVersions(t *testing.T, repo interfaces.AgentReposit
 	// Create multiple agents with versions
 	agent1 := createTestAgent(t, repo, "list-with-versions-1-"+testID)
 	version1 := createTestAgentVersion(t, repo, agent1.ID, "1.0.0")
-	
+
 	agent2 := createTestAgent(t, repo, "list-with-versions-2-"+testID)
 	createTestAgentVersion(t, repo, agent2.ID, "1.0.0")
 	version2 := createTestAgentVersion(t, repo, agent2.ID, "1.1.0")
@@ -495,7 +495,7 @@ func testListAgentsWithLatestVersions(t *testing.T, repo interfaces.AgentReposit
 	// Test ListAgentsWithLatestVersions - only count our test agents
 	agents, versions, _, err := repo.ListAgentsWithLatestVersions(ctx, 0, 0)
 	gt.NoError(t, err)
-	
+
 	// Filter to only our test agents
 	testAgents := make([]*agent.Agent, 0)
 	testVersions := make([]*agent.AgentVersion, 0)
@@ -505,7 +505,7 @@ func testListAgentsWithLatestVersions(t *testing.T, repo interfaces.AgentReposit
 			testVersions = append(testVersions, versions[i])
 		}
 	}
-	
+
 	gt.A(t, testAgents).Length(3)
 	gt.A(t, testVersions).Length(3)
 
@@ -521,13 +521,13 @@ func testListAgentsWithLatestVersions(t *testing.T, repo interfaces.AgentReposit
 	agent1Name := "list-with-versions-1-" + testID
 	agent2Name := "list-with-versions-2-" + testID
 	agent3Name := "list-with-versions-3-" + testID
-	
+
 	gt.V(t, agentVersionMap[agent1Name]).NotNil()
 	gt.Equal(t, agentVersionMap[agent1Name].Version, version1.Version)
-	
+
 	gt.V(t, agentVersionMap[agent2Name]).NotNil()
 	gt.Equal(t, agentVersionMap[agent2Name].Version, version2.Version) // Should be 1.1.0
-	
+
 	gt.V(t, agentVersionMap[agent3Name]).NotNil()
 	gt.Equal(t, agentVersionMap[agent3Name].Version, version3.Version) // Should be 2.0.0
 }

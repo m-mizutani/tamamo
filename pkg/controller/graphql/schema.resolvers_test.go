@@ -752,8 +752,8 @@ func TestQueryResolver_Agents_DefaultPagination(t *testing.T) {
 	// Verify mock was called with defaults
 	calls := mockAgentUseCase.ListAgentsCalls()
 	gt.Equal(t, len(calls), 1)
-	gt.Equal(t, calls[0].Offset, 0)  // Default offset
-	gt.Equal(t, calls[0].Limit, 50)  // Default limit
+	gt.Equal(t, calls[0].Offset, 0) // Default offset
+	gt.Equal(t, calls[0].Limit, 50) // Default limit
 }
 
 func TestQueryResolver_CheckAgentIDAvailability_Available(t *testing.T) {

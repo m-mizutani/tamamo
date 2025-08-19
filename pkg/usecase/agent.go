@@ -56,13 +56,13 @@ func (u *agentUseCaseImpl) CreateAgent(ctx context.Context, req *interfaces.Crea
 
 	// Create agent
 	now := time.Now()
-	
+
 	// Handle optional fields
 	description := ""
 	if req.Description != nil {
 		description = *req.Description
 	}
-	
+
 	agentObj := &agent.Agent{
 		ID:          types.NewUUID(ctx),
 		AgentID:     req.AgentID,
@@ -90,7 +90,7 @@ func (u *agentUseCaseImpl) CreateAgent(ctx context.Context, req *interfaces.Crea
 	if req.SystemPrompt != nil {
 		systemPrompt = *req.SystemPrompt
 	}
-	
+
 	agentVersion := &agent.AgentVersion{
 		AgentUUID:    agentObj.ID,
 		Version:      version,
@@ -182,14 +182,14 @@ func (u *agentUseCaseImpl) UpdateAgent(ctx context.Context, id types.UUID, req *
 
 	// Check if version-related fields are being updated
 	needsNewVersion := req.SystemPrompt != nil || req.LLMProvider != nil || req.LLMModel != nil
-	
+
 	if needsNewVersion {
 		// Get current latest version to increment
 		latestVersion, err := u.agentRepo.GetLatestAgentVersion(ctx, id)
 		if err != nil {
 			return nil, goerr.Wrap(err, "failed to get latest version for update")
 		}
-		
+
 		// Create new version with updated fields
 		newVersionReq := &interfaces.CreateVersionRequest{
 			AgentUUID:   id,
@@ -197,14 +197,14 @@ func (u *agentUseCaseImpl) UpdateAgent(ctx context.Context, id types.UUID, req *
 			LLMProvider: latestVersion.LLMProvider,
 			LLMModel:    latestVersion.LLMModel,
 		}
-		
+
 		// Use existing system prompt by default
 		systemPrompt := latestVersion.SystemPrompt
 		if req.SystemPrompt != nil {
 			systemPrompt = *req.SystemPrompt
 		}
 		newVersionReq.SystemPrompt = &systemPrompt
-		
+
 		// Override with new values if provided
 		if req.LLMProvider != nil {
 			newVersionReq.LLMProvider = *req.LLMProvider
@@ -212,7 +212,7 @@ func (u *agentUseCaseImpl) UpdateAgent(ctx context.Context, id types.UUID, req *
 		if req.LLMModel != nil {
 			newVersionReq.LLMModel = *req.LLMModel
 		}
-		
+
 		// Create the new version
 		_, err = u.CreateAgentVersion(ctx, newVersionReq)
 		if err != nil {
@@ -304,13 +304,13 @@ func (u *agentUseCaseImpl) CreateAgentVersion(ctx context.Context, req *interfac
 
 	// Create agent version
 	now := time.Now()
-	
+
 	// Handle optional system prompt
 	systemPrompt := ""
 	if req.SystemPrompt != nil {
 		systemPrompt = *req.SystemPrompt
 	}
-	
+
 	agentVersion := &agent.AgentVersion{
 		AgentUUID:    req.AgentUUID,
 		Version:      req.Version,
@@ -412,12 +412,12 @@ func incrementVersion(version string) string {
 		// Fallback to simple increment
 		return version + ".1"
 	}
-	
+
 	patch, err := strconv.Atoi(parts[2])
 	if err != nil {
 		// Fallback to simple increment
 		return version + ".1"
 	}
-	
+
 	return fmt.Sprintf("%s.%s.%d", parts[0], parts[1], patch+1)
 }

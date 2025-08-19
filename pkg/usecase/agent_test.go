@@ -447,7 +447,7 @@ func TestGetAgentVersions(t *testing.T) {
 	agentVersions, err := uc.GetAgentVersions(ctx, createdAgent.ID)
 	gt.NoError(t, err)
 	gt.Equal(t, len(agentVersions), 3) // Initial + 2 additional versions
-	
+
 	// Verify versions are sorted by creation date (newest first)
 	expectedVersions := []string{"1.2.0", "1.1.0", "1.0.0"}
 	for i, version := range agentVersions {
@@ -464,4 +464,3 @@ func TestGetAgentVersions_NotFound(t *testing.T) {
 	_, err := uc.GetAgentVersions(ctx, nonExistentID)
 	gt.Error(t, err)
 }
-

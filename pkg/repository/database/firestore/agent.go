@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	firestorepb "cloud.google.com/go/firestore/apiv1/firestorepb"
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	firestorepb "cloud.google.com/go/firestore/apiv1/firestorepb"
 )
 
 const (
@@ -449,7 +449,7 @@ func (c *Client) ListAgentsWithLatestVersions(ctx context.Context, offset, limit
 	if !ok {
 		return nil, nil, 0, goerr.New("count result not found")
 	}
-	
+
 	// Handle Firestore aggregation result type conversion
 	var totalCount int
 	switch v := countValue.(type) {
@@ -521,7 +521,7 @@ func (c *Client) ListAgentsWithLatestVersions(ctx context.Context, offset, limit
 				versions = append(versions, nil)
 				continue
 			}
-			return nil, nil, 0, goerr.Wrap(err, "failed to get latest version", 
+			return nil, nil, 0, goerr.Wrap(err, "failed to get latest version",
 				goerr.V("agent_id", agentObj.AgentID),
 				goerr.V("version", agentObj.Latest))
 		}
