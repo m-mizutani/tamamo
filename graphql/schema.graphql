@@ -1,5 +1,11 @@
 scalar Time
 
+enum LLMProvider {
+  OPENAI
+  CLAUDE
+  GEMINI
+}
+
 type Thread {
   id: ID!
   teamId: String!
@@ -14,11 +20,84 @@ type ThreadsResponse {
   totalCount: Int!
 }
 
+type Agent {
+  id: ID!
+  agentId: String!
+  name: String!
+  description: String!
+  author: String!
+  latest: String!
+  createdAt: Time!
+  updatedAt: Time!
+  latestVersion: AgentVersion
+}
+
+type AgentVersion {
+  agentUuid: ID!
+  version: String!
+  systemPrompt: String!
+  llmProvider: LLMProvider!
+  llmModel: String!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type AgentListResponse {
+  agents: [Agent!]!
+  totalCount: Int!
+}
+
+type AgentIdAvailability {
+  available: Boolean!
+  message: String!
+}
+
+input CreateAgentInput {
+  agentId: String!
+  name: String!
+  description: String
+  systemPrompt: String
+  llmProvider: LLMProvider!
+  llmModel: String!
+  version: String
+}
+
+input UpdateAgentInput {
+  agentId: String
+  name: String
+  description: String
+  systemPrompt: String
+  llmProvider: LLMProvider
+  llmModel: String
+}
+
+input CreateAgentVersionInput {
+  agentUuid: ID!
+  version: String!
+  systemPrompt: String
+  llmProvider: LLMProvider!
+  llmModel: String!
+}
+
 type Query {
   thread(id: ID!): Thread
   threads(offset: Int, limit: Int): ThreadsResponse!
+  
+  agent(id: ID!): Agent
+  agentByAgentId(agentId: String!): Agent
+  agents(offset: Int, limit: Int): AgentListResponse!
+  agentVersions(agentUuid: ID!): [AgentVersion!]!
+  checkAgentIdAvailability(agentId: String!): AgentIdAvailability!
+}
+
+type Mutation {
+  createAgent(input: CreateAgentInput!): Agent!
+  updateAgent(id: ID!, input: UpdateAgentInput!): Agent!
+  deleteAgent(id: ID!): Boolean!
+  createAgentVersion(input: CreateAgentVersionInput!): AgentVersion!
 }
 
 schema {
   query: Query
+  mutation: Mutation
 }

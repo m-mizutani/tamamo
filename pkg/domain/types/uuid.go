@@ -8,7 +8,25 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/utils/errors"
 )
 
-// In
+type UUID string
+
+func NewUUID(ctx context.Context) UUID {
+	return UUID(newUUID(ctx))
+}
+
+func (id UUID) String() string {
+	return string(id)
+}
+
+// IsValid checks if the UUID is valid
+func (id UUID) IsValid() bool {
+	if id == "" {
+		return false
+	}
+	_, err := uuid.Parse(string(id))
+	return err == nil
+}
+
 func newUUID(ctx context.Context) string {
 	id, err := uuid.NewV7()
 	if err != nil {

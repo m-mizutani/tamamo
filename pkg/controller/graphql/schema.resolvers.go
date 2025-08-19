@@ -6,12 +6,83 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
 	goerr "github.com/m-mizutani/goerr/v2"
 	graphql1 "github.com/m-mizutani/tamamo/pkg/domain/model/graphql"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
+
+// CreateAgent is the resolver for the createAgent field.
+func (r *mutationResolver) CreateAgent(ctx context.Context, input graphql1.CreateAgentInput) (*graphql1.Agent, error) {
+	req := convertCreateAgentInputToRequest(input)
+
+	agent, err := r.agentUseCase.CreateAgent(ctx, req)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to create agent")
+	}
+
+	// Get the agent with its latest version for the response
+	agentWithVersion, err := r.agentUseCase.GetAgent(ctx, agent.ID)
+	if err != nil {
+		// Although the agent was created, we can't return the full response.
+		// This might indicate a problem, so returning an error is appropriate.
+		return nil, goerr.Wrap(err, "failed to retrieve newly created agent with version")
+	}
+
+	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil
+}
+
+// UpdateAgent is the resolver for the updateAgent field.
+func (r *mutationResolver) UpdateAgent(ctx context.Context, id string, input graphql1.UpdateAgentInput) (*graphql1.Agent, error) {
+	agentID := types.UUID(id)
+	if !agentID.IsValid() {
+		return nil, goerr.New("invalid agent ID")
+	}
+
+	req := convertUpdateAgentInputToRequest(input)
+
+	agent, err := r.agentUseCase.UpdateAgent(ctx, agentID, req)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to update agent")
+	}
+
+	// Get the latest version for the response
+	agentWithVersion, err := r.agentUseCase.GetAgent(ctx, agent.ID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get agent with version")
+	}
+
+	return convertAgentToGraphQL(agent, agentWithVersion.LatestVersion), nil
+}
+
+// DeleteAgent is the resolver for the deleteAgent field.
+func (r *mutationResolver) DeleteAgent(ctx context.Context, id string) (bool, error) {
+	agentID := types.UUID(id)
+	if !agentID.IsValid() {
+		return false, goerr.New("invalid agent ID")
+	}
+
+	err := r.agentUseCase.DeleteAgent(ctx, agentID)
+	if err != nil {
+		return false, goerr.Wrap(err, "failed to delete agent")
+	}
+
+	return true, nil
+}
+
+// CreateAgentVersion is the resolver for the createAgentVersion field.
+func (r *mutationResolver) CreateAgentVersion(ctx context.Context, input graphql1.CreateAgentVersionInput) (*graphql1.AgentVersion, error) {
+	req := convertCreateAgentVersionInputToRequest(input)
+
+	version, err := r.agentUseCase.CreateAgentVersion(ctx, req)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to create agent version")
+	}
+
+	return convertAgentVersionToGraphQL(version), nil
+}
 
 // Thread is the resolver for the thread field.
 func (r *queryResolver) Thread(ctx context.Context, id string) (*slack.Thread, error) {
@@ -58,10 +129,87 @@ func (r *queryResolver) Threads(ctx context.Context, offset *int, limit *int) (*
 	}, nil
 }
 
+// Agent is the resolver for the agent field.
+func (r *queryResolver) Agent(ctx context.Context, id string) (*graphql1.Agent, error) {
+	agentID := types.UUID(id)
+	if !agentID.IsValid() {
+		return nil, goerr.New("invalid agent ID")
+	}
+
+	agentWithVersion, err := r.agentUseCase.GetAgent(ctx, agentID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get agent")
+	}
+
+	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil
+}
+
+// AgentByAgentID is the resolver for the agentByAgentId field.
+func (r *queryResolver) AgentByAgentID(ctx context.Context, agentID string) (*graphql1.Agent, error) {
+	panic(fmt.Errorf("not implemented: AgentByAgentID - agentByAgentId"))
+}
+
+// Agents is the resolver for the agents field.
+func (r *queryResolver) Agents(ctx context.Context, offset *int, limit *int) (*graphql1.AgentListResponse, error) {
+	// Set default values for pagination
+	actualOffset := 0
+	if offset != nil && *offset > 0 {
+		actualOffset = *offset
+	}
+
+	actualLimit := 50 // Default page size
+	if limit != nil && *limit > 0 {
+		// Cap maximum limit to prevent abuse
+		if *limit > 1000 {
+			actualLimit = 1000
+		} else {
+			actualLimit = *limit
+		}
+	}
+
+	// Get agents from use case
+	response, err := r.agentUseCase.ListAgents(ctx, actualOffset, actualLimit)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to list agents")
+	}
+
+	// Convert to GraphQL format
+	graphqlAgents := make([]*graphql1.Agent, 0, len(response.Agents))
+	for _, agentWithVersion := range response.Agents {
+		graphqlAgents = append(graphqlAgents, convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion))
+	}
+
+	return &graphql1.AgentListResponse{
+		Agents:     graphqlAgents,
+		TotalCount: response.TotalCount,
+	}, nil
+}
+
+// AgentVersions is the resolver for the agentVersions field.
+func (r *queryResolver) AgentVersions(ctx context.Context, agentUUID string) ([]*graphql1.AgentVersion, error) {
+	panic(fmt.Errorf("not implemented: AgentVersions - agentVersions"))
+}
+
+// CheckAgentIDAvailability is the resolver for the checkAgentIdAvailability field.
+func (r *queryResolver) CheckAgentIDAvailability(ctx context.Context, agentID string) (*graphql1.AgentIDAvailability, error) {
+	availability, err := r.agentUseCase.CheckAgentIDAvailability(ctx, agentID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to check agent ID availability")
+	}
+
+	return &graphql1.AgentIDAvailability{
+		Available: availability.Available,
+		Message:   availability.Message,
+	}, nil
+}
+
 // ID is the resolver for the id field.
 func (r *threadResolver) ID(ctx context.Context, obj *slack.Thread) (string, error) {
 	return string(obj.ID), nil
 }
+
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
@@ -69,5 +217,6 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 // Thread returns ThreadResolver implementation.
 func (r *Resolver) Thread() ThreadResolver { return &threadResolver{r} }
 
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type threadResolver struct{ *Resolver }

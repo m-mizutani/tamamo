@@ -9,12 +9,14 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	threadRepo interfaces.ThreadRepository
+	threadRepo   interfaces.ThreadRepository
+	agentUseCase interfaces.AgentUseCases
 }
 
 // NewResolver creates a new resolver instance
-func NewResolver(threadRepo interfaces.ThreadRepository) *Resolver {
+func NewResolver(threadRepo interfaces.ThreadRepository, agentUseCase interfaces.AgentUseCases) *Resolver {
 	return &Resolver{
-		threadRepo: threadRepo,
+		threadRepo:   threadRepo,
+		agentUseCase: agentUseCase,
 	}
 }

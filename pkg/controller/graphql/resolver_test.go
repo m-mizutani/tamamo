@@ -6,18 +6,24 @@ import (
 	"github.com/m-mizutani/gt"
 	"github.com/m-mizutani/tamamo/pkg/controller/graphql"
 	"github.com/m-mizutani/tamamo/pkg/domain/mock"
+	"github.com/m-mizutani/tamamo/pkg/repository/database/memory"
+	"github.com/m-mizutani/tamamo/pkg/usecase"
 )
 
 func TestNewResolver(t *testing.T) {
 	mockRepo := &mock.ThreadRepositoryMock{}
-	resolver := graphql.NewResolver(mockRepo)
+	agentRepo := memory.NewAgentMemoryClient()
+	agentUseCase := usecase.NewAgentUseCases(agentRepo)
+	resolver := graphql.NewResolver(mockRepo, agentUseCase)
 
 	gt.V(t, resolver).NotNil()
 }
 
 func TestResolver_DependencyInjection(t *testing.T) {
 	mockRepo := &mock.ThreadRepositoryMock{}
-	resolver := graphql.NewResolver(mockRepo)
+	agentRepo := memory.NewAgentMemoryClient()
+	agentUseCase := usecase.NewAgentUseCases(agentRepo)
+	resolver := graphql.NewResolver(mockRepo, agentUseCase)
 
 	// Verify that resolver can be created with mock repository
 	gt.V(t, resolver).NotNil()

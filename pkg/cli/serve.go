@@ -146,7 +146,13 @@ func cmdServe() *cli.Command {
 
 			// Configure database repository
 			var repo interfaces.ThreadRepository
+			var agentRepo interfaces.AgentRepository
 			firestoreCfg.SetDefaults()
+
+			// Validate Firestore configuration
+			if err := firestoreCfg.Validate(); err != nil {
+				return goerr.Wrap(err, "invalid firestore configuration")
+			}
 
 			if firestoreCfg.ProjectID != "" {
 				// Use Firestore if project ID is provided
@@ -161,10 +167,12 @@ func cmdServe() *cli.Command {
 				}
 				defer client.Close()
 				repo = client
+				agentRepo = client // Firestore client implements both ThreadRepository and AgentRepository
 			} else {
 				// Use memory repository as fallback
 				logger.Warn("using in-memory repository (data will be lost on restart)")
 				repo = memory.New()
+				agentRepo = memory.NewAgentMemoryClient()
 			}
 
 			logger.Info("starting server",
@@ -189,7 +197,10 @@ func cmdServe() *cli.Command {
 
 			// Create controllers
 			slackCtrl := slack_controller.New(uc)
-			graphqlCtrl := graphql_controller.NewResolver(repo)
+
+			// Create agent use case
+			agentUseCase := usecase.NewAgentUseCases(agentRepo)
+			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase)
 
 			// Build HTTP server options
 			serverOptions := []server.Options{

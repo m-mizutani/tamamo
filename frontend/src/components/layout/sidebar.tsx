@@ -1,6 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Settings } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Home, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navigation = [
@@ -8,6 +7,11 @@ const navigation = [
     name: "Dashboard",
     href: "/",
     icon: Home,
+  },
+  {
+    name: "Agents",
+    href: "/agents",
+    icon: Users,
   },
   {
     name: "Settings",
