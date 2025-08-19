@@ -69,10 +69,10 @@ export function CreateVersionDialog({
       llmModel: ''
     }
 
-    // Version validation (basic semantic versioning)
+    // Version validation (strict semantic versioning - Major.Minor.Patch only)
     if (!formData.version.trim()) {
       errors.version = 'Version is required'
-    } else if (!/^\d+\.\d+\.\d+(-[\w\.-]+)?$/.test(formData.version.trim())) {
+    } else if (!/^\d+\.\d+\.\d+$/.test(formData.version.trim())) {
       errors.version = 'Version must follow semantic versioning (e.g., 1.0.0)'
     }
 
