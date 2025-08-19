@@ -1,10 +1,13 @@
 package graphql
 
 import (
+	"log/slog"
+
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	agentmodel "github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	graphql1 "github.com/m-mizutani/tamamo/pkg/domain/model/graphql"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
+	"github.com/m-mizutani/tamamo/pkg/utils/logging"
 )
 
 // convertAgentToGraphQL converts domain Agent to GraphQL Agent
@@ -58,6 +61,9 @@ func convertLLMProviderToGraphQL(p agentmodel.LLMProvider) graphql1.LLMProvider 
 	case agentmodel.LLMProviderGemini:
 		return graphql1.LLMProviderGemini
 	default:
+		logging.Default().Warn("Unknown LLM provider type, falling back to OpenAI",
+			slog.String("provider", string(p)),
+			slog.String("fallback", "OpenAI"))
 		return graphql1.LLMProviderOpenai // Default fallback
 	}
 }
@@ -72,6 +78,9 @@ func convertGraphQLLLMProviderToDomain(p graphql1.LLMProvider) agentmodel.LLMPro
 	case graphql1.LLMProviderGemini:
 		return agentmodel.LLMProviderGemini
 	default:
+		logging.Default().Warn("Unknown GraphQL LLM provider type, falling back to OpenAI",
+			slog.String("provider", string(p)),
+			slog.String("fallback", "OpenAI"))
 		return agentmodel.LLMProviderOpenAI // Default fallback
 	}
 }
