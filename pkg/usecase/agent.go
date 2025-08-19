@@ -338,8 +338,11 @@ func (u *agentUseCaseImpl) CreateAgentVersion(ctx context.Context, req *interfac
 	agentObj.UpdatedAt = now
 	if err := u.agentRepo.UpdateAgent(ctx, agentObj); err != nil {
 		// Log the error but don't fail the version creation since the version was already created
-		// In production, you might want to use a proper logger here
-		_ = err // Acknowledge the error to satisfy the linter
+		// This creates data inconsistency that needs to be addressed
+		return agentVersion, goerr.Wrap(err, "version created but failed to update agent's latest version tag",
+			goerr.V("agent_uuid", req.AgentUUID),
+			goerr.V("version", req.Version),
+			goerr.V("agent_id", agentObj.AgentID))
 	}
 
 	return agentVersion, nil
