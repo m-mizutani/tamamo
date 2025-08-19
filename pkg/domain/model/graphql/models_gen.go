@@ -3,8 +3,67 @@
 package graphql
 
 import (
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
+	"time"
+
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 )
+
+type Agent struct {
+	ID            string        `json:"id"`
+	AgentID       string        `json:"agentId"`
+	Name          string        `json:"name"`
+	Description   string        `json:"description"`
+	Author        string        `json:"author"`
+	Latest        string        `json:"latest"`
+	CreatedAt     time.Time     `json:"createdAt"`
+	UpdatedAt     time.Time     `json:"updatedAt"`
+	LatestVersion *AgentVersion `json:"latestVersion,omitempty"`
+}
+
+type AgentIDAvailability struct {
+	Available bool   `json:"available"`
+	Message   string `json:"message"`
+}
+
+type AgentListResponse struct {
+	Agents     []*Agent `json:"agents"`
+	TotalCount int      `json:"totalCount"`
+}
+
+type AgentVersion struct {
+	AgentUUID    string      `json:"agentUuid"`
+	Version      string      `json:"version"`
+	SystemPrompt string      `json:"systemPrompt"`
+	LlmProvider  LLMProvider `json:"llmProvider"`
+	LlmModel     string      `json:"llmModel"`
+	CreatedAt    time.Time   `json:"createdAt"`
+	UpdatedAt    time.Time   `json:"updatedAt"`
+}
+
+type CreateAgentInput struct {
+	AgentID      string      `json:"agentId"`
+	Name         string      `json:"name"`
+	Description  string      `json:"description"`
+	SystemPrompt string      `json:"systemPrompt"`
+	LlmProvider  LLMProvider `json:"llmProvider"`
+	LlmModel     string      `json:"llmModel"`
+	Version      *string     `json:"version,omitempty"`
+}
+
+type CreateAgentVersionInput struct {
+	AgentUUID    string      `json:"agentUuid"`
+	Version      string      `json:"version"`
+	SystemPrompt string      `json:"systemPrompt"`
+	LlmProvider  LLMProvider `json:"llmProvider"`
+	LlmModel     string      `json:"llmModel"`
+}
+
+type Mutation struct {
+}
 
 type Query struct {
 }
@@ -12,4 +71,67 @@ type Query struct {
 type ThreadsResponse struct {
 	Threads    []*slack.Thread `json:"threads"`
 	TotalCount int             `json:"totalCount"`
+}
+
+type UpdateAgentInput struct {
+	AgentID     *string `json:"agentId,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+}
+
+type LLMProvider string
+
+const (
+	LLMProviderOpenai LLMProvider = "OPENAI"
+	LLMProviderClaude LLMProvider = "CLAUDE"
+	LLMProviderGemini LLMProvider = "GEMINI"
+)
+
+var AllLLMProvider = []LLMProvider{
+	LLMProviderOpenai,
+	LLMProviderClaude,
+	LLMProviderGemini,
+}
+
+func (e LLMProvider) IsValid() bool {
+	switch e {
+	case LLMProviderOpenai, LLMProviderClaude, LLMProviderGemini:
+		return true
+	}
+	return false
+}
+
+func (e LLMProvider) String() string {
+	return string(e)
+}
+
+func (e *LLMProvider) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = LLMProvider(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid LLMProvider", str)
+	}
+	return nil
+}
+
+func (e LLMProvider) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *LLMProvider) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e LLMProvider) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

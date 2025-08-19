@@ -14,7 +14,7 @@ require (
 	github.com/m-mizutani/goerr/v2 v2.0.0-beta.2
 	github.com/m-mizutani/gollem v0.10.0
 	github.com/m-mizutani/gt v0.0.16
-	github.com/m-mizutani/masq v0.1.12-0.20250814024139-b8878bc94d3a
+	github.com/m-mizutani/masq v0.1.12-0.20250818113152-b9316b785b03
 	github.com/sashabaranov/go-openai v1.40.1
 	github.com/slack-go/slack v0.17.3
 	github.com/urfave/cli/v3 v3.4.1

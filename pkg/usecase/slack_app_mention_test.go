@@ -7,6 +7,7 @@ import (
 
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/gollem"
+	llm_mock "github.com/m-mizutani/gollem/mock"
 	"github.com/m-mizutani/gt"
 	mem_storage "github.com/m-mizutani/tamamo/pkg/adapters/memory"
 	"github.com/m-mizutani/tamamo/pkg/domain/mock"
@@ -568,7 +569,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 			},
 		}
 
-		mockLLMClient := &mock.LLMClientMock{
+		mockLLMClient := &llm_mock.LLMClientMock{
 			NewSessionFunc: func(ctx context.Context, options ...gollem.SessionOption) (gollem.Session, error) {
 				return mockSession, nil
 			},
@@ -640,7 +641,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 			},
 		}
 
-		mockLLMClient := &mock.LLMClientMock{
+		mockLLMClient := &llm_mock.LLMClientMock{
 			NewSessionFunc: func(ctx context.Context, options ...gollem.SessionOption) (gollem.Session, error) {
 				return mockSession, nil
 			},
@@ -722,7 +723,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 
 	t.Run("falls back gracefully when LLM fails", func(t *testing.T) {
 		// Mock LLM that fails
-		mockLLMClient := &mock.LLMClientMock{
+		mockLLMClient := &llm_mock.LLMClientMock{
 			NewSessionFunc: func(ctx context.Context, options ...gollem.SessionOption) (gollem.Session, error) {
 				return nil, goerr.New("LLM service unavailable")
 			},

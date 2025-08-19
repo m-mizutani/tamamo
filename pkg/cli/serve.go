@@ -189,7 +189,12 @@ func cmdServe() *cli.Command {
 
 			// Create controllers
 			slackCtrl := slack_controller.New(uc)
-			graphqlCtrl := graphql_controller.NewResolver(repo)
+
+			// Create agent use case (placeholder - will be properly integrated later)
+			// For now, create a separate memory client for agents
+			agentRepo := memory.NewAgentMemoryClient()
+			agentUseCase := usecase.NewAgentUseCases(agentRepo)
+			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase)
 
 			// Build HTTP server options
 			serverOptions := []server.Options{
