@@ -9,12 +9,14 @@ tasks:
     aliases: [m]
     desc: Generate mock files
     cmds:
-      - go install github.com/matryer/moq@v0.5.1
-      - moq -out pkg/domain/mock/interfaces.go -pkg mock ./pkg/domain/interfaces SlackClient ThreadRepository HistoryRepository StorageAdapter
+      - go install github.com/matryer/moq@latest
+      - moq -out pkg/domain/mock/slack.go -pkg mock ./pkg/domain/interfaces SlackClient ThreadRepository HistoryRepository StorageAdapter
+      - moq -out pkg/domain/mock/agent.go -pkg mock ./pkg/domain/interfaces AgentUseCases AgentRepository
     sources:
       - pkg/domain/interfaces/*.go
     generates:
-      - pkg/domain/mock/interfaces.go
+      - pkg/domain/mock/slack.go
+      - pkg/domain/mock/agent.go
 
   graphql:
     aliases: [g]

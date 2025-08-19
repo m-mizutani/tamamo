@@ -44,6 +44,13 @@ All comment and character literal in source code must be in English
 - Test files should have `package {name}_test`. Do not use same package name
 - **🚨 CRITICAL RULE: Test MUST be included in same name test file. (e.g. test for `abc.go` must be in `abc_test.go`) 🚨**
 
+#### Repository Testing Strategy
+- **🚨 CRITICAL: Repository tests MUST be placed in `pkg/repository/database/` directory with common test suites**
+- Create shared test functions that verify identical behavior across all repository implementations (Firestore, Memory, etc.)
+- Each repository implementation must pass the exact same test suite to ensure behavioral consistency
+- Use a common test interface pattern to test all implementations uniformly
+- This ensures that switching between repository implementations (e.g., Memory for testing, Firestore for production) maintains identical behavior
+
 ### Slack Responses
 - **All Slack responses MUST be sent as thread replies (with thread_ts)**
 - Never send messages to the channel directly unless explicitly required
