@@ -46,7 +46,6 @@ export function AgentDeleteDialog({ agent, open, onOpenChange }: AgentDeleteDial
     } catch (err) {
       console.error('Failed to delete agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to delete agent')
-    } finally {
       setDeleting(false)
     }
   }
