@@ -1,6 +1,9 @@
 package config
 
-import "github.com/urfave/cli/v3"
+import (
+	"github.com/m-mizutani/goerr/v2"
+	"github.com/urfave/cli/v3"
+)
 
 // Firestore contains configuration for Google Cloud Firestore
 type Firestore struct {
@@ -19,17 +22,22 @@ func (f *Firestore) Flags() []cli.Flag {
 		},
 		&cli.StringFlag{
 			Name:        "firestore-database-id",
-			Usage:       "Firestore Database ID (default: (default))",
+			Usage:       "Firestore Database ID (required when firestore-project-id is set)",
 			Sources:     cli.EnvVars("TAMAMO_FIRESTORE_DATABASE_ID"),
-			Value:       "(default)",
 			Destination: &f.DatabaseID,
 		},
 	}
 }
 
+// Validate validates the Firestore configuration
+func (f *Firestore) Validate() error {
+	if f.ProjectID != "" && f.DatabaseID == "" {
+		return goerr.New("firestore-database-id is required when firestore-project-id is set")
+	}
+	return nil
+}
+
 // SetDefaults sets default values for Firestore configuration
 func (f *Firestore) SetDefaults() {
-	if f.DatabaseID == "" {
-		f.DatabaseID = "(default)"
-	}
+	// No defaults are set - both ProjectID and DatabaseID must be explicitly provided
 }

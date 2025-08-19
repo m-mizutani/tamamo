@@ -1,27 +1,32 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Users, Loader2, RefreshCw } from 'lucide-react'
+import { Plus, Users, Loader2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Agent, AgentListResponse, GET_AGENTS, graphqlRequest } from '@/lib/graphql'
 import { useNavigate } from 'react-router-dom'
+
+const AGENTS_PER_PAGE = 18
 
 export function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalCount, setTotalCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
   const navigate = useNavigate()
 
-  const fetchAgents = async (signal?: AbortSignal) => {
+  const fetchAgents = async (page: number = currentPage, signal?: AbortSignal) => {
     try {
       setLoading(true)
       setError(null)
+      const offset = (page - 1) * AGENTS_PER_PAGE
       const response = await graphqlRequest<{ agents: AgentListResponse }>(GET_AGENTS, {
-        offset: 0,
-        limit: 50
+        offset: offset,
+        limit: AGENTS_PER_PAGE
       }, signal)
       setAgents(response.agents.agents)
       setTotalCount(response.agents.totalCount)
+      setCurrentPage(page)
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Request was cancelled, don't update state
@@ -36,7 +41,7 @@ export function AgentsPage() {
 
   useEffect(() => {
     const controller = new AbortController()
-    fetchAgents(controller.signal)
+    fetchAgents(1, controller.signal)
 
     return () => {
       controller.abort()
@@ -49,6 +54,23 @@ export function AgentsPage() {
 
   const handleAgentClick = (agentId: string) => {
     navigate(`/agents/${agentId}`)
+  }
+
+  // Pagination helpers
+  const totalPages = Math.ceil(totalCount / AGENTS_PER_PAGE)
+  const startItem = (currentPage - 1) * AGENTS_PER_PAGE + 1
+  const endItem = Math.min(currentPage * AGENTS_PER_PAGE, totalCount)
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      fetchAgents(currentPage - 1)
+    }
+  }
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      fetchAgents(currentPage + 1)
+    }
   }
 
   if (loading) {
@@ -94,7 +116,7 @@ export function AgentsPage() {
             <p className="text-lg font-medium">Failed to load agents</p>
             <p className="text-sm text-muted-foreground">{error}</p>
           </div>
-          <Button onClick={() => fetchAgents()} variant="outline">
+          <Button onClick={() => fetchAgents(currentPage)} variant="outline">
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
@@ -109,7 +131,10 @@ export function AgentsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Agents</h1>
           <p className="text-muted-foreground">
-            Manage your AI agents and their configurations • {totalCount} total
+            Manage your AI agents and their configurations
+            {totalCount > 0 && (
+              <span> • Showing {startItem}-{endItem} of {totalCount}</span>
+            )}
           </p>
         </div>
         <Button onClick={handleCreateAgent}>
@@ -154,6 +179,40 @@ export function AgentsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {startItem}-{endItem} of {totalCount} agents
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousPage}
+              disabled={currentPage <= 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <div className="flex items-center space-x-1">
+              <span className="text-sm font-medium">
+                Page {currentPage} of {totalPages}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={currentPage >= totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {agents.length === 0 && !loading && (
         <div className="text-center py-12">
