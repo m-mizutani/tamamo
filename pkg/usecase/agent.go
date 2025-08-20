@@ -146,9 +146,6 @@ func (u *agentUseCaseImpl) UpdateAgent(ctx context.Context, id types.UUID, req *
 		return nil, goerr.New("update agent request cannot be nil")
 	}
 
-	// Debug log for troubleshooting
-	fmt.Printf("DEBUG: UpdateAgent called with ID=%s, req=%+v\n", id, req)
-	fmt.Printf("DEBUG: agentRepo is nil: %v\n", u.agentRepo == nil)
 
 	// Get existing agent
 	agentObj, err := u.agentRepo.GetAgent(ctx, id)
