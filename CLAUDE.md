@@ -75,6 +75,11 @@ All comment and character literal in source code must be in English
 - Must wrap errors with `goerr.Wrap` to maintain error context
 - Add helpful variables with `goerr.V` for debugging (e.g., `goerr.V("key", value)`)
 
+### Performance
+- Avoid premature optimization
+- Implement simple solutions first, optimize only when actual performance issues are identified
+- Do not add caching or complex optimizations without proven need
+
 ### Testing
 - Use `github.com/m-mizutani/gt` package for type-safe testing
 - Test files should have `package {name}_test`. Do not use same package name

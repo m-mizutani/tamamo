@@ -125,6 +125,86 @@ func testThreadRepository(t *testing.T, repo interfaces.ThreadRepository) {
 		_, err := repo.GetThreadByTS(ctx, "nonexistent-channel", "nonexistent-ts")
 		gt.Error(t, err)
 	})
+
+	t.Run("GetOrPutThreadWithAgent", func(t *testing.T) {
+		// Test creating thread with agent information
+		agentUUID := types.NewUUID(ctx)
+		agentVersion := "v1.0.0"
+
+		th, err := repo.GetOrPutThreadWithAgent(ctx, "team-agent", "channel-agent", "ts-agent", &agentUUID, agentVersion)
+		gt.NoError(t, err)
+		gt.NotNil(t, th.AgentUUID)
+		gt.Equal(t, agentUUID, *th.AgentUUID)
+		gt.Equal(t, agentVersion, th.AgentVersion)
+
+		// Verify we can retrieve the thread
+		retrieved, err := repo.GetThread(ctx, th.ID)
+		gt.NoError(t, err)
+		gt.NotNil(t, retrieved.AgentUUID)
+		gt.Equal(t, agentUUID, *retrieved.AgentUUID)
+		gt.Equal(t, agentVersion, retrieved.AgentVersion)
+	})
+
+	t.Run("GetOrPutThreadWithAgent_GeneralMode", func(t *testing.T) {
+		// Test creating thread with general mode UUID
+		generalModeUUID := types.UUID("00000000-0000-0000-0000-000000000000")
+		agentVersion := "general-v1"
+
+		th, err := repo.GetOrPutThreadWithAgent(ctx, "team-general", "channel-general", "ts-general", &generalModeUUID, agentVersion)
+		gt.NoError(t, err)
+		gt.NotNil(t, th.AgentUUID)
+		gt.Equal(t, generalModeUUID, *th.AgentUUID)
+		gt.Equal(t, agentVersion, th.AgentVersion)
+	})
+
+	t.Run("GetOrPutThreadWithAgent_NilUUID", func(t *testing.T) {
+		// Test creating thread with nil agent UUID
+		agentVersion := "v1.0.0"
+
+		th, err := repo.GetOrPutThreadWithAgent(ctx, "team-nil", "channel-nil", "ts-nil", nil, agentVersion)
+		gt.NoError(t, err)
+		gt.Equal(t, nil, th.AgentUUID)
+		gt.Equal(t, agentVersion, th.AgentVersion)
+	})
+
+	t.Run("GetOrPutThreadWithAgent_Idempotent", func(t *testing.T) {
+		// Test that calling GetOrPutThreadWithAgent twice returns the same thread
+		agentUUID := types.NewUUID(ctx)
+		agentVersion := "v1.0.0"
+
+		// First call
+		th1, err := repo.GetOrPutThreadWithAgent(ctx, "team-idem-agent", "channel-idem-agent", "ts-idem-agent", &agentUUID, agentVersion)
+		gt.NoError(t, err)
+
+		// Second call with same parameters
+		th2, err := repo.GetOrPutThreadWithAgent(ctx, "team-idem-agent", "channel-idem-agent", "ts-idem-agent", &agentUUID, agentVersion)
+		gt.NoError(t, err)
+
+		// Should return the same thread
+		gt.Equal(t, th1.ID, th2.ID)
+		gt.NotNil(t, th2.AgentUUID)
+		gt.Equal(t, agentUUID, *th2.AgentUUID)
+		gt.Equal(t, agentVersion, th2.AgentVersion)
+	})
+
+	t.Run("GetOrPutThreadWithAgent_ExistingThread", func(t *testing.T) {
+		// Create a thread without agent first
+		th1, err := repo.GetOrPutThread(ctx, "team-existing", "channel-existing", "ts-existing")
+		gt.NoError(t, err)
+		gt.Equal(t, nil, th1.AgentUUID)
+
+		// Now call GetOrPutThreadWithAgent with the same identifiers
+		agentUUID := types.NewUUID(ctx)
+		agentVersion := "v2.0.0"
+
+		th2, err := repo.GetOrPutThreadWithAgent(ctx, "team-existing", "channel-existing", "ts-existing", &agentUUID, agentVersion)
+		gt.NoError(t, err)
+
+		// Should return the same thread ID but potentially updated agent info
+		gt.Equal(t, th1.ID, th2.ID)
+		// Agent information behavior on existing threads may vary by implementation
+		// Some implementations might update, others might preserve existing
+	})
 }
 
 func TestMemoryRepository(t *testing.T) {

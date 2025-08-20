@@ -4,10 +4,11 @@ import "errors"
 
 var (
 	// Thread errors
-	ErrInvalidThreadID = errors.New("invalid thread ID")
-	ErrEmptyTeamID     = errors.New("team ID is empty")
-	ErrEmptyChannelID  = errors.New("channel ID is empty")
-	ErrEmptyThreadTS   = errors.New("thread timestamp is empty")
+	ErrInvalidThreadID  = errors.New("invalid thread ID")
+	ErrEmptyTeamID      = errors.New("team ID is empty")
+	ErrEmptyChannelID   = errors.New("channel ID is empty")
+	ErrEmptyThreadTS    = errors.New("thread timestamp is empty")
+	ErrInvalidAgentUUID = errors.New("invalid agent UUID")
 
 	// Message errors
 	ErrInvalidMessageID = errors.New("invalid message ID")
@@ -23,4 +24,7 @@ var (
 	ErrInvalidHistoryID = errors.New("invalid history ID")
 	ErrHistoryNotFound  = errors.New("history not found")
 	ErrLLMUnavailable   = errors.New("LLM service is unavailable")
+
+	// Agent errors
+	ErrAgentNotFound = errors.New("agent not found")
 )

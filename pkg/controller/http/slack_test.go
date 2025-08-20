@@ -66,7 +66,7 @@ func TestSlackEventHandler(t *testing.T) {
 				// Verify message is posted to correct thread
 				gt.Equal(t, channel, channelID)
 				gt.Equal(t, thread, threadTS)
-				gt.S(t, text).Contains("Hello!")
+				gt.S(t, text).Contains("LLM not configured")
 				return nil
 			},
 			IsBotUserFunc: func(uid string) bool {

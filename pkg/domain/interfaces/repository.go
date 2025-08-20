@@ -14,6 +14,7 @@ type ThreadRepository interface {
 	GetThread(ctx context.Context, id types.ThreadID) (*slack.Thread, error)
 	GetThreadByTS(ctx context.Context, channelID, threadTS string) (*slack.Thread, error)
 	GetOrPutThread(ctx context.Context, teamID, channelID, threadTS string) (*slack.Thread, error)
+	GetOrPutThreadWithAgent(ctx context.Context, teamID, channelID, threadTS string, agentUUID *types.UUID, agentVersion string) (*slack.Thread, error)
 	ListThreads(ctx context.Context, offset, limit int) ([]*slack.Thread, int, error)
 
 	// Message operations

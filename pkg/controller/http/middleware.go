@@ -119,3 +119,71 @@ func (w *responseWriter) Write(b []byte) (int, error) {
 	}
 	return w.ResponseWriter.Write(b)
 }
+
+// graphQLLoggingMiddleware logs GraphQL request details for debugging
+func graphQLLoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Only log GraphQL requests
+		if r.URL.Path != "/graphql" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Read and log the request body
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			ctxlog.From(r.Context()).Error("failed to read GraphQL request body", "error", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Log the GraphQL request details
+		logger := ctxlog.From(r.Context())
+		logger.Info("GraphQL request details",
+			"method", r.Method,
+			"content_type", r.Header.Get("Content-Type"),
+			"content_length", len(body),
+			"body", string(body),
+		)
+
+		// Restore body for GraphQL handler
+		r.Body = io.NopCloser(bytes.NewReader(body))
+
+		// Wrap response writer to capture status and response
+		wrapped := &graphQLResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+		
+		next.ServeHTTP(wrapped, r)
+
+		// Log response details
+		logger.Info("GraphQL response details",
+			"status", wrapped.statusCode,
+			"response_length", len(wrapped.responseBody),
+			"response_body", string(wrapped.responseBody),
+		)
+	})
+}
+
+// graphQLResponseWriter wraps http.ResponseWriter to capture both status and response body
+type graphQLResponseWriter struct {
+	http.ResponseWriter
+	statusCode   int
+	written      bool
+	responseBody []byte
+}
+
+func (w *graphQLResponseWriter) WriteHeader(code int) {
+	if !w.written {
+		w.statusCode = code
+		w.written = true
+		w.ResponseWriter.WriteHeader(code)
+	}
+}
+
+func (w *graphQLResponseWriter) Write(b []byte) (int, error) {
+	if !w.written {
+		w.written = true
+	}
+	// Capture response body for logging
+	w.responseBody = append(w.responseBody, b...)
+	return w.ResponseWriter.Write(b)
+}

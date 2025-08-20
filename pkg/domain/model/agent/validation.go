@@ -94,8 +94,8 @@ func ValidateAgentVersion(version *AgentVersion) error {
 		return goerr.New("LLM model cannot be longer than 100 characters")
 	}
 
-	if len(version.SystemPrompt) > 10000 {
-		return goerr.New("system prompt cannot be longer than 10000 characters")
+	if len(version.SystemPrompt) > 50000 {
+		return goerr.New("system prompt cannot be longer than 50000 characters")
 	}
 
 	return nil

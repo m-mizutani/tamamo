@@ -29,6 +29,11 @@ func New() *Client {
 
 // GetOrPutThread gets an existing thread or creates a new one atomically
 func (c *Client) GetOrPutThread(ctx context.Context, teamID, channelID, threadTS string) (*slack.Thread, error) {
+	return c.GetOrPutThreadWithAgent(ctx, teamID, channelID, threadTS, nil, "")
+}
+
+// GetOrPutThreadWithAgent gets an existing thread or creates a new one with agent information atomically
+func (c *Client) GetOrPutThreadWithAgent(ctx context.Context, teamID, channelID, threadTS string, agentUUID *types.UUID, agentVersion string) (*slack.Thread, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -41,8 +46,13 @@ func (c *Client) GetOrPutThread(ctx context.Context, teamID, channelID, threadTS
 		}
 	}
 
-	// Thread not found, create new one
-	t := slack.NewThread(ctx, teamID, channelID, threadTS)
+	// Thread not found, create new one with appropriate constructor
+	var t *slack.Thread
+	if agentUUID != nil || agentVersion != "" {
+		t = slack.NewThreadWithAgent(ctx, teamID, channelID, threadTS, agentUUID, agentVersion)
+	} else {
+		t = slack.NewThread(ctx, teamID, channelID, threadTS)
+	}
 	if err := t.Validate(); err != nil {
 		return nil, goerr.Wrap(err, "invalid thread", goerr.V("thread_id", t.ID))
 	}

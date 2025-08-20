@@ -8,11 +8,12 @@ import (
 
 // Slack holds all use cases
 type Slack struct {
-	slackClient  interfaces.SlackClient
-	repository   interfaces.ThreadRepository
-	storageRepo  *storage.Client
-	geminiClient gollem.LLMClient
-	geminiModel  string
+	slackClient     interfaces.SlackClient
+	repository      interfaces.ThreadRepository
+	agentRepository interfaces.AgentRepository
+	storageRepo     *storage.Client
+	llmClient       gollem.LLMClient
+	llmModel        string
 }
 
 // SlackOption is a functional option for Slack
@@ -32,6 +33,13 @@ func WithRepository(repo interfaces.ThreadRepository) SlackOption {
 	}
 }
 
+// WithAgentRepository sets the agent repository
+func WithAgentRepository(repo interfaces.AgentRepository) SlackOption {
+	return func(uc *Slack) {
+		uc.agentRepository = repo
+	}
+}
+
 // WithStorageRepository sets the storage repository
 func WithStorageRepository(repo *storage.Client) SlackOption {
 	return func(uc *Slack) {
@@ -39,18 +47,28 @@ func WithStorageRepository(repo *storage.Client) SlackOption {
 	}
 }
 
-// WithGeminiClient sets the Gemini client
-func WithGeminiClient(client gollem.LLMClient) SlackOption {
+// WithLLMClient sets the LLM client
+func WithLLMClient(client gollem.LLMClient) SlackOption {
 	return func(uc *Slack) {
-		uc.geminiClient = client
+		uc.llmClient = client
 	}
 }
 
-// WithGeminiModel sets the Gemini model
-func WithGeminiModel(model string) SlackOption {
+// WithLLMModel sets the LLM model
+func WithLLMModel(model string) SlackOption {
 	return func(uc *Slack) {
-		uc.geminiModel = model
+		uc.llmModel = model
 	}
+}
+
+// WithGeminiClient is deprecated. Use WithLLMClient instead.
+func WithGeminiClient(client gollem.LLMClient) SlackOption {
+	return WithLLMClient(client)
+}
+
+// WithGeminiModel is deprecated. Use WithLLMModel instead.
+func WithGeminiModel(model string) SlackOption {
+	return WithLLMModel(model)
 }
 
 // New creates a new Slack instance
