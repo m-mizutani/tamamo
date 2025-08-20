@@ -643,13 +643,15 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 
 		// Create repositories
 		repo := memory.New()
+		agentRepo := memory.NewAgentMemoryClient()
 		storageAdapter := mem_storage.New()
 		storageRepo := storage.New(storageAdapter)
 
-		// Create usecase with LLM
+		// Create usecase with LLM and agent repository
 		uc := usecase.New(
 			usecase.WithSlackClient(mockSlackClient),
 			usecase.WithRepository(repo),
+			usecase.WithAgentRepository(agentRepo),
 			usecase.WithStorageRepository(storageRepo),
 			usecase.WithLLMClient(mockLLMClient),
 		)
@@ -660,7 +662,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 			InnerEvent: slackevents.EventsAPIInnerEvent{
 				Data: &slackevents.AppMentionEvent{
 					User:            userID,
-					Text:            "<@U12345BOT> explain quantum computing",
+					Text:            "<@U12345BOT> !help with quantum computing",
 					TimeStamp:       "1234567890.123456",
 					Channel:         channelID,
 					ThreadTimeStamp: "1234567890.100000",
@@ -723,13 +725,15 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 
 		// Create repositories
 		repo := memory.New()
+		agentRepo := memory.NewAgentMemoryClient()
 		storageAdapter := mem_storage.New()
 		storageRepo := storage.New(storageAdapter)
 
-		// Create usecase with LLM
+		// Create usecase with LLM and agent repository
 		uc := usecase.New(
 			usecase.WithSlackClient(mockSlackClient),
 			usecase.WithRepository(repo),
+			usecase.WithAgentRepository(agentRepo),
 			usecase.WithStorageRepository(storageRepo),
 			usecase.WithLLMClient(mockLLMClient),
 		)
@@ -740,7 +744,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 			InnerEvent: slackevents.EventsAPIInnerEvent{
 				Data: &slackevents.AppMentionEvent{
 					User:            userID,
-					Text:            "<@U12345BOT> first question",
+					Text:            "<@U12345BOT> !help with my question",
 					TimeStamp:       "1234567890.123456",
 					Channel:         channelID,
 					ThreadTimeStamp: "1234567890.100000",
@@ -765,7 +769,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 			InnerEvent: slackevents.EventsAPIInnerEvent{
 				Data: &slackevents.AppMentionEvent{
 					User:            userID,
-					Text:            "<@U12345BOT> follow-up question",
+					Text:            "<@U12345BOT> ?please continue",
 					TimeStamp:       "1234567890.234567",
 					Channel:         channelID,
 					ThreadTimeStamp: "1234567890.100000", // Same thread
@@ -805,9 +809,18 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 			},
 		}
 
-		// Create usecase with failing LLM
+		// Create repositories
+		repo := memory.New()
+		agentRepo := memory.NewAgentMemoryClient()
+		storageAdapter := mem_storage.New()
+		storageRepo := storage.New(storageAdapter)
+
+		// Create usecase with failing LLM and repositories
 		uc := usecase.New(
 			usecase.WithSlackClient(mockSlackClient),
+			usecase.WithRepository(repo),
+			usecase.WithAgentRepository(agentRepo),
+			usecase.WithStorageRepository(storageRepo),
 			usecase.WithLLMClient(mockLLMClient),
 		)
 
@@ -817,7 +830,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 			InnerEvent: slackevents.EventsAPIInnerEvent{
 				Data: &slackevents.AppMentionEvent{
 					User:            userID,
-					Text:            "<@U12345BOT> test",
+					Text:            "<@U12345BOT> ?test",
 					TimeStamp:       "1234567890.123456",
 					Channel:         channelID,
 					ThreadTimeStamp: "",
@@ -1031,7 +1044,7 @@ func TestResolveAgent(t *testing.T) {
 	channelID := "C11111"
 	teamID := "T12345"
 
-	t.Run("general mode without agent repository", func(t *testing.T) {
+	t.Run("general mode with agent repository", func(t *testing.T) {
 		repo := memory.New()
 		mockClient := &mock.SlackClientMock{
 			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
@@ -1061,10 +1074,14 @@ func TestResolveAgent(t *testing.T) {
 		storageAdapter := mem_storage.New()
 		storageRepo := storage.New(storageAdapter)
 
-		// Create usecase without agent repository but with LLM
+		// Create agent repository for modern implementation (now required)
+		agentRepo := memory.NewAgentMemoryClient()
+
+		// Create usecase with all required repositories and LLM
 		uc := usecase.New(
 			usecase.WithSlackClient(mockClient),
 			usecase.WithRepository(repo),
+			usecase.WithAgentRepository(agentRepo),
 			usecase.WithStorageRepository(storageRepo),
 			usecase.WithLLMClient(mockLLMClient),
 		)
@@ -1075,7 +1092,7 @@ func TestResolveAgent(t *testing.T) {
 			InnerEvent: slackevents.EventsAPIInnerEvent{
 				Data: &slackevents.AppMentionEvent{
 					User:            userID,
-					Text:            "<@U12345BOT> hello how are you?",
+					Text:            "<@U12345BOT> !help how are you?",
 					TimeStamp:       "1234567890.123456",
 					Channel:         channelID,
 					ThreadTimeStamp: "1234567890.100000",

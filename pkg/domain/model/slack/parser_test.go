@@ -234,9 +234,9 @@ func TestIsValidAgentID(t *testing.T) {
 		shouldBeAgentID bool
 	}{
 		{
-			name:            "alphanumeric without dash (invalid)",
+			name:            "alphanumeric without dash (2+ chars, valid)",
 			text:            "<@U123456> abc123 message",
-			shouldBeAgentID: false,
+			shouldBeAgentID: true,
 		},
 		{
 			name:            "valid with dashes",
@@ -254,9 +254,9 @@ func TestIsValidAgentID(t *testing.T) {
 			shouldBeAgentID: false,
 		},
 		{
-			name:            "invalid with spaces",
+			name:            "invalid with spaces (first word valid)",
 			text:            "<@U123456> code helper message",
-			shouldBeAgentID: false,
+			shouldBeAgentID: true, // "code" is 2+ chars and valid, spaces are in message part
 		},
 		{
 			name:            "invalid with dots",
