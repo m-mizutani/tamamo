@@ -655,6 +655,9 @@ input UpdateAgentInput {
   agentId: String
   name: String
   description: String
+  systemPrompt: String
+  llmProvider: LLMProvider
+  llmModel: String
 }
 
 input CreateAgentVersionInput {
@@ -5125,7 +5128,7 @@ func (ec *executionContext) unmarshalInputUpdateAgentInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"agentId", "name", "description"}
+	fieldsInOrder := [...]string{"agentId", "name", "description", "systemPrompt", "llmProvider", "llmModel"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5153,6 +5156,27 @@ func (ec *executionContext) unmarshalInputUpdateAgentInput(ctx context.Context, 
 				return it, err
 			}
 			it.Description = data
+		case "systemPrompt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("systemPrompt"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SystemPrompt = data
+		case "llmProvider":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("llmProvider"))
+			data, err := ec.unmarshalOLLMProvider2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProvider(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LlmProvider = data
+		case "llmModel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("llmModel"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LlmModel = data
 		}
 	}
 
@@ -6769,6 +6793,22 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOLLMProvider2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProvider(ctx context.Context, v any) (*graphql1.LLMProvider, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(graphql1.LLMProvider)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOLLMProvider2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProvider(ctx context.Context, sel ast.SelectionSet, v *graphql1.LLMProvider) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

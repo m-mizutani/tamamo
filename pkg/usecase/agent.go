@@ -146,6 +146,10 @@ func (u *agentUseCaseImpl) UpdateAgent(ctx context.Context, id types.UUID, req *
 		return nil, goerr.New("update agent request cannot be nil")
 	}
 
+	// Debug log for troubleshooting
+	fmt.Printf("DEBUG: UpdateAgent called with ID=%s, req=%+v\n", id, req)
+	fmt.Printf("DEBUG: agentRepo is nil: %v\n", u.agentRepo == nil)
+
 	// Get existing agent
 	agentObj, err := u.agentRepo.GetAgent(ctx, id)
 	if err != nil {
@@ -218,6 +222,12 @@ func (u *agentUseCaseImpl) UpdateAgent(ctx context.Context, id types.UUID, req *
 		if err != nil {
 			return nil, goerr.Wrap(err, "failed to create new version with updated configuration")
 		}
+
+		// Re-fetch the agent to get updated Latest version
+		agentObj, err = u.agentRepo.GetAgent(ctx, id)
+		if err != nil {
+			return nil, goerr.Wrap(err, "failed to get updated agent after version creation")
+		}
 	}
 
 	// Validate the updated agent
@@ -225,9 +235,11 @@ func (u *agentUseCaseImpl) UpdateAgent(ctx context.Context, id types.UUID, req *
 		return nil, goerr.Wrap(err, "agent validation failed")
 	}
 
-	// Update in repository
-	if err := u.agentRepo.UpdateAgent(ctx, agentObj); err != nil {
-		return nil, goerr.Wrap(err, "failed to update agent")
+	// Update in repository (only if non-version fields were updated)
+	if req.AgentID != nil || req.Name != nil || req.Description != nil {
+		if err := u.agentRepo.UpdateAgent(ctx, agentObj); err != nil {
+			return nil, goerr.Wrap(err, "failed to update agent")
+		}
 	}
 
 	return agentObj, nil

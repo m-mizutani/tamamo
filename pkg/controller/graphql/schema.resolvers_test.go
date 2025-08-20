@@ -809,3 +809,72 @@ func TestQueryResolver_CheckAgentIDAvailability_Taken(t *testing.T) {
 	gt.Equal(t, result.Available, false)
 	gt.Equal(t, result.Message, "Agent ID is already taken")
 }
+
+func TestMutationResolver_UpdateAgent_SystemPromptOnly(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup test data
+	testAgent := &agentmodel.Agent{
+		ID:          types.NewUUID(ctx),
+		AgentID:     "test-agent",
+		Name:        "Test Agent",
+		Description: "A test agent",
+		Author:      "test-author",
+		Latest:      "1.0.0",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	testAgentWithVersion := &interfaces.AgentWithVersion{
+		Agent: testAgent,
+		LatestVersion: &agentmodel.AgentVersion{
+			AgentUUID:    testAgent.ID,
+			Version:      "1.0.0",
+			SystemPrompt: "Updated system prompt",
+			LLMProvider:  agentmodel.LLMProviderOpenAI,
+			LLMModel:     "gpt-4",
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		},
+	}
+
+	// Setup mock
+	mockAgentUseCase := &mock.AgentUseCasesMock{
+		UpdateAgentFunc: func(ctx context.Context, id types.UUID, req *interfaces.UpdateAgentRequest) (*agentmodel.Agent, error) {
+			if id == testAgent.ID {
+				return testAgent, nil
+			}
+			return nil, errors.New("agent not found")
+		},
+		GetAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
+			if id == testAgent.ID {
+				return testAgentWithVersion, nil
+			}
+			return nil, errors.New("agent not found")
+		},
+	}
+
+	// Create resolver
+	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	mutationResolver := resolver.Mutation()
+
+	// Prepare input with only system prompt update (100 characters)
+	systemPrompt := "You are a helpful AI assistant. Please provide clear and concise answers to user questions."
+	input := graphqlmodel.UpdateAgentInput{
+		SystemPrompt: &systemPrompt,
+	}
+
+	// Execute test
+	result, err := mutationResolver.UpdateAgent(ctx, testAgent.ID.String(), input)
+
+	// Verify results
+	gt.NoError(t, err)
+	gt.V(t, result).NotNil()
+	gt.Equal(t, result.ID, testAgent.ID.String())
+	
+	// Verify mock was called correctly
+	updateCalls := mockAgentUseCase.UpdateAgentCalls()
+	gt.Equal(t, len(updateCalls), 1)
+	gt.V(t, updateCalls[0].Req.SystemPrompt).NotNil()
+	gt.Equal(t, *updateCalls[0].Req.SystemPrompt, systemPrompt)
+}

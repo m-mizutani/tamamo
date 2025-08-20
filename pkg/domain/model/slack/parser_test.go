@@ -47,13 +47,13 @@ func TestParseAgentMention(t *testing.T) {
 			},
 		},
 		{
-			name: "no agent ID (general mode)",
+			name: "2+ character word (valid agent ID)",
 			text: "<@U123456> hello how are you?",
 			expected: []slack.AgentMention{
 				{
 					UserID:  "U123456",
-					AgentID: "",
-					Message: "hello how are you?",
+					AgentID: "hello",
+					Message: "how are you?",
 				},
 			},
 		},
@@ -80,13 +80,13 @@ func TestParseAgentMention(t *testing.T) {
 			},
 		},
 		{
-			name: "alphanumeric without dash (not agent ID)",
+			name: "alphanumeric without dash (2+ chars, valid agent ID)",
 			text: "<@U123456> agent123 help me",
 			expected: []slack.AgentMention{
 				{
 					UserID:  "U123456",
-					AgentID: "",
-					Message: "agent123 help me",
+					AgentID: "agent123",
+					Message: "help me",
 				},
 			},
 		},
@@ -158,6 +158,17 @@ func TestParseAgentMention(t *testing.T) {
 					UserID:  "U123456",
 					AgentID: "",
 					Message: "a run command",
+				},
+			},
+		},
+		{
+			name: "general conversation (no agent ID pattern)",
+			text: "<@U123456> !help with this code",
+			expected: []slack.AgentMention{
+				{
+					UserID:  "U123456",
+					AgentID: "",
+					Message: "!help with this code",
 				},
 			},
 		},

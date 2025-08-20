@@ -45,7 +45,9 @@ func (r *mutationResolver) UpdateAgent(ctx context.Context, id string, input gra
 
 	agent, err := r.agentUseCase.UpdateAgent(ctx, agentID, req)
 	if err != nil {
-		return nil, goerr.Wrap(err, "failed to update agent")
+		return nil, goerr.Wrap(err, "failed to update agent",
+			goerr.V("agent_id", agentID),
+			goerr.V("request", req))
 	}
 
 	// Get the latest version for the response

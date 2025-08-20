@@ -190,6 +190,7 @@ func cmdServe() *cli.Command {
 			uc := usecase.New(
 				usecase.WithSlackClient(slackSvc),
 				usecase.WithRepository(repo),
+				usecase.WithAgentRepository(agentRepo),
 				usecase.WithStorageRepository(storageRepo),
 				usecase.WithLLMClient(geminiClient),
 				usecase.WithLLMModel(geminiModel),

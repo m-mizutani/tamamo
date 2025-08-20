@@ -106,7 +106,8 @@ func New(opts ...Options) *Server {
 				},
 			),
 		)
-		r.Handle("/graphql", srv)
+		// Add GraphQL-specific logging middleware
+		r.Handle("/graphql", graphQLLoggingMiddleware(srv))
 
 		// GraphiQL IDE (optional)
 		if s.enableGraphiQL {

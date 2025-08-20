@@ -98,7 +98,9 @@ func ParseAgentMention(text string) []AgentMention {
 }
 
 // isValidAgentID checks if a string is a valid agent ID
-// Valid agent IDs either contain dashes or are purely numeric
+// Valid agent IDs are:
+// - 2+ characters long AND contain only alphanumeric characters and dashes
+// - OR contain at least one dash (any length)
 func isValidAgentID(s string) bool {
 	if s == "" {
 		return false
@@ -109,11 +111,13 @@ func isValidAgentID(s string) bool {
 		return false
 	}
 
-	// Must either contain dashes or be purely numeric
+	// Valid if either:
+	// 1. Contains at least one dash (kebab-case style: code-helper, a-b, etc.)
+	// 2. Is 2+ characters long (allows simple names like: aoko, gpt, claude, etc.)
 	containsDash := strings.Contains(s, "-")
-	isNumeric := isNumeric(s)
+	isLongEnough := len(s) >= 2
 
-	return containsDash || isNumeric
+	return containsDash || isLongEnough
 }
 
 // isAlphanumeric checks if a string contains only alphanumeric characters and dashes

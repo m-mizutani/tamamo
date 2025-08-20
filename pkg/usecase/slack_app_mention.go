@@ -218,7 +218,6 @@ func (uc *Slack) analyzeThreadContext(ctx context.Context, slackMsg slack.Messag
 		logger.Debug("thread not found, treating as new thread",
 			"channel", slackMsg.Channel,
 			"thread_ts", slackMsg.GetThreadTS(),
-			"error", err,
 		)
 		// Thread not found, this is a new thread
 		return &threadContext{
