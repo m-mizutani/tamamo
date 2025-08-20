@@ -871,7 +871,7 @@ func TestMutationResolver_UpdateAgent_SystemPromptOnly(t *testing.T) {
 	gt.NoError(t, err)
 	gt.V(t, result).NotNil()
 	gt.Equal(t, result.ID, testAgent.ID.String())
-	
+
 	// Verify mock was called correctly
 	updateCalls := mockAgentUseCase.UpdateAgentCalls()
 	gt.Equal(t, len(updateCalls), 1)

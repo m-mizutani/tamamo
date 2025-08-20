@@ -129,7 +129,7 @@ func graphQLLoggingMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Read and log the request body
+		// Read request body
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			ctxlog.From(r.Context()).Error("failed to read GraphQL request body", "error", err)
@@ -137,13 +137,13 @@ func graphQLLoggingMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Log the GraphQL request details
+		// Log basic request details at Debug level for security
 		logger := ctxlog.From(r.Context())
-		logger.Info("GraphQL request details",
+		logger.Debug("GraphQL request",
 			"method", r.Method,
 			"content_type", r.Header.Get("Content-Type"),
 			"content_length", len(body),
-			"body", string(body),
+			"body_preview", truncateString(string(body), 200),
 		)
 
 		// Restore body for GraphQL handler
@@ -151,16 +151,24 @@ func graphQLLoggingMiddleware(next http.Handler) http.Handler {
 
 		// Wrap response writer to capture status and response
 		wrapped := &graphQLResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
-		
+
 		next.ServeHTTP(wrapped, r)
 
-		// Log response details
-		logger.Info("GraphQL response details",
+		// Log response details at Debug level
+		logger.Debug("GraphQL response",
 			"status", wrapped.statusCode,
 			"response_length", len(wrapped.responseBody),
-			"response_body", string(wrapped.responseBody),
+			"response_preview", truncateString(string(wrapped.responseBody), 200),
 		)
 	})
+}
+
+// truncateString truncates a string to maxLength characters and adds "..." if truncated
+func truncateString(s string, maxLength int) string {
+	if len(s) <= maxLength {
+		return s
+	}
+	return s[:maxLength] + "..."
 }
 
 // graphQLResponseWriter wraps http.ResponseWriter to capture both status and response body

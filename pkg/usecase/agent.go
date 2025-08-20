@@ -146,7 +146,6 @@ func (u *agentUseCaseImpl) UpdateAgent(ctx context.Context, id types.UUID, req *
 		return nil, goerr.New("update agent request cannot be nil")
 	}
 
-
 	// Get existing agent
 	agentObj, err := u.agentRepo.GetAgent(ctx, id)
 	if err != nil {
