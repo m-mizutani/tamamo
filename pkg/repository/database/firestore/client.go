@@ -60,20 +60,33 @@ func (c *Client) Close() error {
 
 // GetOrPutThread gets an existing thread or creates a new one atomically using Firestore transaction
 func (c *Client) GetOrPutThread(ctx context.Context, teamID, channelID, threadTS string) (*slack.Thread, error) {
-	var result *slack.Thread
+	return c.GetOrPutThreadWithAgent(ctx, teamID, channelID, threadTS, nil, "")
+}
 
+// GetOrPutThreadWithAgent gets an existing thread or creates a new one with agent information atomically using Firestore transaction
+func (c *Client) GetOrPutThreadWithAgent(ctx context.Context, teamID, channelID, threadTS string, agentUUID *types.UUID, agentVersion string) (*slack.Thread, error) {
+	// Pre-generate thread outside transaction to avoid time-dependent operations inside transaction
+	var newThread *slack.Thread
+	if agentUUID != nil || agentVersion != "" {
+		newThread = slack.NewThreadWithAgent(ctx, teamID, channelID, threadTS, agentUUID, agentVersion)
+	} else {
+		newThread = slack.NewThread(ctx, teamID, channelID, threadTS)
+	}
+	if err := newThread.Validate(); err != nil {
+		return nil, goerr.Wrap(err, "invalid thread", goerr.V("thread_id", newThread.ID))
+	}
+
+	var result *slack.Thread
 	err := c.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		// Query for existing thread by channel and timestamp
 		query := c.client.Collection(collectionThreads).
 			Where("ChannelID", "==", channelID).
 			Where("ThreadTS", "==", threadTS).
 			Limit(1)
-
 		docs, err := tx.Documents(query).GetAll()
 		if err != nil {
 			return goerr.Wrap(err, "failed to query threads")
 		}
-
 		if len(docs) > 0 {
 			// Thread exists, decode and return it
 			t := &slack.Thread{}
@@ -83,29 +96,19 @@ func (c *Client) GetOrPutThread(ctx context.Context, teamID, channelID, threadTS
 			result = t
 			return nil
 		}
-
-		// Thread doesn't exist, create new one
-		t := slack.NewThread(ctx, teamID, channelID, threadTS)
-		if err := t.Validate(); err != nil {
-			return goerr.Wrap(err, "invalid thread", goerr.V("thread_id", t.ID))
+		// Thread doesn't exist, use pre-generated thread
+		if err := tx.Set(c.client.Collection(collectionThreads).Doc(newThread.ID.String()), newThread); err != nil {
+			return goerr.Wrap(err, "failed to create thread", goerr.V("thread_id", newThread.ID))
 		}
-
-		// Store the new thread
-		if err := tx.Set(c.client.Collection(collectionThreads).Doc(t.ID.String()), t); err != nil {
-			return goerr.Wrap(err, "failed to create thread", goerr.V("thread_id", t.ID))
-		}
-
-		result = t
+		result = newThread
 		return nil
 	})
-
 	if err != nil {
 		return nil, goerr.Wrap(err, "transaction failed",
 			goerr.V("team_id", teamID),
 			goerr.V("channel_id", channelID),
 			goerr.V("thread_ts", threadTS))
 	}
-
 	return result, nil
 }
 

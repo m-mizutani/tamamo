@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/m-mizutani/gt"
 	mem_storage "github.com/m-mizutani/tamamo/pkg/adapters/memory"
 	"github.com/m-mizutani/tamamo/pkg/domain/mock"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/repository/database/memory"
@@ -32,8 +34,8 @@ func TestHandleSlackAppMention(t *testing.T) {
 			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
 				// Verify the message is posted to the correct thread
 				gt.Equal(t, channelID, "C11111")
-				gt.Equal(t, threadTS, threadTS) // Should reply in thread
-				gt.S(t, text).Contains("Hello! You mentioned me with: help me")
+				gt.Equal(t, threadTS, "1234567890.123456") // Should reply in thread
+				gt.S(t, text).Contains("LLM not configured")
 				return nil
 			},
 			IsBotUserFunc: func(uid string) bool {
@@ -63,16 +65,27 @@ func TestHandleSlackAppMention(t *testing.T) {
 		err := uc.HandleSlackAppMention(context.Background(), *msg)
 		gt.NoError(t, err)
 
-		// Verify mock was called
+		// Verify mock call counts
 		gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
 		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+
+		// Verify PostMessage call details
+		postMessageCall := mockClient.PostMessageCalls()[0]
+		gt.Equal(t, postMessageCall.ChannelID, channelID)
+		gt.Equal(t, postMessageCall.ThreadTS, threadTS)
+		gt.S(t, postMessageCall.Text).Contains("LLM not configured")
+		gt.S(t, postMessageCall.Text).Contains("Please contact your administrator")
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, botUserID)
 	})
 
 	t.Run("responds to bot mention without message", func(t *testing.T) {
 		// Setup mock
 		mockClient := &mock.SlackClientMock{
 			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
-				gt.S(t, text).Contains("How can I help you today?")
+				gt.S(t, text).Contains("LLM not configured")
 				return nil
 			},
 			IsBotUserFunc: func(uid string) bool {
@@ -102,10 +115,19 @@ func TestHandleSlackAppMention(t *testing.T) {
 		err := uc.HandleSlackAppMention(context.Background(), *msg)
 		gt.NoError(t, err)
 
-		// Verify mock was called
+		// Verify mock call counts
 		gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
-		call := mockClient.PostMessageCalls()[0]
-		gt.Equal(t, call.ThreadTS, "1234567890.123456") // Should use message TS as thread
+		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+
+		// Verify PostMessage call details
+		postMessageCall := mockClient.PostMessageCalls()[0]
+		gt.Equal(t, postMessageCall.ChannelID, channelID)
+		gt.Equal(t, postMessageCall.ThreadTS, "1234567890.123456") // Should use message TS as thread
+		gt.S(t, postMessageCall.Text).Contains("LLM not configured")
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, botUserID)
 	})
 
 	t.Run("ignores non-bot mentions", func(t *testing.T) {
@@ -142,9 +164,13 @@ func TestHandleSlackAppMention(t *testing.T) {
 		err := uc.HandleSlackAppMention(context.Background(), *msg)
 		gt.NoError(t, err)
 
-		// Verify mock was not called for posting
+		// Verify mock call counts
 		gt.Equal(t, len(mockClient.PostMessageCalls()), 0)
 		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, "U99999OTHER")
 	})
 
 	t.Run("ensures reply is in thread", func(t *testing.T) {
@@ -202,10 +228,19 @@ func TestHandleSlackAppMention(t *testing.T) {
 				err := uc.HandleSlackAppMention(context.Background(), *msg)
 				gt.NoError(t, err)
 
-				// Verify mock was called
-				calls := mockClient.PostMessageCalls()
-				gt.Equal(t, len(calls), 1)
-				gt.Equal(t, calls[0].ThreadTS, tc.expectedTS)
+				// Verify mock call counts
+				gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
+				gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+
+				// Verify PostMessage call details
+				postMessageCall := mockClient.PostMessageCalls()[0]
+				gt.Equal(t, postMessageCall.ChannelID, channelID)
+				gt.Equal(t, postMessageCall.ThreadTS, tc.expectedTS)
+				gt.S(t, postMessageCall.Text).Contains("LLM not configured")
+
+				// Verify IsBotUser call details
+				isBotUserCall := mockClient.IsBotUserCalls()[0]
+				gt.Equal(t, isBotUserCall.UserID, botUserID)
 			})
 		}
 	})
@@ -450,8 +485,19 @@ func TestHandleSlackAppMentionWithRepository(t *testing.T) {
 		err := uc.HandleSlackAppMention(context.Background(), *msg)
 		gt.NoError(t, err)
 
-		// Verify slack client was still called
+		// Verify mock call counts
 		gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
+		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+
+		// Verify PostMessage call details
+		postMessageCall := mockClient.PostMessageCalls()[0]
+		gt.Equal(t, postMessageCall.ChannelID, channelID)
+		gt.Equal(t, postMessageCall.ThreadTS, "1234567890.100000")
+		gt.S(t, postMessageCall.Text).Contains("LLM not configured")
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, botUserID)
 	})
 
 	t.Run("ignores non-bot mentions and does not record", func(t *testing.T) {
@@ -493,6 +539,14 @@ func TestHandleSlackAppMentionWithRepository(t *testing.T) {
 		// Execute
 		err := uc.HandleSlackAppMention(context.Background(), *msg)
 		gt.NoError(t, err)
+
+		// Verify mock call counts
+		gt.Equal(t, len(mockClient.PostMessageCalls()), 0)
+		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, "U99999OTHER")
 
 		// Verify no thread was created
 		threads := repo.GetAllThreadsForTest()
@@ -597,7 +651,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 			usecase.WithSlackClient(mockSlackClient),
 			usecase.WithRepository(repo),
 			usecase.WithStorageRepository(storageRepo),
-			usecase.WithGeminiClient(mockLLMClient),
+			usecase.WithLLMClient(mockLLMClient),
 		)
 
 		// Create test message
@@ -619,12 +673,22 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 		err := uc.HandleSlackAppMention(context.Background(), *msg)
 		gt.NoError(t, err)
 
-		// Verify LLM was called (through Session)
+		// Verify LLM mock call counts
 		gt.Equal(t, len(mockLLMClient.NewSessionCalls()), 1)
 
-		// Verify response was posted
+		// Verify Slack mock call counts
 		gt.Equal(t, len(mockSlackClient.PostMessageCalls()), 1)
+		gt.Equal(t, len(mockSlackClient.IsBotUserCalls()), 1)
+
+		// Verify PostMessage call details
+		postMessageCall := mockSlackClient.PostMessageCalls()[0]
+		gt.Equal(t, postMessageCall.ChannelID, channelID)
+		gt.Equal(t, postMessageCall.ThreadTS, "1234567890.100000")
 		gt.S(t, capturedResponse).Contains("AI-powered response")
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockSlackClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, botUserID)
 	})
 
 	t.Run("maintains conversation history", func(t *testing.T) {
@@ -667,7 +731,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 			usecase.WithSlackClient(mockSlackClient),
 			usecase.WithRepository(repo),
 			usecase.WithStorageRepository(storageRepo),
-			usecase.WithGeminiClient(mockLLMClient),
+			usecase.WithLLMClient(mockLLMClient),
 		)
 
 		// First message
@@ -744,7 +808,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 		// Create usecase with failing LLM
 		uc := usecase.New(
 			usecase.WithSlackClient(mockSlackClient),
-			usecase.WithGeminiClient(mockLLMClient),
+			usecase.WithLLMClient(mockLLMClient),
 		)
 
 		// Create test message
@@ -767,8 +831,399 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 		gt.Error(t, err) // Now we expect an error to be returned
 		gt.S(t, err.Error()).Contains("failed to create LLM session")
 
-		// Verify fallback message was sent to user
+		// Verify Slack mock call counts
 		gt.Equal(t, len(mockSlackClient.PostMessageCalls()), 1)
+		gt.Equal(t, len(mockSlackClient.IsBotUserCalls()), 1)
+
+		// Verify PostMessage call details
+		postMessageCall := mockSlackClient.PostMessageCalls()[0]
+		gt.Equal(t, postMessageCall.ChannelID, channelID)
+		gt.Equal(t, postMessageCall.ThreadTS, "1234567890.123456")
 		gt.S(t, capturedResponse).Contains("experiencing issues")
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockSlackClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, botUserID)
+	})
+}
+
+// TestAnalyzeThreadContext tests the thread context analysis
+func TestAnalyzeThreadContext(t *testing.T) {
+	botUserID := "U12345BOT"
+	userID := "U67890USER"
+	channelID := "C11111"
+	teamID := "T12345"
+
+	t.Run("new thread without repository", func(t *testing.T) {
+		mockClient := &mock.SlackClientMock{
+			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
+				return nil
+			},
+			IsBotUserFunc: func(uid string) bool {
+				return uid == botUserID
+			},
+		}
+
+		// Create usecase without repository
+		uc := usecase.New(usecase.WithSlackClient(mockClient))
+
+		// Create test message
+		ev := &slackevents.EventsAPIEvent{
+			TeamID: teamID,
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Data: &slackevents.AppMentionEvent{
+					User:            userID,
+					Text:            "<@U12345BOT> code-helper debug this",
+					TimeStamp:       "1234567890.123456",
+					Channel:         channelID,
+					ThreadTimeStamp: "1234567890.100000",
+				},
+			},
+		}
+		msg := slack.NewMessage(context.Background(), ev)
+
+		// Execute - this should work without repository
+		err := uc.HandleSlackAppMention(context.Background(), *msg)
+		gt.NoError(t, err)
+
+		// Verify mock call counts
+		gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
+		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+
+		// Verify PostMessage call details
+		postMessageCall := mockClient.PostMessageCalls()[0]
+		gt.Equal(t, postMessageCall.ChannelID, channelID)
+		gt.Equal(t, postMessageCall.ThreadTS, "1234567890.100000")
+		gt.S(t, postMessageCall.Text).Contains("LLM not configured")
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, botUserID)
+	})
+
+	t.Run("new thread with repository", func(t *testing.T) {
+		repo := memory.New()
+		mockClient := &mock.SlackClientMock{
+			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
+				return nil
+			},
+			IsBotUserFunc: func(uid string) bool {
+				return uid == botUserID
+			},
+		}
+
+		// Create usecase with repository
+		uc := usecase.New(
+			usecase.WithSlackClient(mockClient),
+			usecase.WithRepository(repo),
+		)
+
+		// Create test message for new thread
+		ev := &slackevents.EventsAPIEvent{
+			TeamID: teamID,
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Data: &slackevents.AppMentionEvent{
+					User:            userID,
+					Text:            "<@U12345BOT> code-helper debug this",
+					TimeStamp:       "1234567890.123456",
+					Channel:         channelID,
+					ThreadTimeStamp: "1234567890.100000",
+				},
+			},
+		}
+		msg := slack.NewMessage(context.Background(), ev)
+
+		// Execute
+		err := uc.HandleSlackAppMention(context.Background(), *msg)
+		gt.NoError(t, err)
+
+		// Verify mock call counts
+		gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
+		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+
+		// Verify PostMessage call details
+		postMessageCall := mockClient.PostMessageCalls()[0]
+		gt.Equal(t, postMessageCall.ChannelID, channelID)
+		gt.Equal(t, postMessageCall.ThreadTS, "1234567890.100000")
+		gt.S(t, postMessageCall.Text).Contains("LLM not configured")
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, botUserID)
+
+		// Verify thread was created
+		threads := repo.GetAllThreadsForTest()
+		gt.A(t, threads).Length(1)
+
+		createdThread := threads[0]
+		gt.V(t, createdThread.TeamID).Equal(teamID)
+		gt.V(t, createdThread.ChannelID).Equal(channelID)
+		gt.V(t, createdThread.ThreadTS).Equal("1234567890.100000")
+	})
+
+	t.Run("existing thread", func(t *testing.T) {
+		repo := memory.New()
+		ctx := context.Background()
+
+		// Create existing thread
+		existingThread, err := repo.GetOrPutThread(ctx, teamID, channelID, "1234567890.100000")
+		gt.NoError(t, err)
+
+		mockClient := &mock.SlackClientMock{
+			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
+				return nil
+			},
+			IsBotUserFunc: func(uid string) bool {
+				return uid == botUserID
+			},
+		}
+
+		// Create usecase with repository
+		uc := usecase.New(
+			usecase.WithSlackClient(mockClient),
+			usecase.WithRepository(repo),
+		)
+
+		// Create test message for existing thread
+		ev := &slackevents.EventsAPIEvent{
+			TeamID: teamID,
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Data: &slackevents.AppMentionEvent{
+					User:            userID,
+					Text:            "<@U12345BOT> continue conversation",
+					TimeStamp:       "1234567890.200000",
+					Channel:         channelID,
+					ThreadTimeStamp: "1234567890.100000", // Same thread TS
+				},
+			},
+		}
+		msg := slack.NewMessage(ctx, ev)
+
+		// Execute
+		err = uc.HandleSlackAppMention(ctx, *msg)
+		gt.NoError(t, err)
+
+		// Verify mock call counts
+		gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
+		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+
+		// Verify PostMessage call details
+		postMessageCall := mockClient.PostMessageCalls()[0]
+		gt.Equal(t, postMessageCall.ChannelID, channelID)
+		gt.Equal(t, postMessageCall.ThreadTS, "1234567890.100000")
+		gt.S(t, postMessageCall.Text).Contains("LLM not configured")
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, botUserID)
+
+		// Should still have only one thread
+		threads := repo.GetAllThreadsForTest()
+		gt.A(t, threads).Length(1)
+		gt.V(t, threads[0].ID).Equal(existingThread.ID)
+	})
+}
+
+// TestResolveAgent tests agent resolution functionality
+func TestResolveAgent(t *testing.T) {
+	botUserID := "U12345BOT"
+	userID := "U67890USER"
+	channelID := "C11111"
+	teamID := "T12345"
+
+	t.Run("general mode without agent repository", func(t *testing.T) {
+		repo := memory.New()
+		mockClient := &mock.SlackClientMock{
+			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
+				return nil
+			},
+			IsBotUserFunc: func(uid string) bool {
+				return uid == botUserID
+			},
+		}
+
+		// Mock LLM to enable agent functionality
+		mockSession := &MockSession{
+			generateContentFunc: func(ctx context.Context, input ...gollem.Input) (*gollem.Response, error) {
+				return &gollem.Response{
+					Texts: []string{"Welcome to Tamamo general mode!"},
+				}, nil
+			},
+		}
+
+		mockLLMClient := &llm_mock.LLMClientMock{
+			NewSessionFunc: func(ctx context.Context, options ...gollem.SessionOption) (gollem.Session, error) {
+				return mockSession, nil
+			},
+		}
+
+		// Create repositories
+		storageAdapter := mem_storage.New()
+		storageRepo := storage.New(storageAdapter)
+
+		// Create usecase without agent repository but with LLM
+		uc := usecase.New(
+			usecase.WithSlackClient(mockClient),
+			usecase.WithRepository(repo),
+			usecase.WithStorageRepository(storageRepo),
+			usecase.WithLLMClient(mockLLMClient),
+		)
+
+		// Create test message for general mode
+		ev := &slackevents.EventsAPIEvent{
+			TeamID: teamID,
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Data: &slackevents.AppMentionEvent{
+					User:            userID,
+					Text:            "<@U12345BOT> hello how are you?",
+					TimeStamp:       "1234567890.123456",
+					Channel:         channelID,
+					ThreadTimeStamp: "1234567890.100000",
+				},
+			},
+		}
+		msg := slack.NewMessage(context.Background(), ev)
+
+		// Execute - should work in general mode
+		err := uc.HandleSlackAppMention(context.Background(), *msg)
+		gt.NoError(t, err)
+
+		// Verify LLM mock call counts
+		gt.Equal(t, len(mockLLMClient.NewSessionCalls()), 1)
+
+		// Verify Slack mock call counts
+		gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
+		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+
+		// Verify PostMessage call details
+		postMessageCall := mockClient.PostMessageCalls()[0]
+		gt.Equal(t, postMessageCall.ChannelID, channelID)
+		gt.Equal(t, postMessageCall.ThreadTS, "1234567890.100000")
+		gt.S(t, postMessageCall.Text).Contains("Welcome to Tamamo general mode!")
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, botUserID)
+
+		// Verify thread was created with general mode UUID
+		threads := repo.GetAllThreadsForTest()
+		gt.A(t, threads).Length(1)
+
+		createdThread := threads[0]
+		gt.V(t, createdThread.AgentUUID).NotEqual(nil)
+		gt.V(t, *createdThread.AgentUUID).Equal(types.UUID("00000000-0000-0000-0000-000000000000"))
+		gt.V(t, createdThread.AgentVersion).Equal("general-v1")
+	})
+
+	t.Run("agent not found error", func(t *testing.T) {
+		repo := memory.New()
+
+		// Mock agent repository that returns "not found"
+		mockAgentRepo := &mock.AgentRepositoryMock{
+			GetAgentByAgentIDFunc: func(ctx context.Context, agentID string) (*agent.Agent, error) {
+				return nil, slack.ErrAgentNotFound
+			},
+			ListAgentsFunc: func(ctx context.Context, offset, limit int) ([]*agent.Agent, int, error) {
+				// Return some sample agents for error message
+				return []*agent.Agent{
+					{
+						ID:          types.NewUUID(ctx),
+						AgentID:     "code-helper",
+						Name:        "Code Helper",
+						Description: "Helps with coding tasks",
+					},
+					{
+						ID:          types.NewUUID(ctx),
+						AgentID:     "data-analyzer",
+						Name:        "Data Analyzer",
+						Description: "Analyzes data and generates insights",
+					},
+				}, 2, nil
+			},
+		}
+
+		var capturedErrorMsg string
+		mockClient := &mock.SlackClientMock{
+			PostMessageFunc: func(ctx context.Context, channelID, threadTS, text string) error {
+				capturedErrorMsg = text
+				return nil
+			},
+			IsBotUserFunc: func(uid string) bool {
+				return uid == botUserID
+			},
+		}
+
+		// Mock LLM to enable agent functionality
+		mockSession := &MockSession{
+			generateContentFunc: func(ctx context.Context, input ...gollem.Input) (*gollem.Response, error) {
+				return &gollem.Response{
+					Texts: []string{"This should not be reached due to agent error"},
+				}, nil
+			},
+		}
+
+		mockLLMClient := &llm_mock.LLMClientMock{
+			NewSessionFunc: func(ctx context.Context, options ...gollem.SessionOption) (gollem.Session, error) {
+				return mockSession, nil
+			},
+		}
+
+		// Create repositories
+		storageAdapter := mem_storage.New()
+		storageRepo := storage.New(storageAdapter)
+
+		// Create usecase with agent repository and LLM
+		uc := usecase.New(
+			usecase.WithSlackClient(mockClient),
+			usecase.WithRepository(repo),
+			usecase.WithAgentRepository(mockAgentRepo),
+			usecase.WithStorageRepository(storageRepo),
+			usecase.WithLLMClient(mockLLMClient),
+		)
+
+		// Create test message with invalid agent
+		ev := &slackevents.EventsAPIEvent{
+			TeamID: teamID,
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Data: &slackevents.AppMentionEvent{
+					User:            userID,
+					Text:            "<@U12345BOT> invalid-agent do something",
+					TimeStamp:       "1234567890.123456",
+					Channel:         channelID,
+					ThreadTimeStamp: "1234567890.100000",
+				},
+			},
+		}
+		msg := slack.NewMessage(context.Background(), ev)
+
+		// Execute - should handle error gracefully
+		err := uc.HandleSlackAppMention(context.Background(), *msg)
+		gt.NoError(t, err) // Should not return error, but send error message to Slack
+
+		// Verify mock call counts
+		gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
+		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
+		gt.Equal(t, len(mockAgentRepo.GetAgentByAgentIDCalls()), 1)
+		gt.Equal(t, len(mockAgentRepo.ListAgentsCalls()), 1)
+
+		// Verify PostMessage call details
+		postMessageCall := mockClient.PostMessageCalls()[0]
+		gt.Equal(t, postMessageCall.ChannelID, channelID)
+		gt.Equal(t, postMessageCall.ThreadTS, "1234567890.100000")
+		gt.V(t, strings.Contains(capturedErrorMsg, "Agent ID 'invalid-agent' not found")).Equal(true)
+		gt.V(t, strings.Contains(capturedErrorMsg, "Usage: @tamamo <agent_id> [message]")).Equal(true)
+
+		// Verify IsBotUser call details
+		isBotUserCall := mockClient.IsBotUserCalls()[0]
+		gt.Equal(t, isBotUserCall.UserID, botUserID)
+
+		// Verify GetAgentByAgentID call details
+		getAgentCall := mockAgentRepo.GetAgentByAgentIDCalls()[0]
+		gt.Equal(t, getAgentCall.AgentID, "invalid-agent")
+
+		// Verify ListAgents call details
+		listAgentsCall := mockAgentRepo.ListAgentsCalls()[0]
+		gt.Equal(t, listAgentsCall.Offset, 0)
+		gt.Equal(t, listAgentsCall.Limit, 10)
 	})
 }

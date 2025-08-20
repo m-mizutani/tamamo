@@ -158,6 +158,9 @@ var _ interfaces.ThreadRepository = &ThreadRepositoryMock{}
 //			GetOrPutThreadFunc: func(ctx context.Context, teamID string, channelID string, threadTS string) (*slack.Thread, error) {
 //				panic("mock out the GetOrPutThread method")
 //			},
+//			GetOrPutThreadWithAgentFunc: func(ctx context.Context, teamID string, channelID string, threadTS string, agentUUID *types.UUID, agentVersion string) (*slack.Thread, error) {
+//				panic("mock out the GetOrPutThreadWithAgent method")
+//			},
 //			GetThreadFunc: func(ctx context.Context, id types.ThreadID) (*slack.Thread, error) {
 //				panic("mock out the GetThread method")
 //			},
@@ -191,6 +194,9 @@ type ThreadRepositoryMock struct {
 
 	// GetOrPutThreadFunc mocks the GetOrPutThread method.
 	GetOrPutThreadFunc func(ctx context.Context, teamID string, channelID string, threadTS string) (*slack.Thread, error)
+
+	// GetOrPutThreadWithAgentFunc mocks the GetOrPutThreadWithAgent method.
+	GetOrPutThreadWithAgentFunc func(ctx context.Context, teamID string, channelID string, threadTS string, agentUUID *types.UUID, agentVersion string) (*slack.Thread, error)
 
 	// GetThreadFunc mocks the GetThread method.
 	GetThreadFunc func(ctx context.Context, id types.ThreadID) (*slack.Thread, error)
@@ -236,6 +242,21 @@ type ThreadRepositoryMock struct {
 			ChannelID string
 			// ThreadTS is the threadTS argument value.
 			ThreadTS string
+		}
+		// GetOrPutThreadWithAgent holds details about calls to the GetOrPutThreadWithAgent method.
+		GetOrPutThreadWithAgent []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// TeamID is the teamID argument value.
+			TeamID string
+			// ChannelID is the channelID argument value.
+			ChannelID string
+			// ThreadTS is the threadTS argument value.
+			ThreadTS string
+			// AgentUUID is the agentUUID argument value.
+			AgentUUID *types.UUID
+			// AgentVersion is the agentVersion argument value.
+			AgentVersion string
 		}
 		// GetThread holds details about calls to the GetThread method.
 		GetThread []struct {
@@ -286,15 +307,16 @@ type ThreadRepositoryMock struct {
 			Message *slack.Message
 		}
 	}
-	lockGetHistoryByID    sync.RWMutex
-	lockGetLatestHistory  sync.RWMutex
-	lockGetOrPutThread    sync.RWMutex
-	lockGetThread         sync.RWMutex
-	lockGetThreadByTS     sync.RWMutex
-	lockGetThreadMessages sync.RWMutex
-	lockListThreads       sync.RWMutex
-	lockPutHistory        sync.RWMutex
-	lockPutThreadMessage  sync.RWMutex
+	lockGetHistoryByID          sync.RWMutex
+	lockGetLatestHistory        sync.RWMutex
+	lockGetOrPutThread          sync.RWMutex
+	lockGetOrPutThreadWithAgent sync.RWMutex
+	lockGetThread               sync.RWMutex
+	lockGetThreadByTS           sync.RWMutex
+	lockGetThreadMessages       sync.RWMutex
+	lockListThreads             sync.RWMutex
+	lockPutHistory              sync.RWMutex
+	lockPutThreadMessage        sync.RWMutex
 }
 
 // GetHistoryByID calls GetHistoryByIDFunc.
@@ -410,6 +432,58 @@ func (mock *ThreadRepositoryMock) GetOrPutThreadCalls() []struct {
 	mock.lockGetOrPutThread.RLock()
 	calls = mock.calls.GetOrPutThread
 	mock.lockGetOrPutThread.RUnlock()
+	return calls
+}
+
+// GetOrPutThreadWithAgent calls GetOrPutThreadWithAgentFunc.
+func (mock *ThreadRepositoryMock) GetOrPutThreadWithAgent(ctx context.Context, teamID string, channelID string, threadTS string, agentUUID *types.UUID, agentVersion string) (*slack.Thread, error) {
+	if mock.GetOrPutThreadWithAgentFunc == nil {
+		panic("ThreadRepositoryMock.GetOrPutThreadWithAgentFunc: method is nil but ThreadRepository.GetOrPutThreadWithAgent was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		TeamID       string
+		ChannelID    string
+		ThreadTS     string
+		AgentUUID    *types.UUID
+		AgentVersion string
+	}{
+		Ctx:          ctx,
+		TeamID:       teamID,
+		ChannelID:    channelID,
+		ThreadTS:     threadTS,
+		AgentUUID:    agentUUID,
+		AgentVersion: agentVersion,
+	}
+	mock.lockGetOrPutThreadWithAgent.Lock()
+	mock.calls.GetOrPutThreadWithAgent = append(mock.calls.GetOrPutThreadWithAgent, callInfo)
+	mock.lockGetOrPutThreadWithAgent.Unlock()
+	return mock.GetOrPutThreadWithAgentFunc(ctx, teamID, channelID, threadTS, agentUUID, agentVersion)
+}
+
+// GetOrPutThreadWithAgentCalls gets all the calls that were made to GetOrPutThreadWithAgent.
+// Check the length with:
+//
+//	len(mockedThreadRepository.GetOrPutThreadWithAgentCalls())
+func (mock *ThreadRepositoryMock) GetOrPutThreadWithAgentCalls() []struct {
+	Ctx          context.Context
+	TeamID       string
+	ChannelID    string
+	ThreadTS     string
+	AgentUUID    *types.UUID
+	AgentVersion string
+} {
+	var calls []struct {
+		Ctx          context.Context
+		TeamID       string
+		ChannelID    string
+		ThreadTS     string
+		AgentUUID    *types.UUID
+		AgentVersion string
+	}
+	mock.lockGetOrPutThreadWithAgent.RLock()
+	calls = mock.calls.GetOrPutThreadWithAgent
+	mock.lockGetOrPutThreadWithAgent.RUnlock()
 	return calls
 }
 

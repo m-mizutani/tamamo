@@ -191,8 +191,8 @@ func cmdServe() *cli.Command {
 				usecase.WithSlackClient(slackSvc),
 				usecase.WithRepository(repo),
 				usecase.WithStorageRepository(storageRepo),
-				usecase.WithGeminiClient(geminiClient),
-				usecase.WithGeminiModel(geminiModel),
+				usecase.WithLLMClient(geminiClient),
+				usecase.WithLLMModel(geminiModel),
 			)
 
 			// Create controllers
