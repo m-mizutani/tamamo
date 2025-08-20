@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	goerr "github.com/m-mizutani/goerr/v2"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	graphql1 "github.com/m-mizutani/tamamo/pkg/domain/model/graphql"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
@@ -72,6 +73,50 @@ func (r *mutationResolver) DeleteAgent(ctx context.Context, id string) (bool, er
 	}
 
 	return true, nil
+}
+
+// ArchiveAgent is the resolver for the archiveAgent field.
+func (r *mutationResolver) ArchiveAgent(ctx context.Context, id string) (*graphql1.Agent, error) {
+	agentID := types.UUID(id)
+	if !agentID.IsValid() {
+		return nil, goerr.New("invalid agent ID")
+	}
+
+	agent, err := r.agentUseCase.ArchiveAgent(ctx, agentID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to archive agent")
+	}
+
+	// Get the agent with its latest version for the response
+	agentWithVersion, err := r.agentUseCase.GetAgent(ctx, agent.ID)
+	if err != nil {
+		// Return the archived agent even if we can't get the latest version
+		return convertAgentToGraphQL(agent, nil), nil
+	}
+
+	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil
+}
+
+// UnarchiveAgent is the resolver for the unarchiveAgent field.
+func (r *mutationResolver) UnarchiveAgent(ctx context.Context, id string) (*graphql1.Agent, error) {
+	agentID := types.UUID(id)
+	if !agentID.IsValid() {
+		return nil, goerr.New("invalid agent ID")
+	}
+
+	agent, err := r.agentUseCase.UnarchiveAgent(ctx, agentID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to unarchive agent")
+	}
+
+	// Get the agent with its latest version for the response
+	agentWithVersion, err := r.agentUseCase.GetAgent(ctx, agent.ID)
+	if err != nil {
+		// Return the unarchived agent even if we can't get the latest version
+		return convertAgentToGraphQL(agent, nil), nil
+	}
+
+	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil
 }
 
 // CreateAgentVersion is the resolver for the createAgentVersion field.
@@ -173,6 +218,92 @@ func (r *queryResolver) Agents(ctx context.Context, offset *int, limit *int) (*g
 	response, err := r.agentUseCase.ListAgents(ctx, actualOffset, actualLimit)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to list agents")
+	}
+
+	// Convert to GraphQL format
+	graphqlAgents := make([]*graphql1.Agent, 0, len(response.Agents))
+	for _, agentWithVersion := range response.Agents {
+		graphqlAgents = append(graphqlAgents, convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion))
+	}
+
+	return &graphql1.AgentListResponse{
+		Agents:     graphqlAgents,
+		TotalCount: response.TotalCount,
+	}, nil
+}
+
+// AllAgents is the resolver for the allAgents field.
+func (r *queryResolver) AllAgents(ctx context.Context, offset *int, limit *int) (*graphql1.AgentListResponse, error) {
+	// Set default values for pagination
+	actualOffset := 0
+	if offset != nil && *offset > 0 {
+		actualOffset = *offset
+	}
+
+	actualLimit := 50 // Default page size
+	if limit != nil && *limit > 0 {
+		// Cap maximum limit to prevent abuse
+		if *limit > 1000 {
+			actualLimit = 1000
+		} else {
+			actualLimit = *limit
+		}
+	}
+
+	// Get all agents from use case
+	response, err := r.agentUseCase.ListAllAgents(ctx, actualOffset, actualLimit)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to list all agents")
+	}
+
+	// Convert to GraphQL format
+	graphqlAgents := make([]*graphql1.Agent, 0, len(response.Agents))
+	for _, agentWithVersion := range response.Agents {
+		graphqlAgents = append(graphqlAgents, convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion))
+	}
+
+	return &graphql1.AgentListResponse{
+		Agents:     graphqlAgents,
+		TotalCount: response.TotalCount,
+	}, nil
+}
+
+// AgentsByStatus is the resolver for the agentsByStatus field.
+func (r *queryResolver) AgentsByStatus(ctx context.Context, status graphql1.AgentStatus, offset *int, limit *int) (*graphql1.AgentListResponse, error) {
+	// Convert GraphQL status to domain status
+	var domainStatus agent.Status
+	switch status {
+	case graphql1.AgentStatusActive:
+		domainStatus = agent.StatusActive
+	case graphql1.AgentStatusArchived:
+		domainStatus = agent.StatusArchived
+	default:
+		return nil, goerr.New("invalid agent status", goerr.V("status", status))
+	}
+
+	// Set default values for pagination
+	actualOffset := 0
+	if offset != nil && *offset > 0 {
+		actualOffset = *offset
+	}
+
+	actualLimit := 50 // Default page size
+	if limit != nil && *limit > 0 {
+		// Cap maximum limit to prevent abuse
+		if *limit > 1000 {
+			actualLimit = 1000
+		} else {
+			actualLimit = *limit
+		}
+	}
+
+	// Get agents by status from use case
+	response, err := r.agentUseCase.ListAgentsByStatus(ctx, domainStatus, actualOffset, actualLimit)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to list agents by status",
+			goerr.V("status", status),
+			goerr.V("offset", actualOffset),
+			goerr.V("limit", actualLimit))
 	}
 
 	// Convert to GraphQL format

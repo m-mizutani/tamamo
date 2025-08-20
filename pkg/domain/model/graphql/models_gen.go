@@ -18,6 +18,7 @@ type Agent struct {
 	Name          string        `json:"name"`
 	Description   string        `json:"description"`
 	Author        string        `json:"author"`
+	Status        AgentStatus   `json:"status"`
 	Latest        string        `json:"latest"`
 	CreatedAt     time.Time     `json:"createdAt"`
 	UpdatedAt     time.Time     `json:"updatedAt"`
@@ -80,6 +81,61 @@ type UpdateAgentInput struct {
 	SystemPrompt *string      `json:"systemPrompt,omitempty"`
 	LlmProvider  *LLMProvider `json:"llmProvider,omitempty"`
 	LlmModel     *string      `json:"llmModel,omitempty"`
+}
+
+type AgentStatus string
+
+const (
+	AgentStatusActive   AgentStatus = "ACTIVE"
+	AgentStatusArchived AgentStatus = "ARCHIVED"
+)
+
+var AllAgentStatus = []AgentStatus{
+	AgentStatusActive,
+	AgentStatusArchived,
+}
+
+func (e AgentStatus) IsValid() bool {
+	switch e {
+	case AgentStatusActive, AgentStatusArchived:
+		return true
+	}
+	return false
+}
+
+func (e AgentStatus) String() string {
+	return string(e)
+}
+
+func (e *AgentStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AgentStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AgentStatus", str)
+	}
+	return nil
+}
+
+func (e AgentStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AgentStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AgentStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type LLMProvider string

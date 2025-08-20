@@ -68,7 +68,8 @@ func (u *agentUseCaseImpl) CreateAgent(ctx context.Context, req *interfaces.Crea
 		AgentID:     req.AgentID,
 		Name:        req.Name,
 		Description: description,
-		Author:      "anonymous", // As per requirement
+		Author:      "anonymous",        // As per requirement
+		Status:      agent.StatusActive, // Default to active
 		Latest:      version,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -261,24 +262,60 @@ func (u *agentUseCaseImpl) DeleteAgent(ctx context.Context, id types.UUID) error
 	return nil
 }
 
-// ListAgents retrieves a list of agents with their latest versions
+// ListAgents retrieves a list of active agents with their latest versions
 func (u *agentUseCaseImpl) ListAgents(ctx context.Context, offset, limit int) (*interfaces.AgentListResponse, error) {
 	if offset < 0 || limit < 0 {
 		return nil, goerr.New("offset and limit must be non-negative")
 	}
 
-	// Use optimized method to get agents and their latest versions in one operation
-	agents, versions, totalCount, err := u.agentRepo.ListAgentsWithLatestVersions(ctx, offset, limit)
+	// Get only active agents
+	agents, totalCount, err := u.agentRepo.ListActiveAgents(ctx, offset, limit)
 	if err != nil {
-		return nil, goerr.Wrap(err, "failed to list agents with latest versions")
+		return nil, goerr.Wrap(err, "failed to list active agents")
 	}
 
-	// Combine agents with their versions
+	// Get latest versions for the agents
 	agentsWithVersions := make([]*interfaces.AgentWithVersion, 0, len(agents))
-	for i, agentObj := range agents {
-		var latestVersion *agent.AgentVersion
-		if i < len(versions) {
-			latestVersion = versions[i]
+	for _, agentObj := range agents {
+		// Get latest version for this agent
+		latestVersion, err := u.agentRepo.GetLatestAgentVersion(ctx, agentObj.ID)
+		if err != nil {
+			// If version not found, create AgentWithVersion with nil version
+			latestVersion = nil
+		}
+
+		agentsWithVersions = append(agentsWithVersions, &interfaces.AgentWithVersion{
+			Agent:         agentObj,
+			LatestVersion: latestVersion,
+		})
+	}
+
+	return &interfaces.AgentListResponse{
+		Agents:     agentsWithVersions,
+		TotalCount: totalCount,
+	}, nil
+}
+
+// ListAllAgents retrieves a list of all agents (both active and archived) with their latest versions
+func (u *agentUseCaseImpl) ListAllAgents(ctx context.Context, offset, limit int) (*interfaces.AgentListResponse, error) {
+	if offset < 0 || limit < 0 {
+		return nil, goerr.New("offset and limit must be non-negative")
+	}
+
+	// Get all agents regardless of status
+	agents, totalCount, err := u.agentRepo.ListAgents(ctx, offset, limit)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to list all agents")
+	}
+
+	// Get latest versions for the agents
+	agentsWithVersions := make([]*interfaces.AgentWithVersion, 0, len(agents))
+	for _, agentObj := range agents {
+		// Get latest version for this agent
+		latestVersion, err := u.agentRepo.GetLatestAgentVersion(ctx, agentObj.ID)
+		if err != nil {
+			// If version not found, create AgentWithVersion with nil version
+			latestVersion = nil
 		}
 
 		agentsWithVersions = append(agentsWithVersions, &interfaces.AgentWithVersion{
@@ -431,4 +468,99 @@ func incrementVersion(version string) string {
 	}
 
 	return fmt.Sprintf("%s.%s.%d", parts[0], parts[1], patch+1)
+}
+
+// ArchiveAgent archives an existing agent
+func (u *agentUseCaseImpl) ArchiveAgent(ctx context.Context, id types.UUID) (*agent.Agent, error) {
+	if !id.IsValid() {
+		return nil, goerr.New("invalid agent ID")
+	}
+
+	// Get existing agent
+	agentObj, err := u.agentRepo.GetAgent(ctx, id)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get agent for archiving")
+	}
+
+	// Check if already archived
+	if agentObj.Status == agent.StatusArchived {
+		return nil, goerr.New("agent is already archived", goerr.V("agent_id", agentObj.AgentID))
+	}
+
+	// Update status to archived
+	if err := u.agentRepo.UpdateAgentStatus(ctx, id, agent.StatusArchived); err != nil {
+		return nil, goerr.Wrap(err, "failed to archive agent")
+	}
+
+	// Return updated agent
+	agentObj.Status = agent.StatusArchived
+	agentObj.UpdatedAt = time.Now()
+
+	return agentObj, nil
+}
+
+// UnarchiveAgent unarchives an existing agent (sets to active)
+func (u *agentUseCaseImpl) UnarchiveAgent(ctx context.Context, id types.UUID) (*agent.Agent, error) {
+	if !id.IsValid() {
+		return nil, goerr.New("invalid agent ID")
+	}
+
+	// Get existing agent
+	agentObj, err := u.agentRepo.GetAgent(ctx, id)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get agent for unarchiving")
+	}
+
+	// Check if already active
+	if agentObj.Status == agent.StatusActive {
+		return nil, goerr.New("agent is already active", goerr.V("agent_id", agentObj.AgentID))
+	}
+
+	// Update status to active
+	if err := u.agentRepo.UpdateAgentStatus(ctx, id, agent.StatusActive); err != nil {
+		return nil, goerr.Wrap(err, "failed to unarchive agent")
+	}
+
+	// Return updated agent
+	agentObj.Status = agent.StatusActive
+	agentObj.UpdatedAt = time.Now()
+
+	return agentObj, nil
+}
+
+// ListAgentsByStatus retrieves a list of agents with a specific status
+func (u *agentUseCaseImpl) ListAgentsByStatus(ctx context.Context, status agent.Status, offset, limit int) (*interfaces.AgentListResponse, error) {
+	if offset < 0 || limit < 0 {
+		return nil, goerr.New("offset and limit must be non-negative")
+	}
+
+	// Get agents by status
+	agents, totalCount, err := u.agentRepo.ListAgentsByStatus(ctx, status, offset, limit)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to list agents by status",
+			goerr.V("status", status),
+			goerr.V("offset", offset),
+			goerr.V("limit", limit))
+	}
+
+	// Get latest versions for the agents
+	agentsWithVersions := make([]*interfaces.AgentWithVersion, 0, len(agents))
+	for _, agentObj := range agents {
+		// Get latest version for this agent
+		latestVersion, err := u.agentRepo.GetLatestAgentVersion(ctx, agentObj.ID)
+		if err != nil {
+			// If version not found, create AgentWithVersion with nil version
+			latestVersion = nil
+		}
+
+		agentsWithVersions = append(agentsWithVersions, &interfaces.AgentWithVersion{
+			Agent:         agentObj,
+			LatestVersion: latestVersion,
+		})
+	}
+
+	return &interfaces.AgentListResponse{
+		Agents:     agentsWithVersions,
+		TotalCount: totalCount,
+	}, nil
 }

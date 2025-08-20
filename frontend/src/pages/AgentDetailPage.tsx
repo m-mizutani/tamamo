@@ -11,7 +11,8 @@ import {
   ArrowLeft, 
   Save, 
   Edit3, 
-  Trash2, 
+  Archive, 
+  ArchiveRestore,
   Loader2, 
   AlertCircle, 
   CheckCircle,
@@ -25,11 +26,14 @@ import {
   GET_AGENT, 
   UPDATE_AGENT,
   CHECK_AGENT_ID_AVAILABILITY,
+  ARCHIVE_AGENT,
+  UNARCHIVE_AGENT,
   graphqlRequest,
   AgentIdAvailability,
   UpdateAgentInput
 } from '@/lib/graphql'
-import { AgentDeleteDialog } from '@/components/agents/AgentDeleteDialog'
+import { Badge } from '@/components/ui/badge'
+import { ConfirmDialog } from '@/components/ConfirmDialogV2'
 import { CreateVersionDialog } from '@/components/agents/CreateVersionDialog'
 
 const LLM_PROVIDERS = [
@@ -54,8 +58,10 @@ export function AgentDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [archiving, setArchiving] = useState(false)
   const [showCreateVersionDialog, setShowCreateVersionDialog] = useState(false)
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+  const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false)
   
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -213,6 +219,46 @@ export function AgentDetailPage() {
     }))
   }
 
+  const handleArchive = async () => {
+    if (!agent) return
+    
+    try {
+      setArchiving(true)
+      setError(null)
+      
+      const response = await graphqlRequest<{ archiveAgent: Agent }>(ARCHIVE_AGENT, {
+        id: agent.id
+      })
+      
+      setAgent(response.archiveAgent)
+    } catch (err) {
+      console.error('Failed to archive agent:', err)
+      setError(err instanceof Error ? err.message : 'Failed to archive agent')
+    } finally {
+      setArchiving(false)
+    }
+  }
+
+  const handleUnarchive = async () => {
+    if (!agent) return
+    
+    try {
+      setArchiving(true)
+      setError(null)
+      
+      const response = await graphqlRequest<{ unarchiveAgent: Agent }>(UNARCHIVE_AGENT, {
+        id: agent.id
+      })
+      
+      setAgent(response.unarchiveAgent)
+    } catch (err) {
+      console.error('Failed to unarchive agent:', err)
+      setError(err instanceof Error ? err.message : 'Failed to unarchive agent')
+    } finally {
+      setArchiving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -277,7 +323,12 @@ export function AgentDetailPage() {
             Back to Agents
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{agent.name}</h1>
+            <div className="flex items-center space-x-3">
+              <h1 className="text-3xl font-bold tracking-tight">{agent.name}</h1>
+              <Badge variant={agent.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                {agent.status === 'ACTIVE' ? 'Active' : 'Archived'}
+              </Badge>
+            </div>
             <p className="text-muted-foreground">
               {agent.agentId} • v{agent.latest}
             </p>
@@ -506,6 +557,15 @@ export function AgentDetailPage() {
               </div>
               
               <div className="space-y-2">
+                <Label>Status</Label>
+                <div>
+                  <Badge variant={agent.status === 'ACTIVE' ? 'default' : 'secondary'} className="text-xs">
+                    {agent.status === 'ACTIVE' ? 'Active' : 'Archived'}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
                 <Label>Latest Version</Label>
                 <p className="text-sm text-muted-foreground">v{agent.latest}</p>
               </div>
@@ -562,36 +622,78 @@ export function AgentDetailPage() {
 
               <Separator />
 
-              <Button 
-                variant="destructive" 
-                className="w-full justify-start"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Agent
-              </Button>
+              {agent.status === 'ACTIVE' ? (
+                <Button 
+                  variant="destructive" 
+                  className="w-full justify-start"
+                  disabled={archiving}
+                  onClick={() => setShowArchiveDialog(true)}
+                >
+                  {archiving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Archive className="mr-2 h-4 w-4" />
+                  )}
+                  {archiving ? 'Archiving...' : 'Archive Agent'}
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  disabled={archiving}
+                  onClick={() => setShowUnarchiveDialog(true)}
+                >
+                  {archiving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArchiveRestore className="mr-2 h-4 w-4" />
+                  )}
+                  {archiving ? 'Unarchiving...' : 'Unarchive Agent'}
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
 
       {agent && (
-        <>
-          <AgentDeleteDialog
-            agent={agent}
-            open={showDeleteDialog}
-            onOpenChange={setShowDeleteDialog}
-          />
-          <CreateVersionDialog
-            agent={agent}
-            open={showCreateVersionDialog}
-            onOpenChange={setShowCreateVersionDialog}
-            onVersionCreated={() => {
-              // Refresh agent data to get updated version info
-              fetchAgent()
-            }}
-          />
-        </>
+        <CreateVersionDialog
+          agent={agent}
+          open={showCreateVersionDialog}
+          onOpenChange={setShowCreateVersionDialog}
+          onVersionCreated={() => {
+            // Refresh agent data to get updated version info
+            fetchAgent()
+          }}
+        />
+      )}
+
+      {/* Archive Confirmation Dialog */}
+      {agent && (
+        <ConfirmDialog
+          open={showArchiveDialog}
+          onOpenChange={setShowArchiveDialog}
+          title="Archive Agent"
+          description={`Are you sure you want to archive "${agent.name}"? Archived agents cannot be used in Slack conversations but can be restored later.`}
+          confirmText="Archive"
+          cancelText="Cancel"
+          confirmVariant="destructive"
+          onConfirm={handleArchive}
+        />
+      )}
+
+      {/* Unarchive Confirmation Dialog */}
+      {agent && (
+        <ConfirmDialog
+          open={showUnarchiveDialog}
+          onOpenChange={setShowUnarchiveDialog}
+          title="Unarchive Agent"
+          description={`Are you sure you want to unarchive "${agent.name}"? This will make the agent available for use in Slack conversations again.`}
+          confirmText="Unarchive"
+          cancelText="Cancel"
+          confirmVariant="default"
+          onConfirm={handleUnarchive}
+        />
       )}
     </div>
   )

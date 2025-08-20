@@ -1137,10 +1137,10 @@ func TestResolveAgent(t *testing.T) {
 
 		// Mock agent repository that returns "not found"
 		mockAgentRepo := &mock.AgentRepositoryMock{
-			GetAgentByAgentIDFunc: func(ctx context.Context, agentID string) (*agent.Agent, error) {
+			GetAgentByAgentIDActiveFunc: func(ctx context.Context, agentID string) (*agent.Agent, error) {
 				return nil, slack.ErrAgentNotFound
 			},
-			ListAgentsFunc: func(ctx context.Context, offset, limit int) ([]*agent.Agent, int, error) {
+			ListActiveAgentsFunc: func(ctx context.Context, offset, limit int) ([]*agent.Agent, int, error) {
 				// Return some sample agents for error message
 				return []*agent.Agent{
 					{
@@ -1148,12 +1148,14 @@ func TestResolveAgent(t *testing.T) {
 						AgentID:     "code-helper",
 						Name:        "Code Helper",
 						Description: "Helps with coding tasks",
+						Status:      agent.StatusActive,
 					},
 					{
 						ID:          types.NewUUID(ctx),
 						AgentID:     "data-analyzer",
 						Name:        "Data Analyzer",
 						Description: "Analyzes data and generates insights",
+						Status:      agent.StatusActive,
 					},
 				}, 2, nil
 			},
@@ -1220,8 +1222,8 @@ func TestResolveAgent(t *testing.T) {
 		// Verify mock call counts
 		gt.Equal(t, len(mockClient.PostMessageCalls()), 1)
 		gt.Equal(t, len(mockClient.IsBotUserCalls()), 1)
-		gt.Equal(t, len(mockAgentRepo.GetAgentByAgentIDCalls()), 1)
-		gt.Equal(t, len(mockAgentRepo.ListAgentsCalls()), 1)
+		gt.Equal(t, len(mockAgentRepo.GetAgentByAgentIDActiveCalls()), 1)
+		gt.Equal(t, len(mockAgentRepo.ListActiveAgentsCalls()), 1)
 
 		// Verify PostMessage call details
 		postMessageCall := mockClient.PostMessageCalls()[0]
@@ -1234,12 +1236,12 @@ func TestResolveAgent(t *testing.T) {
 		isBotUserCall := mockClient.IsBotUserCalls()[0]
 		gt.Equal(t, isBotUserCall.UserID, botUserID)
 
-		// Verify GetAgentByAgentID call details
-		getAgentCall := mockAgentRepo.GetAgentByAgentIDCalls()[0]
+		// Verify GetAgentByAgentIDActive call details
+		getAgentCall := mockAgentRepo.GetAgentByAgentIDActiveCalls()[0]
 		gt.Equal(t, getAgentCall.AgentID, "invalid-agent")
 
-		// Verify ListAgents call details
-		listAgentsCall := mockAgentRepo.ListAgentsCalls()[0]
+		// Verify ListActiveAgents call details
+		listAgentsCall := mockAgentRepo.ListActiveAgentsCalls()[0]
 		gt.Equal(t, listAgentsCall.Offset, 0)
 		gt.Equal(t, listAgentsCall.Limit, 10)
 	})

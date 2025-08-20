@@ -28,8 +28,8 @@ func NewAgentMemoryClient() *AgentMemoryClient {
 }
 
 // CreateAgent creates a new agent
-func (c *AgentMemoryClient) CreateAgent(ctx context.Context, agent *agent.Agent) error {
-	if agent == nil {
+func (c *AgentMemoryClient) CreateAgent(ctx context.Context, agentObj *agent.Agent) error {
+	if agentObj == nil {
 		return goerr.New("agent cannot be nil")
 	}
 
@@ -38,24 +38,29 @@ func (c *AgentMemoryClient) CreateAgent(ctx context.Context, agent *agent.Agent)
 
 	// Check if AgentID already exists
 	for _, existing := range c.agents {
-		if existing.AgentID == agent.AgentID {
-			return goerr.New("agent ID already exists", goerr.V("agent_id", agent.AgentID))
+		if existing.AgentID == agentObj.AgentID {
+			return goerr.New("agent ID already exists", goerr.V("agent_id", agentObj.AgentID))
 		}
 	}
 
-	if !agent.ID.IsValid() {
-		agent.ID = types.NewUUID(ctx)
+	if !agentObj.ID.IsValid() {
+		agentObj.ID = types.NewUUID(ctx)
 	}
 
 	now := time.Now()
-	if agent.CreatedAt.IsZero() {
-		agent.CreatedAt = now
+	if agentObj.CreatedAt.IsZero() {
+		agentObj.CreatedAt = now
 	}
-	agent.UpdatedAt = now
+	agentObj.UpdatedAt = now
+
+	// Set default status if not specified
+	if agentObj.Status == "" {
+		agentObj.Status = agent.StatusActive
+	}
 
 	// Create a copy to avoid external modifications
-	agentCopy := *agent
-	c.agents[agent.ID] = &agentCopy
+	agentCopy := *agentObj
+	c.agents[agentObj.ID] = &agentCopy
 
 	return nil
 }
@@ -100,36 +105,41 @@ func (c *AgentMemoryClient) GetAgentByAgentID(ctx context.Context, agentID strin
 }
 
 // UpdateAgent updates an existing agent
-func (c *AgentMemoryClient) UpdateAgent(ctx context.Context, agent *agent.Agent) error {
-	if agent == nil {
+func (c *AgentMemoryClient) UpdateAgent(ctx context.Context, agentObj *agent.Agent) error {
+	if agentObj == nil {
 		return goerr.New("agent cannot be nil")
 	}
 
-	if !agent.ID.IsValid() {
+	if !agentObj.ID.IsValid() {
 		return goerr.New("invalid agent ID")
 	}
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	existing, exists := c.agents[agent.ID]
+	existing, exists := c.agents[agentObj.ID]
 	if !exists {
-		return goerr.New("agent not found", goerr.V("id", agent.ID.String()))
+		return goerr.New("agent not found", goerr.V("id", agentObj.ID.String()))
 	}
 
 	// Check if AgentID conflicts with another agent
 	for id, other := range c.agents {
-		if id != agent.ID && other.AgentID == agent.AgentID {
-			return goerr.New("agent ID already exists", goerr.V("agent_id", agent.AgentID))
+		if id != agentObj.ID && other.AgentID == agentObj.AgentID {
+			return goerr.New("agent ID already exists", goerr.V("agent_id", agentObj.AgentID))
 		}
 	}
 
-	agent.UpdatedAt = time.Now()
-	agent.CreatedAt = existing.CreatedAt // Preserve original creation time
+	agentObj.UpdatedAt = time.Now()
+	agentObj.CreatedAt = existing.CreatedAt // Preserve original creation time
+
+	// Set default status if not specified
+	if agentObj.Status == "" {
+		agentObj.Status = agent.StatusActive
+	}
 
 	// Create a copy to avoid external modifications
-	agentCopy := *agent
-	c.agents[agent.ID] = &agentCopy
+	agentCopy := *agentObj
+	c.agents[agentObj.ID] = &agentCopy
 
 	return nil
 }
@@ -431,4 +441,170 @@ func (c *AgentMemoryClient) AgentIDExists(ctx context.Context, agentID string) (
 	}
 
 	return false, nil
+}
+
+// UpdateAgentStatus updates the status of an agent
+func (c *AgentMemoryClient) UpdateAgentStatus(ctx context.Context, id types.UUID, status agent.Status) error {
+	if !id.IsValid() {
+		return goerr.New("invalid agent ID")
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	existing, exists := c.agents[id]
+	if !exists {
+		return goerr.New("agent not found", goerr.V("id", id.String()))
+	}
+
+	// Create a copy and update status
+	agentCopy := *existing
+	agentCopy.Status = status
+	agentCopy.UpdatedAt = time.Now()
+
+	c.agents[id] = &agentCopy
+
+	return nil
+}
+
+// ListActiveAgents retrieves a list of active agents with pagination
+func (c *AgentMemoryClient) ListActiveAgents(ctx context.Context, offset, limit int) ([]*agent.Agent, int, error) {
+	if offset < 0 || limit < 0 {
+		return nil, 0, goerr.New("offset and limit must be non-negative")
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	// Filter active agents and convert to slice
+	activeAgents := make([]*agent.Agent, 0)
+	for _, agentObj := range c.agents {
+		// Set default status for backward compatibility
+		status := agentObj.Status
+		if status == "" {
+			status = agent.StatusActive
+		}
+
+		if status == agent.StatusActive {
+			// Create a copy to avoid external modifications
+			agentCopy := *agentObj
+			// Ensure status is set for response
+			if agentCopy.Status == "" {
+				agentCopy.Status = agent.StatusActive
+			}
+			activeAgents = append(activeAgents, &agentCopy)
+		}
+	}
+
+	// Sort by creation time (newest first)
+	sort.Slice(activeAgents, func(i, j int) bool {
+		return activeAgents[i].CreatedAt.After(activeAgents[j].CreatedAt)
+	})
+
+	totalCount := len(activeAgents)
+
+	// Apply pagination
+	start := offset
+	if start > totalCount {
+		start = totalCount
+	}
+
+	end := start + limit
+	if limit == 0 || end > totalCount {
+		end = totalCount
+	}
+
+	if start >= totalCount {
+		return []*agent.Agent{}, totalCount, nil
+	}
+
+	return activeAgents[start:end], totalCount, nil
+}
+
+// GetAgentByAgentIDActive retrieves an active agent by AgentID
+func (c *AgentMemoryClient) GetAgentByAgentIDActive(ctx context.Context, agentID string) (*agent.Agent, error) {
+	if agentID == "" {
+		return nil, goerr.New("agent ID cannot be empty")
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	for _, agentObj := range c.agents {
+		if agentObj.AgentID == agentID {
+			// Set default status for backward compatibility
+			status := agentObj.Status
+			if status == "" {
+				status = agent.StatusActive
+			}
+
+			if status == agent.StatusActive {
+				// Return a copy to avoid external modifications
+				agentCopy := *agentObj
+				// Ensure status is set for response
+				if agentCopy.Status == "" {
+					agentCopy.Status = agent.StatusActive
+				}
+				return &agentCopy, nil
+			} else {
+				return nil, goerr.New("agent is archived", goerr.V("agent_id", agentID))
+			}
+		}
+	}
+
+	return nil, goerr.New("agent not found", goerr.V("agent_id", agentID))
+}
+
+// ListAgentsByStatus retrieves a list of agents with specific status and pagination
+func (c *AgentMemoryClient) ListAgentsByStatus(ctx context.Context, status agent.Status, offset, limit int) ([]*agent.Agent, int, error) {
+	if offset < 0 || limit < 0 {
+		return nil, 0, goerr.New("offset and limit must be non-negative")
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	// Filter agents by status and convert to slice
+	filteredAgents := make([]*agent.Agent, 0)
+	for _, agentObj := range c.agents {
+		// Set default status for backward compatibility
+		agentStatus := agentObj.Status
+		if agentStatus == "" {
+			agentStatus = agent.StatusActive
+		}
+
+		if agentStatus == status {
+			// Create a copy to avoid external modifications
+			agentCopy := *agentObj
+			// Ensure status is set for response
+			if agentCopy.Status == "" {
+				agentCopy.Status = agent.StatusActive
+			}
+			filteredAgents = append(filteredAgents, &agentCopy)
+		}
+	}
+
+	// Sort by creation time (newest first)
+	sort.Slice(filteredAgents, func(i, j int) bool {
+		return filteredAgents[i].CreatedAt.After(filteredAgents[j].CreatedAt)
+	})
+
+	totalCount := len(filteredAgents)
+
+	// Apply pagination
+	start := offset
+	if start > totalCount {
+		start = totalCount
+	}
+
+	end := start + limit
+	if limit == 0 || end > totalCount {
+		end = totalCount
+	}
+
+	if start >= totalCount {
+		return []*agent.Agent{}, totalCount, nil
+	}
+
+	return filteredAgents[start:end], totalCount, nil
 }

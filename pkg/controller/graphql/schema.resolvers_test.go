@@ -878,3 +878,405 @@ func TestMutationResolver_UpdateAgent_SystemPromptOnly(t *testing.T) {
 	gt.V(t, updateCalls[0].Req.SystemPrompt).NotNil()
 	gt.Equal(t, *updateCalls[0].Req.SystemPrompt, systemPrompt)
 }
+
+func TestMutationResolver_ArchiveAgent_Success(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup test data
+	testAgent := &agentmodel.Agent{
+		ID:          types.NewUUID(ctx),
+		AgentID:     "test-agent",
+		Name:        "Test Agent",
+		Description: "A test agent",
+		Author:      "test-author",
+		Status:      agentmodel.StatusArchived,
+		Latest:      "1.0.0",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	testAgentWithVersion := &interfaces.AgentWithVersion{
+		Agent: testAgent,
+		LatestVersion: &agentmodel.AgentVersion{
+			AgentUUID:    testAgent.ID,
+			Version:      "1.0.0",
+			SystemPrompt: "You are a helpful assistant.",
+			LLMProvider:  agentmodel.LLMProviderOpenAI,
+			LLMModel:     "gpt-4",
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		},
+	}
+
+	// Setup mock
+	mockAgentUseCase := &mock.AgentUseCasesMock{
+		ArchiveAgentFunc: func(ctx context.Context, id types.UUID) (*agentmodel.Agent, error) {
+			if id == testAgent.ID {
+				return testAgent, nil
+			}
+			return nil, errors.New("agent not found")
+		},
+		GetAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
+			if id == testAgent.ID {
+				return testAgentWithVersion, nil
+			}
+			return nil, errors.New("agent not found")
+		},
+	}
+
+	// Create resolver
+	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	mutationResolver := resolver.Mutation()
+
+	// Execute test
+	result, err := mutationResolver.ArchiveAgent(ctx, testAgent.ID.String())
+
+	// Verify results
+	gt.NoError(t, err)
+	gt.V(t, result).NotNil()
+	gt.Equal(t, result.ID, testAgent.ID.String())
+	gt.Equal(t, result.Status, graphqlmodel.AgentStatusArchived)
+
+	// Verify mock was called correctly
+	archiveCalls := mockAgentUseCase.ArchiveAgentCalls()
+	gt.Equal(t, len(archiveCalls), 1)
+	gt.Equal(t, archiveCalls[0].ID, testAgent.ID)
+}
+
+func TestMutationResolver_ArchiveAgent_InvalidID(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup mock
+	mockAgentUseCase := &mock.AgentUseCasesMock{}
+
+	// Create resolver
+	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	mutationResolver := resolver.Mutation()
+
+	// Execute test with invalid ID
+	result, err := mutationResolver.ArchiveAgent(ctx, "invalid-id")
+
+	// Verify results
+	gt.Error(t, err)
+	gt.V(t, result).Nil()
+	gt.V(t, err.Error()).Equal("invalid agent ID")
+}
+
+func TestMutationResolver_ArchiveAgent_UseCaseError(t *testing.T) {
+	ctx := context.Background()
+	testAgentID := types.NewUUID(ctx)
+
+	// Setup mock to return error
+	mockAgentUseCase := &mock.AgentUseCasesMock{
+		ArchiveAgentFunc: func(ctx context.Context, id types.UUID) (*agentmodel.Agent, error) {
+			return nil, errors.New("archive failed")
+		},
+	}
+
+	// Create resolver
+	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	mutationResolver := resolver.Mutation()
+
+	// Execute test
+	result, err := mutationResolver.ArchiveAgent(ctx, testAgentID.String())
+
+	// Verify results
+	gt.Error(t, err)
+	gt.V(t, result).Nil()
+}
+
+func TestMutationResolver_UnarchiveAgent_Success(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup test data
+	testAgent := &agentmodel.Agent{
+		ID:          types.NewUUID(ctx),
+		AgentID:     "test-agent",
+		Name:        "Test Agent",
+		Description: "A test agent",
+		Author:      "test-author",
+		Status:      agentmodel.StatusActive,
+		Latest:      "1.0.0",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	testAgentWithVersion := &interfaces.AgentWithVersion{
+		Agent: testAgent,
+		LatestVersion: &agentmodel.AgentVersion{
+			AgentUUID:    testAgent.ID,
+			Version:      "1.0.0",
+			SystemPrompt: "You are a helpful assistant.",
+			LLMProvider:  agentmodel.LLMProviderOpenAI,
+			LLMModel:     "gpt-4",
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		},
+	}
+
+	// Setup mock
+	mockAgentUseCase := &mock.AgentUseCasesMock{
+		UnarchiveAgentFunc: func(ctx context.Context, id types.UUID) (*agentmodel.Agent, error) {
+			if id == testAgent.ID {
+				return testAgent, nil
+			}
+			return nil, errors.New("agent not found")
+		},
+		GetAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
+			if id == testAgent.ID {
+				return testAgentWithVersion, nil
+			}
+			return nil, errors.New("agent not found")
+		},
+	}
+
+	// Create resolver
+	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	mutationResolver := resolver.Mutation()
+
+	// Execute test
+	result, err := mutationResolver.UnarchiveAgent(ctx, testAgent.ID.String())
+
+	// Verify results
+	gt.NoError(t, err)
+	gt.V(t, result).NotNil()
+	gt.Equal(t, result.ID, testAgent.ID.String())
+	gt.Equal(t, result.Status, graphqlmodel.AgentStatusActive)
+
+	// Verify mock was called correctly
+	unarchiveCalls := mockAgentUseCase.UnarchiveAgentCalls()
+	gt.Equal(t, len(unarchiveCalls), 1)
+	gt.Equal(t, unarchiveCalls[0].ID, testAgent.ID)
+}
+
+func TestMutationResolver_UnarchiveAgent_InvalidID(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup mock
+	mockAgentUseCase := &mock.AgentUseCasesMock{}
+
+	// Create resolver
+	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	mutationResolver := resolver.Mutation()
+
+	// Execute test with invalid ID
+	result, err := mutationResolver.UnarchiveAgent(ctx, "invalid-id")
+
+	// Verify results
+	gt.Error(t, err)
+	gt.V(t, result).Nil()
+	gt.V(t, err.Error()).Equal("invalid agent ID")
+}
+
+func TestMutationResolver_UnarchiveAgent_UseCaseError(t *testing.T) {
+	ctx := context.Background()
+	testAgentID := types.NewUUID(ctx)
+
+	// Setup mock to return error
+	mockAgentUseCase := &mock.AgentUseCasesMock{
+		UnarchiveAgentFunc: func(ctx context.Context, id types.UUID) (*agentmodel.Agent, error) {
+			return nil, errors.New("unarchive failed")
+		},
+	}
+
+	// Create resolver
+	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	mutationResolver := resolver.Mutation()
+
+	// Execute test
+	result, err := mutationResolver.UnarchiveAgent(ctx, testAgentID.String())
+
+	// Verify results
+	gt.Error(t, err)
+	gt.V(t, result).Nil()
+}
+
+func TestQueryResolver_AgentsByStatus_Success(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup test data
+	testAgents := []*interfaces.AgentWithVersion{
+		{
+			Agent: &agentmodel.Agent{
+				ID:          types.NewUUID(ctx),
+				AgentID:     "archived-agent-1",
+				Name:        "Archived Agent 1",
+				Description: "First archived agent",
+				Author:      "test-author",
+				Status:      agentmodel.StatusArchived,
+				Latest:      "1.0.0",
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			},
+			LatestVersion: &agentmodel.AgentVersion{
+				AgentUUID:    types.NewUUID(ctx),
+				Version:      "1.0.0",
+				SystemPrompt: "You are a helpful assistant.",
+				LLMProvider:  agentmodel.LLMProviderOpenAI,
+				LLMModel:     "gpt-4",
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+			},
+		},
+	}
+
+	agentListResponse := &interfaces.AgentListResponse{
+		Agents:     testAgents,
+		TotalCount: 1,
+	}
+
+	// Setup mock
+	mockAgentUseCase := &mock.AgentUseCasesMock{
+		ListAgentsByStatusFunc: func(ctx context.Context, status agentmodel.Status, offset, limit int) (*interfaces.AgentListResponse, error) {
+			if status == agentmodel.StatusArchived {
+				return agentListResponse, nil
+			}
+			return &interfaces.AgentListResponse{Agents: []*interfaces.AgentWithVersion{}, TotalCount: 0}, nil
+		},
+	}
+
+	// Create resolver
+	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	queryResolver := resolver.Query()
+
+	// Execute test
+	offset := 0
+	limit := 10
+	result, err := queryResolver.AgentsByStatus(ctx, graphqlmodel.AgentStatusArchived, &offset, &limit)
+
+	// Verify results
+	gt.NoError(t, err)
+	gt.V(t, result).NotNil()
+	gt.Equal(t, len(result.Agents), 1)
+	gt.Equal(t, result.TotalCount, 1)
+	gt.Equal(t, result.Agents[0].AgentID, "archived-agent-1")
+	gt.Equal(t, result.Agents[0].Status, graphqlmodel.AgentStatusArchived)
+
+	// Verify mock was called with correct parameters
+	calls := mockAgentUseCase.ListAgentsByStatusCalls()
+	gt.Equal(t, len(calls), 1)
+	gt.Equal(t, calls[0].Status, agentmodel.StatusArchived)
+	gt.Equal(t, calls[0].Offset, 0)
+	gt.Equal(t, calls[0].Limit, 10)
+}
+
+func TestQueryResolver_AgentsByStatus_DefaultPagination(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup mock
+	mockAgentUseCase := &mock.AgentUseCasesMock{
+		ListAgentsByStatusFunc: func(ctx context.Context, status agentmodel.Status, offset, limit int) (*interfaces.AgentListResponse, error) {
+			return &interfaces.AgentListResponse{
+				Agents:     []*interfaces.AgentWithVersion{},
+				TotalCount: 0,
+			}, nil
+		},
+	}
+
+	// Create resolver
+	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	queryResolver := resolver.Query()
+
+	// Execute test with nil parameters
+	result, err := queryResolver.AgentsByStatus(ctx, graphqlmodel.AgentStatusActive, nil, nil)
+
+	// Verify results
+	gt.NoError(t, err)
+	gt.V(t, result).NotNil()
+
+	// Verify mock was called with defaults
+	calls := mockAgentUseCase.ListAgentsByStatusCalls()
+	gt.Equal(t, len(calls), 1)
+	gt.Equal(t, calls[0].Status, agentmodel.StatusActive)
+	gt.Equal(t, calls[0].Offset, 0) // Default offset
+	gt.Equal(t, calls[0].Limit, 50) // Default limit
+}
+
+func TestQueryResolver_AllAgents_Success(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup test data with mixed statuses
+	testAgents := []*interfaces.AgentWithVersion{
+		{
+			Agent: &agentmodel.Agent{
+				ID:          types.NewUUID(ctx),
+				AgentID:     "active-agent",
+				Name:        "Active Agent",
+				Description: "An active agent",
+				Author:      "test-author",
+				Status:      agentmodel.StatusActive,
+				Latest:      "1.0.0",
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			},
+			LatestVersion: &agentmodel.AgentVersion{
+				AgentUUID:    types.NewUUID(ctx),
+				Version:      "1.0.0",
+				SystemPrompt: "You are a helpful assistant.",
+				LLMProvider:  agentmodel.LLMProviderOpenAI,
+				LLMModel:     "gpt-4",
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+			},
+		},
+		{
+			Agent: &agentmodel.Agent{
+				ID:          types.NewUUID(ctx),
+				AgentID:     "archived-agent",
+				Name:        "Archived Agent",
+				Description: "An archived agent",
+				Author:      "test-author",
+				Status:      agentmodel.StatusArchived,
+				Latest:      "1.1.0",
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			},
+			LatestVersion: &agentmodel.AgentVersion{
+				AgentUUID:    types.NewUUID(ctx),
+				Version:      "1.1.0",
+				SystemPrompt: "You are an archived assistant.",
+				LLMProvider:  agentmodel.LLMProviderClaude,
+				LLMModel:     "claude-3-opus",
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+			},
+		},
+	}
+
+	agentListResponse := &interfaces.AgentListResponse{
+		Agents:     testAgents,
+		TotalCount: 2,
+	}
+
+	// Setup mock
+	mockAgentUseCase := &mock.AgentUseCasesMock{
+		ListAllAgentsFunc: func(ctx context.Context, offset, limit int) (*interfaces.AgentListResponse, error) {
+			return agentListResponse, nil
+		},
+	}
+
+	// Create resolver
+	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	queryResolver := resolver.Query()
+
+	// Execute test
+	offset := 0
+	limit := 10
+	result, err := queryResolver.AllAgents(ctx, &offset, &limit)
+
+	// Verify results
+	gt.NoError(t, err)
+	gt.V(t, result).NotNil()
+	gt.Equal(t, len(result.Agents), 2)
+	gt.Equal(t, result.TotalCount, 2)
+	gt.Equal(t, result.Agents[0].AgentID, "active-agent")
+	gt.Equal(t, result.Agents[0].Status, graphqlmodel.AgentStatusActive)
+	gt.Equal(t, result.Agents[1].AgentID, "archived-agent")
+	gt.Equal(t, result.Agents[1].Status, graphqlmodel.AgentStatusArchived)
+
+	// Verify mock was called with correct parameters
+	calls := mockAgentUseCase.ListAllAgentsCalls()
+	gt.Equal(t, len(calls), 1)
+	gt.Equal(t, calls[0].Offset, 0)
+	gt.Equal(t, calls[0].Limit, 10)
+}

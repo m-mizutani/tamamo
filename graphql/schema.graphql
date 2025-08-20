@@ -6,6 +6,11 @@ enum LLMProvider {
   GEMINI
 }
 
+enum AgentStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 type Thread {
   id: ID!
   teamId: String!
@@ -26,6 +31,7 @@ type Agent {
   name: String!
   description: String!
   author: String!
+  status: AgentStatus!
   latest: String!
   createdAt: Time!
   updatedAt: Time!
@@ -86,6 +92,8 @@ type Query {
   agent(id: ID!): Agent
   agentByAgentId(agentId: String!): Agent
   agents(offset: Int, limit: Int): AgentListResponse!
+  allAgents(offset: Int, limit: Int): AgentListResponse!
+  agentsByStatus(status: AgentStatus!, offset: Int, limit: Int): AgentListResponse!
   agentVersions(agentUuid: ID!): [AgentVersion!]!
   checkAgentIdAvailability(agentId: String!): AgentIdAvailability!
 }
@@ -94,6 +102,8 @@ type Mutation {
   createAgent(input: CreateAgentInput!): Agent!
   updateAgent(id: ID!, input: UpdateAgentInput!): Agent!
   deleteAgent(id: ID!): Boolean!
+  archiveAgent(id: ID!): Agent!
+  unarchiveAgent(id: ID!): Agent!
   createAgentVersion(input: CreateAgentVersionInput!): AgentVersion!
 }
 

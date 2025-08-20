@@ -317,10 +317,10 @@ func (uc *Slack) resolveAgent(ctx context.Context, agentMention *slack.AgentMent
 
 	logger.Debug("resolving agent", "agent_id", agentMention.AgentID)
 
-	// Get agent by agent ID
-	agentInfo, err := uc.agentRepository.GetAgentByAgentID(ctx, agentMention.AgentID)
+	// Get active agent by agent ID
+	agentInfo, err := uc.agentRepository.GetAgentByAgentIDActive(ctx, agentMention.AgentID)
 	if err != nil {
-		return nil, goerr.Wrap(slack.ErrAgentNotFound, "agent not found",
+		return nil, goerr.Wrap(slack.ErrAgentNotFound, "agent not found or archived",
 			goerr.V("agent_id", agentMention.AgentID))
 	}
 
@@ -404,12 +404,12 @@ func (uc *Slack) handleAgentError(ctx context.Context, slackMsg slack.Message, e
 func (uc *Slack) generateAgentErrorMessage(ctx context.Context, agentID string) string {
 	logger := ctxlog.From(ctx)
 
-	// Try to get available agents
+	// Try to get available active agents
 	var availableAgents []string
 	if uc.agentRepository != nil {
-		agents, _, err := uc.agentRepository.ListAgents(ctx, 0, 10) // Get first 10 agents
+		agents, _, err := uc.agentRepository.ListActiveAgents(ctx, 0, 10) // Get first 10 active agents
 		if err != nil {
-			logger.Warn("failed to get available agents", "error", err)
+			logger.Warn("failed to get available active agents", "error", err)
 		} else {
 			availableAgents = make([]string, 0, len(agents))
 			for _, agent := range agents {

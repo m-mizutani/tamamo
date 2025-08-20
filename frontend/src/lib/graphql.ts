@@ -9,6 +9,55 @@ export const GET_AGENTS = `
         name
         description
         author
+        status
+        latest
+        createdAt
+        updatedAt
+        latestVersion {
+          systemPrompt
+          llmProvider
+          llmModel
+        }
+      }
+      totalCount
+    }
+  }
+`;
+
+export const GET_AGENTS_BY_STATUS = `
+  query GetAgentsByStatus($status: AgentStatus!, $offset: Int, $limit: Int) {
+    agentsByStatus(status: $status, offset: $offset, limit: $limit) {
+      agents {
+        id
+        agentId
+        name
+        description
+        author
+        status
+        latest
+        createdAt
+        updatedAt
+        latestVersion {
+          systemPrompt
+          llmProvider
+          llmModel
+        }
+      }
+      totalCount
+    }
+  }
+`;
+
+export const GET_ALL_AGENTS = `
+  query GetAllAgents($offset: Int, $limit: Int) {
+    allAgents(offset: $offset, limit: $limit) {
+      agents {
+        id
+        agentId
+        name
+        description
+        author
+        status
         latest
         createdAt
         updatedAt
@@ -31,6 +80,7 @@ export const GET_AGENT = `
       name
       description
       author
+      status
       latest
       createdAt
       updatedAt
@@ -60,6 +110,7 @@ export const CREATE_AGENT = `
       name
       description
       author
+      status
       latest
       createdAt
       updatedAt
@@ -80,6 +131,7 @@ export const UPDATE_AGENT = `
       name
       description
       author
+      status
       latest
       createdAt
       updatedAt
@@ -95,6 +147,48 @@ export const UPDATE_AGENT = `
 export const DELETE_AGENT = `
   mutation DeleteAgent($id: ID!) {
     deleteAgent(id: $id)
+  }
+`;
+
+export const ARCHIVE_AGENT = `
+  mutation ArchiveAgent($id: ID!) {
+    archiveAgent(id: $id) {
+      id
+      agentId
+      name
+      description
+      author
+      status
+      latest
+      createdAt
+      updatedAt
+      latestVersion {
+        systemPrompt
+        llmProvider
+        llmModel
+      }
+    }
+  }
+`;
+
+export const UNARCHIVE_AGENT = `
+  mutation UnarchiveAgent($id: ID!) {
+    unarchiveAgent(id: $id) {
+      id
+      agentId
+      name
+      description
+      author
+      status
+      latest
+      createdAt
+      updatedAt
+      latestVersion {
+        systemPrompt
+        llmProvider
+        llmModel
+      }
+    }
   }
 `;
 
@@ -127,12 +221,15 @@ export const GET_AGENT_VERSIONS = `
 `;
 
 // Type definitions
+export type AgentStatus = 'ACTIVE' | 'ARCHIVED';
+
 export interface Agent {
   id: string;
   agentId: string;
   name: string;
   description: string;
   author: string;
+  status: AgentStatus;
   latest: string;
   createdAt: string;
   updatedAt: string;

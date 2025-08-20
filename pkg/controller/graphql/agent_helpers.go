@@ -22,6 +22,7 @@ func convertAgentToGraphQL(a *agentmodel.Agent, latestVersion *agentmodel.AgentV
 		Name:        a.Name,
 		Description: a.Description,
 		Author:      a.Author,
+		Status:      convertAgentStatusToGraphQL(a.Status),
 		Latest:      a.Latest,
 		CreatedAt:   a.CreatedAt,
 		UpdatedAt:   a.UpdatedAt,
@@ -48,6 +49,21 @@ func convertAgentVersionToGraphQL(v *agentmodel.AgentVersion) *graphql1.AgentVer
 		LlmModel:     v.LLMModel,
 		CreatedAt:    v.CreatedAt,
 		UpdatedAt:    v.UpdatedAt,
+	}
+}
+
+// convertAgentStatusToGraphQL converts domain Agent Status to GraphQL AgentStatus
+func convertAgentStatusToGraphQL(s agentmodel.Status) graphql1.AgentStatus {
+	switch s {
+	case agentmodel.StatusActive:
+		return graphql1.AgentStatusActive
+	case agentmodel.StatusArchived:
+		return graphql1.AgentStatusArchived
+	default:
+		logging.Default().Warn("Unknown agent status type, falling back to Active",
+			slog.String("status", string(s)),
+			slog.String("fallback", "Active"))
+		return graphql1.AgentStatusActive // Default fallback
 	}
 }
 

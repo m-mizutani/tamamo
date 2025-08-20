@@ -58,6 +58,7 @@ type ComplexityRoot struct {
 		Latest        func(childComplexity int) int
 		LatestVersion func(childComplexity int) int
 		Name          func(childComplexity int) int
+		Status        func(childComplexity int) int
 		UpdatedAt     func(childComplexity int) int
 	}
 
@@ -82,9 +83,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		ArchiveAgent       func(childComplexity int, id string) int
 		CreateAgent        func(childComplexity int, input graphql1.CreateAgentInput) int
 		CreateAgentVersion func(childComplexity int, input graphql1.CreateAgentVersionInput) int
 		DeleteAgent        func(childComplexity int, id string) int
+		UnarchiveAgent     func(childComplexity int, id string) int
 		UpdateAgent        func(childComplexity int, id string, input graphql1.UpdateAgentInput) int
 	}
 
@@ -93,6 +96,8 @@ type ComplexityRoot struct {
 		AgentByAgentID           func(childComplexity int, agentID string) int
 		AgentVersions            func(childComplexity int, agentUUID string) int
 		Agents                   func(childComplexity int, offset *int, limit *int) int
+		AgentsByStatus           func(childComplexity int, status graphql1.AgentStatus, offset *int, limit *int) int
+		AllAgents                func(childComplexity int, offset *int, limit *int) int
 		CheckAgentIDAvailability func(childComplexity int, agentID string) int
 		Thread                   func(childComplexity int, id string) int
 		Threads                  func(childComplexity int, offset *int, limit *int) int
@@ -117,6 +122,8 @@ type MutationResolver interface {
 	CreateAgent(ctx context.Context, input graphql1.CreateAgentInput) (*graphql1.Agent, error)
 	UpdateAgent(ctx context.Context, id string, input graphql1.UpdateAgentInput) (*graphql1.Agent, error)
 	DeleteAgent(ctx context.Context, id string) (bool, error)
+	ArchiveAgent(ctx context.Context, id string) (*graphql1.Agent, error)
+	UnarchiveAgent(ctx context.Context, id string) (*graphql1.Agent, error)
 	CreateAgentVersion(ctx context.Context, input graphql1.CreateAgentVersionInput) (*graphql1.AgentVersion, error)
 }
 type QueryResolver interface {
@@ -125,6 +132,8 @@ type QueryResolver interface {
 	Agent(ctx context.Context, id string) (*graphql1.Agent, error)
 	AgentByAgentID(ctx context.Context, agentID string) (*graphql1.Agent, error)
 	Agents(ctx context.Context, offset *int, limit *int) (*graphql1.AgentListResponse, error)
+	AllAgents(ctx context.Context, offset *int, limit *int) (*graphql1.AgentListResponse, error)
+	AgentsByStatus(ctx context.Context, status graphql1.AgentStatus, offset *int, limit *int) (*graphql1.AgentListResponse, error)
 	AgentVersions(ctx context.Context, agentUUID string) ([]*graphql1.AgentVersion, error)
 	CheckAgentIDAvailability(ctx context.Context, agentID string) (*graphql1.AgentIDAvailability, error)
 }
@@ -206,6 +215,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Agent.Name(childComplexity), true
+
+	case "Agent.status":
+		if e.complexity.Agent.Status == nil {
+			break
+		}
+
+		return e.complexity.Agent.Status(childComplexity), true
 
 	case "Agent.updatedAt":
 		if e.complexity.Agent.UpdatedAt == nil {
@@ -291,6 +307,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.AgentVersion.Version(childComplexity), true
 
+	case "Mutation.archiveAgent":
+		if e.complexity.Mutation.ArchiveAgent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_archiveAgent_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ArchiveAgent(childComplexity, args["id"].(string)), true
+
 	case "Mutation.createAgent":
 		if e.complexity.Mutation.CreateAgent == nil {
 			break
@@ -326,6 +354,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.DeleteAgent(childComplexity, args["id"].(string)), true
+
+	case "Mutation.unarchiveAgent":
+		if e.complexity.Mutation.UnarchiveAgent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unarchiveAgent_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnarchiveAgent(childComplexity, args["id"].(string)), true
 
 	case "Mutation.updateAgent":
 		if e.complexity.Mutation.UpdateAgent == nil {
@@ -386,6 +426,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Agents(childComplexity, args["offset"].(*int), args["limit"].(*int)), true
+
+	case "Query.agentsByStatus":
+		if e.complexity.Query.AgentsByStatus == nil {
+			break
+		}
+
+		args, err := ec.field_Query_agentsByStatus_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AgentsByStatus(childComplexity, args["status"].(graphql1.AgentStatus), args["offset"].(*int), args["limit"].(*int)), true
+
+	case "Query.allAgents":
+		if e.complexity.Query.AllAgents == nil {
+			break
+		}
+
+		args, err := ec.field_Query_allAgents_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AllAgents(childComplexity, args["offset"].(*int), args["limit"].(*int)), true
 
 	case "Query.checkAgentIdAvailability":
 		if e.complexity.Query.CheckAgentIDAvailability == nil {
@@ -595,6 +659,11 @@ enum LLMProvider {
   GEMINI
 }
 
+enum AgentStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 type Thread {
   id: ID!
   teamId: String!
@@ -615,6 +684,7 @@ type Agent {
   name: String!
   description: String!
   author: String!
+  status: AgentStatus!
   latest: String!
   createdAt: Time!
   updatedAt: Time!
@@ -675,6 +745,8 @@ type Query {
   agent(id: ID!): Agent
   agentByAgentId(agentId: String!): Agent
   agents(offset: Int, limit: Int): AgentListResponse!
+  allAgents(offset: Int, limit: Int): AgentListResponse!
+  agentsByStatus(status: AgentStatus!, offset: Int, limit: Int): AgentListResponse!
   agentVersions(agentUuid: ID!): [AgentVersion!]!
   checkAgentIdAvailability(agentId: String!): AgentIdAvailability!
 }
@@ -683,6 +755,8 @@ type Mutation {
   createAgent(input: CreateAgentInput!): Agent!
   updateAgent(id: ID!, input: UpdateAgentInput!): Agent!
   deleteAgent(id: ID!): Boolean!
+  archiveAgent(id: ID!): Agent!
+  unarchiveAgent(id: ID!): Agent!
   createAgentVersion(input: CreateAgentVersionInput!): AgentVersion!
 }
 
@@ -696,6 +770,17 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_archiveAgent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createAgentVersion_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -720,6 +805,17 @@ func (ec *executionContext) field_Mutation_createAgent_args(ctx context.Context,
 }
 
 func (ec *executionContext) field_Mutation_deleteAgent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unarchiveAgent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
@@ -790,7 +886,44 @@ func (ec *executionContext) field_Query_agent_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_agentsByStatus_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "status", ec.unmarshalNAgentStatus2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentStatus)
+	if err != nil {
+		return nil, err
+	}
+	args["status"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_agents_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_allAgents_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
@@ -1111,6 +1244,50 @@ func (ec *executionContext) fieldContext_Agent_author(_ context.Context, field g
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Agent_status(ctx context.Context, field graphql.CollectedField, obj *graphql1.Agent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Agent_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(graphql1.AgentStatus)
+	fc.Result = res
+	return ec.marshalNAgentStatus2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Agent_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Agent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type AgentStatus does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1442,6 +1619,8 @@ func (ec *executionContext) fieldContext_AgentListResponse_agents(_ context.Cont
 				return ec.fieldContext_Agent_description(ctx, field)
 			case "author":
 				return ec.fieldContext_Agent_author(ctx, field)
+			case "status":
+				return ec.fieldContext_Agent_status(ctx, field)
 			case "latest":
 				return ec.fieldContext_Agent_latest(ctx, field)
 			case "createdAt":
@@ -1858,6 +2037,8 @@ func (ec *executionContext) fieldContext_Mutation_createAgent(ctx context.Contex
 				return ec.fieldContext_Agent_description(ctx, field)
 			case "author":
 				return ec.fieldContext_Agent_author(ctx, field)
+			case "status":
+				return ec.fieldContext_Agent_status(ctx, field)
 			case "latest":
 				return ec.fieldContext_Agent_latest(ctx, field)
 			case "createdAt":
@@ -1933,6 +2114,8 @@ func (ec *executionContext) fieldContext_Mutation_updateAgent(ctx context.Contex
 				return ec.fieldContext_Agent_description(ctx, field)
 			case "author":
 				return ec.fieldContext_Agent_author(ctx, field)
+			case "status":
+				return ec.fieldContext_Agent_status(ctx, field)
 			case "latest":
 				return ec.fieldContext_Agent_latest(ctx, field)
 			case "createdAt":
@@ -2008,6 +2191,160 @@ func (ec *executionContext) fieldContext_Mutation_deleteAgent(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteAgent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_archiveAgent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_archiveAgent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ArchiveAgent(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.Agent)
+	fc.Result = res
+	return ec.marshalNAgent2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_archiveAgent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Agent_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_Agent_agentId(ctx, field)
+			case "name":
+				return ec.fieldContext_Agent_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Agent_description(ctx, field)
+			case "author":
+				return ec.fieldContext_Agent_author(ctx, field)
+			case "status":
+				return ec.fieldContext_Agent_status(ctx, field)
+			case "latest":
+				return ec.fieldContext_Agent_latest(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Agent_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Agent_updatedAt(ctx, field)
+			case "latestVersion":
+				return ec.fieldContext_Agent_latestVersion(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_archiveAgent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_unarchiveAgent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_unarchiveAgent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UnarchiveAgent(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.Agent)
+	fc.Result = res
+	return ec.marshalNAgent2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_unarchiveAgent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Agent_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_Agent_agentId(ctx, field)
+			case "name":
+				return ec.fieldContext_Agent_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Agent_description(ctx, field)
+			case "author":
+				return ec.fieldContext_Agent_author(ctx, field)
+			case "status":
+				return ec.fieldContext_Agent_status(ctx, field)
+			case "latest":
+				return ec.fieldContext_Agent_latest(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Agent_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Agent_updatedAt(ctx, field)
+			case "latestVersion":
+				return ec.fieldContext_Agent_latestVersion(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_unarchiveAgent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2258,6 +2595,8 @@ func (ec *executionContext) fieldContext_Query_agent(ctx context.Context, field 
 				return ec.fieldContext_Agent_description(ctx, field)
 			case "author":
 				return ec.fieldContext_Agent_author(ctx, field)
+			case "status":
+				return ec.fieldContext_Agent_status(ctx, field)
 			case "latest":
 				return ec.fieldContext_Agent_latest(ctx, field)
 			case "createdAt":
@@ -2330,6 +2669,8 @@ func (ec *executionContext) fieldContext_Query_agentByAgentId(ctx context.Contex
 				return ec.fieldContext_Agent_description(ctx, field)
 			case "author":
 				return ec.fieldContext_Agent_author(ctx, field)
+			case "status":
+				return ec.fieldContext_Agent_status(ctx, field)
 			case "latest":
 				return ec.fieldContext_Agent_latest(ctx, field)
 			case "createdAt":
@@ -2411,6 +2752,128 @@ func (ec *executionContext) fieldContext_Query_agents(ctx context.Context, field
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_agents_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_allAgents(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_allAgents(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AllAgents(rctx, fc.Args["offset"].(*int), fc.Args["limit"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentListResponse)
+	fc.Result = res
+	return ec.marshalNAgentListResponse2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentListResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_allAgents(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "agents":
+				return ec.fieldContext_AgentListResponse_agents(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_AgentListResponse_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentListResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_allAgents_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_agentsByStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_agentsByStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AgentsByStatus(rctx, fc.Args["status"].(graphql1.AgentStatus), fc.Args["offset"].(*int), fc.Args["limit"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentListResponse)
+	fc.Result = res
+	return ec.marshalNAgentListResponse2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentListResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_agentsByStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "agents":
+				return ec.fieldContext_AgentListResponse_agents(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_AgentListResponse_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentListResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_agentsByStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5227,6 +5690,11 @@ func (ec *executionContext) _Agent(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "status":
+			out.Values[i] = ec._Agent_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "latest":
 			out.Values[i] = ec._Agent_latest(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -5464,6 +5932,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "archiveAgent":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_archiveAgent(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unarchiveAgent":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_unarchiveAgent(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createAgentVersion":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createAgentVersion(ctx, field)
@@ -5602,6 +6084,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_agents(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "allAgents":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_allAgents(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "agentsByStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_agentsByStatus(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -6247,6 +6773,16 @@ func (ec *executionContext) marshalNAgentListResponse2ᚖgithubᚗcomᚋmᚑmizu
 		return graphql.Null
 	}
 	return ec._AgentListResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNAgentStatus2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentStatus(ctx context.Context, v any) (graphql1.AgentStatus, error) {
+	var res graphql1.AgentStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNAgentStatus2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentStatus(ctx context.Context, sel ast.SelectionSet, v graphql1.AgentStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNAgentVersion2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentVersion(ctx context.Context, sel ast.SelectionSet, v graphql1.AgentVersion) graphql.Marshaler {

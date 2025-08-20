@@ -63,6 +63,12 @@ type AgentUseCases interface {
 	UpdateAgent(ctx context.Context, id types.UUID, req *UpdateAgentRequest) (*agent.Agent, error)
 	DeleteAgent(ctx context.Context, id types.UUID) error
 	ListAgents(ctx context.Context, offset, limit int) (*AgentListResponse, error)
+	ListAllAgents(ctx context.Context, offset, limit int) (*AgentListResponse, error)
+	ListAgentsByStatus(ctx context.Context, status agent.Status, offset, limit int) (*AgentListResponse, error)
+
+	// Agent status management
+	ArchiveAgent(ctx context.Context, id types.UUID) (*agent.Agent, error)
+	UnarchiveAgent(ctx context.Context, id types.UUID) (*agent.Agent, error)
 
 	// Version management
 	CreateAgentVersion(ctx context.Context, req *CreateVersionRequest) (*agent.AgentVersion, error)
