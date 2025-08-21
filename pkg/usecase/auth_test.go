@@ -68,11 +68,9 @@ func TestAuthUseCase_SessionLifecycle(t *testing.T) {
 func TestAuthUseCase_ExpiredSession(t *testing.T) {
 	ctx := context.Background()
 	sessionRepo := memory.NewSessionRepository()
-	oauthStateRepo := memory.NewOAuthStateRepository()
 
 	uc := usecase.NewAuthUseCase(
 		sessionRepo,
-		oauthStateRepo,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
