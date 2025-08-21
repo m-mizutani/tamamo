@@ -58,7 +58,7 @@ export function AgentDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [archiving, setArchiving] = useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [showCreateVersionDialog, setShowCreateVersionDialog] = useState(false)
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false)
@@ -223,7 +223,7 @@ export function AgentDetailPage() {
     if (!agent) return
     
     try {
-      setArchiving(true)
+      setIsUpdatingStatus(true)
       setError(null)
       
       const response = await graphqlRequest<{ archiveAgent: Agent }>(ARCHIVE_AGENT, {
@@ -235,7 +235,7 @@ export function AgentDetailPage() {
       console.error('Failed to archive agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to archive agent')
     } finally {
-      setArchiving(false)
+      setIsUpdatingStatus(false)
     }
   }
 
@@ -243,7 +243,7 @@ export function AgentDetailPage() {
     if (!agent) return
     
     try {
-      setArchiving(true)
+      setIsUpdatingStatus(true)
       setError(null)
       
       const response = await graphqlRequest<{ unarchiveAgent: Agent }>(UNARCHIVE_AGENT, {
@@ -255,7 +255,7 @@ export function AgentDetailPage() {
       console.error('Failed to unarchive agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to unarchive agent')
     } finally {
-      setArchiving(false)
+      setIsUpdatingStatus(false)
     }
   }
 
@@ -626,29 +626,29 @@ export function AgentDetailPage() {
                 <Button 
                   variant="destructive" 
                   className="w-full justify-start"
-                  disabled={archiving}
+                  disabled={isUpdatingStatus}
                   onClick={() => setShowArchiveDialog(true)}
                 >
-                  {archiving ? (
+                  {isUpdatingStatus ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <Archive className="mr-2 h-4 w-4" />
                   )}
-                  {archiving ? 'Archiving...' : 'Archive Agent'}
+                  {isUpdatingStatus ? 'Archiving...' : 'Archive Agent'}
                 </Button>
               ) : (
                 <Button 
                   variant="outline" 
                   className="w-full justify-start"
-                  disabled={archiving}
+                  disabled={isUpdatingStatus}
                   onClick={() => setShowUnarchiveDialog(true)}
                 >
-                  {archiving ? (
+                  {isUpdatingStatus ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <ArchiveRestore className="mr-2 h-4 w-4" />
                   )}
-                  {archiving ? 'Unarchiving...' : 'Unarchive Agent'}
+                  {isUpdatingStatus ? 'Unarchiving...' : 'Unarchive Agent'}
                 </Button>
               )}
             </CardContent>
