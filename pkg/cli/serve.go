@@ -15,6 +15,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/adapters/cs"
 	mem_adapter "github.com/m-mizutani/tamamo/pkg/adapters/memory"
 	"github.com/m-mizutani/tamamo/pkg/cli/config"
+	auth_controller "github.com/m-mizutani/tamamo/pkg/controller/auth"
 	graphql_controller "github.com/m-mizutani/tamamo/pkg/controller/graphql"
 	server "github.com/m-mizutani/tamamo/pkg/controller/http"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
@@ -31,12 +32,14 @@ func cmdServe() *cli.Command {
 		addr           string
 		slackCfg       config.Slack
 		firestoreCfg   config.Firestore
+		authCfg        config.Auth
 		geminiProject  string
 		geminiModel    string
 		geminiLocation string
 		storageBucket  string
 		storagePrefix  string
 		enableGraphiQL bool
+		isProduction   bool
 	)
 
 	flags := []cli.Flag{
@@ -87,9 +90,16 @@ func cmdServe() *cli.Command {
 			Usage:       "Enable GraphiQL IDE for development",
 			Destination: &enableGraphiQL,
 		},
+		&cli.BoolFlag{
+			Name:        "production",
+			Sources:     cli.EnvVars("TAMAMO_PRODUCTION"),
+			Usage:       "Enable production mode (sets secure cookie attributes)",
+			Destination: &isProduction,
+		},
 	}
 	flags = append(flags, slackCfg.Flags()...)
 	flags = append(flags, firestoreCfg.Flags()...)
+	flags = append(flags, authCfg.Flags()...)
 
 	return &cli.Command{
 		Name:    "serve",
@@ -98,6 +108,11 @@ func cmdServe() *cli.Command {
 		Flags:   flags,
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			logger := ctxlog.From(ctx)
+
+			// Validate authentication configuration
+			if err := authCfg.Validate(); err != nil {
+				return goerr.Wrap(err, "invalid authentication configuration")
+			}
 
 			// Validate Gemini configuration
 			if geminiProject == "" {
@@ -147,6 +162,8 @@ func cmdServe() *cli.Command {
 			// Configure database repository
 			var repo interfaces.ThreadRepository
 			var agentRepo interfaces.AgentRepository
+			var sessionRepo interfaces.SessionRepository
+			var oauthStateRepo interfaces.OAuthStateRepository
 			firestoreCfg.SetDefaults()
 
 			// Validate Firestore configuration
@@ -168,11 +185,15 @@ func cmdServe() *cli.Command {
 				defer client.Close()
 				repo = client
 				agentRepo = client // Firestore client implements both ThreadRepository and AgentRepository
+				sessionRepo = firestore.NewSessionRepository(client.GetClient())
+				oauthStateRepo = firestore.NewOAuthStateRepository(client.GetClient())
 			} else {
 				// Use memory repository as fallback
 				logger.Warn("using in-memory repository (data will be lost on restart)")
 				repo = memory.New()
 				agentRepo = memory.NewAgentMemoryClient()
+				sessionRepo = memory.NewSessionRepository()
+				oauthStateRepo = memory.NewOAuthStateRepository()
 			}
 
 			logger.Info("starting server",
@@ -184,6 +205,20 @@ func cmdServe() *cli.Command {
 			slackSvc, err := slackCfg.Configure()
 			if err != nil {
 				return goerr.Wrap(err, "failed to configure slack service")
+			}
+
+			// Configure authentication use case
+			var authUseCase interfaces.AuthUseCases
+			var authCtrl *auth_controller.Controller
+			if authCfg.IsAuthenticationEnabled() {
+				authUseCase, err = authCfg.ConfigureAuthUseCase(sessionRepo, oauthStateRepo, slackSvc)
+				if err != nil {
+					return goerr.Wrap(err, "failed to configure authentication")
+				}
+				authCtrl = auth_controller.NewController(authUseCase, authCfg.FrontendURL, isProduction)
+				logger.Info("authentication enabled")
+			} else {
+				logger.Warn("authentication disabled - running in anonymous mode")
 			}
 
 			// Create usecase with LLM integration
@@ -209,6 +244,15 @@ func cmdServe() *cli.Command {
 				server.WithGraphQLController(graphqlCtrl),
 				server.WithGraphiQL(enableGraphiQL),
 				server.WithSlackVerifier(slackCfg.Verifier()),
+				server.WithNoAuth(authCfg.NoAuthentication),
+			}
+
+			// Add auth controller if authentication is enabled
+			if authCtrl != nil {
+				serverOptions = append(serverOptions,
+					server.WithAuthController(authCtrl),
+					server.WithAuthUseCase(authUseCase),
+				)
 			}
 
 			httpServer := http.Server{

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
@@ -68,4 +69,19 @@ type HistoryRepository interface {
 	PutHistory(ctx context.Context, history *slack.History) error
 	GetLatestHistory(ctx context.Context, threadID types.ThreadID) (*slack.History, error)
 	GetHistoryByID(ctx context.Context, id types.HistoryID) (*slack.History, error)
+}
+
+// SessionRepository manages user session persistence
+type SessionRepository interface {
+	CreateSession(ctx context.Context, session *auth.Session) error
+	GetSession(ctx context.Context, sessionID string) (*auth.Session, error)
+	DeleteSession(ctx context.Context, sessionID string) error
+	CleanupExpiredSessions(ctx context.Context) error
+}
+
+// OAuthStateRepository manages OAuth state for CSRF protection
+type OAuthStateRepository interface {
+	SaveState(ctx context.Context, state *auth.OAuthState) error
+	GetState(ctx context.Context, state string) (*auth.OAuthState, error)
+	ValidateAndDeleteState(ctx context.Context, state string) error
 }

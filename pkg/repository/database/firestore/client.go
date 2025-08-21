@@ -58,6 +58,11 @@ func (c *Client) Close() error {
 	return nil
 }
 
+// GetClient returns the underlying Firestore client
+func (c *Client) GetClient() *firestore.Client {
+	return c.client
+}
+
 // GetOrPutThread gets an existing thread or creates a new one atomically using Firestore transaction
 func (c *Client) GetOrPutThread(ctx context.Context, teamID, channelID, threadTS string) (*slack.Thread, error) {
 	return c.GetOrPutThreadWithAgent(ctx, teamID, channelID, threadTS, nil, "")

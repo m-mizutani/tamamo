@@ -294,12 +294,20 @@ export async function graphqlRequest<T>(
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include', // Include cookies for authentication
     body: JSON.stringify({
       query,
       variables,
     }),
     signal,
   });
+
+  // Handle authentication errors
+  if (response.status === 401) {
+    // Clear any cached auth state and redirect to login
+    window.location.href = '/api/auth/login';
+    throw new Error('Authentication required');
+  }
 
   if (!response.ok) {
     throw new Error(`GraphQL request failed: ${response.statusText}`);
@@ -308,6 +316,17 @@ export async function graphqlRequest<T>(
   const result = await response.json();
 
   if (result.errors) {
+    // Check if any error is an authentication error
+    const hasAuthError = result.errors.some((e: any) => 
+      e.message?.toLowerCase().includes('unauthorized') ||
+      e.message?.toLowerCase().includes('authentication')
+    );
+    
+    if (hasAuthError) {
+      window.location.href = '/api/auth/login';
+      throw new Error('Authentication required');
+    }
+    
     throw new Error(`GraphQL errors: ${result.errors.map((e: any) => e.message).join(', ')}`);
   }
 
