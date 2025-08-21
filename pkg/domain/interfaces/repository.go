@@ -46,6 +46,8 @@ type AgentRepository interface {
 
 	// Efficient queries for performance optimization
 	ListAgentsWithLatestVersions(ctx context.Context, offset, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error)
+	ListActiveAgentsWithLatestVersions(ctx context.Context, offset, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error)
+	ListAgentsByStatusWithLatestVersions(ctx context.Context, status agent.Status, offset, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error)
 
 	// Status management
 	UpdateAgentStatus(ctx context.Context, id types.UUID, status agent.Status) error

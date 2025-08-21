@@ -268,20 +268,18 @@ func (u *agentUseCaseImpl) ListAgents(ctx context.Context, offset, limit int) (*
 		return nil, goerr.New("offset and limit must be non-negative")
 	}
 
-	// Get only active agents
-	agents, totalCount, err := u.agentRepo.ListActiveAgents(ctx, offset, limit)
+	// Get active agents with their latest versions in a single optimized call
+	agents, versions, totalCount, err := u.agentRepo.ListActiveAgentsWithLatestVersions(ctx, offset, limit)
 	if err != nil {
-		return nil, goerr.Wrap(err, "failed to list active agents")
+		return nil, goerr.Wrap(err, "failed to list active agents with versions")
 	}
 
-	// Get latest versions for the agents
+	// Combine agents and versions
 	agentsWithVersions := make([]*interfaces.AgentWithVersion, 0, len(agents))
-	for _, agentObj := range agents {
-		// Get latest version for this agent
-		latestVersion, err := u.agentRepo.GetLatestAgentVersion(ctx, agentObj.ID)
-		if err != nil {
-			// If version not found, create AgentWithVersion with nil version
-			latestVersion = nil
+	for i, agentObj := range agents {
+		var latestVersion *agent.AgentVersion
+		if i < len(versions) {
+			latestVersion = versions[i]
 		}
 
 		agentsWithVersions = append(agentsWithVersions, &interfaces.AgentWithVersion{
@@ -302,20 +300,18 @@ func (u *agentUseCaseImpl) ListAllAgents(ctx context.Context, offset, limit int)
 		return nil, goerr.New("offset and limit must be non-negative")
 	}
 
-	// Get all agents regardless of status
-	agents, totalCount, err := u.agentRepo.ListAgents(ctx, offset, limit)
+	// Get all agents with their latest versions in a single optimized call
+	agents, versions, totalCount, err := u.agentRepo.ListAgentsWithLatestVersions(ctx, offset, limit)
 	if err != nil {
-		return nil, goerr.Wrap(err, "failed to list all agents")
+		return nil, goerr.Wrap(err, "failed to list all agents with versions")
 	}
 
-	// Get latest versions for the agents
+	// Combine agents and versions
 	agentsWithVersions := make([]*interfaces.AgentWithVersion, 0, len(agents))
-	for _, agentObj := range agents {
-		// Get latest version for this agent
-		latestVersion, err := u.agentRepo.GetLatestAgentVersion(ctx, agentObj.ID)
-		if err != nil {
-			// If version not found, create AgentWithVersion with nil version
-			latestVersion = nil
+	for i, agentObj := range agents {
+		var latestVersion *agent.AgentVersion
+		if i < len(versions) {
+			latestVersion = versions[i]
 		}
 
 		agentsWithVersions = append(agentsWithVersions, &interfaces.AgentWithVersion{
@@ -534,23 +530,21 @@ func (u *agentUseCaseImpl) ListAgentsByStatus(ctx context.Context, status agent.
 		return nil, goerr.New("offset and limit must be non-negative")
 	}
 
-	// Get agents by status
-	agents, totalCount, err := u.agentRepo.ListAgentsByStatus(ctx, status, offset, limit)
+	// Get agents by status with their latest versions in a single optimized call
+	agents, versions, totalCount, err := u.agentRepo.ListAgentsByStatusWithLatestVersions(ctx, status, offset, limit)
 	if err != nil {
-		return nil, goerr.Wrap(err, "failed to list agents by status",
+		return nil, goerr.Wrap(err, "failed to list agents by status with versions",
 			goerr.V("status", status),
 			goerr.V("offset", offset),
 			goerr.V("limit", limit))
 	}
 
-	// Get latest versions for the agents
+	// Combine agents and versions
 	agentsWithVersions := make([]*interfaces.AgentWithVersion, 0, len(agents))
-	for _, agentObj := range agents {
-		// Get latest version for this agent
-		latestVersion, err := u.agentRepo.GetLatestAgentVersion(ctx, agentObj.ID)
-		if err != nil {
-			// If version not found, create AgentWithVersion with nil version
-			latestVersion = nil
+	for i, agentObj := range agents {
+		var latestVersion *agent.AgentVersion
+		if i < len(versions) {
+			latestVersion = versions[i]
 		}
 
 		agentsWithVersions = append(agentsWithVersions, &interfaces.AgentWithVersion{

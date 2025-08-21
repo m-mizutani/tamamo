@@ -601,6 +601,222 @@ func (c *Client) ListAgentsWithLatestVersions(ctx context.Context, offset, limit
 	return agents, versions, totalCount, nil
 }
 
+// ListActiveAgentsWithLatestVersions efficiently retrieves active agents and their latest versions in a single operation
+func (c *Client) ListActiveAgentsWithLatestVersions(ctx context.Context, offset, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
+	if offset < 0 || limit < 0 {
+		return nil, nil, 0, goerr.New("offset and limit must be non-negative")
+	}
+
+	// Get total count of active agents using efficient aggregation query
+	baseQuery := c.client.Collection(collectionAgents).
+		Where("status", "==", agent.StatusActive.String())
+	aggregationQuery := baseQuery.NewAggregationQuery().WithCount("total")
+	result, err := aggregationQuery.Get(ctx)
+	if err != nil {
+		return nil, nil, 0, goerr.Wrap(err, "failed to count active agents")
+	}
+
+	countValue, ok := result["total"]
+	if !ok {
+		return nil, nil, 0, goerr.New("count result not found")
+	}
+
+	totalCount, err := extractCountFromAggregation(countValue)
+	if err != nil {
+		return nil, nil, 0, goerr.Wrap(err, "failed to extract count from aggregation result")
+	}
+
+	// Get active agents with pagination
+	query := c.client.Collection(collectionAgents).
+		Where("status", "==", agent.StatusActive.String()).
+		OrderBy(firestore.DocumentID, firestore.Asc)
+	if offset > 0 {
+		query = query.Offset(offset)
+	}
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+
+	iter := query.Documents(ctx)
+	defer iter.Stop()
+
+	var agents []*agent.Agent
+	var agentIDs []types.UUID
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, nil, 0, goerr.Wrap(err, "failed to iterate active agents")
+		}
+
+		var agentDoc agentDoc
+		if err := doc.DataTo(&agentDoc); err != nil {
+			return nil, nil, 0, goerr.Wrap(err, "failed to unmarshal agent data")
+		}
+
+		agentObj := &agent.Agent{
+			ID:          types.UUID(agentDoc.ID),
+			AgentID:     agentDoc.AgentID,
+			Name:        agentDoc.Name,
+			Description: agentDoc.Description,
+			Author:      agentDoc.Author,
+			Status:      agent.StatusActive, // Already filtered for active
+			Latest:      agentDoc.Latest,
+			CreatedAt:   agentDoc.CreatedAt,
+			UpdatedAt:   agentDoc.UpdatedAt,
+		}
+		agents = append(agents, agentObj)
+		agentIDs = append(agentIDs, agentObj.ID)
+	}
+
+	// Batch fetch latest versions for all agents
+	var versions []*agent.AgentVersion
+	for i, agentObj := range agents {
+		// Get latest version for this agent
+		versionDoc, err := c.client.Collection(collectionAgents).Doc(agentIDs[i].String()).Collection(subCollectionVersions).Doc(agentObj.Latest).Get(ctx)
+		if err != nil {
+			if status.Code(err) == codes.NotFound {
+				// If version not found, skip this agent's version
+				versions = append(versions, nil)
+				continue
+			}
+			return nil, nil, 0, goerr.Wrap(err, "failed to get latest version",
+				goerr.V("agent_id", agentObj.AgentID),
+				goerr.V("version", agentObj.Latest))
+		}
+
+		var versionDocData agentVersionDoc
+		if err := versionDoc.DataTo(&versionDocData); err != nil {
+			return nil, nil, 0, goerr.Wrap(err, "failed to unmarshal version data",
+				goerr.V("agent_id", agentObj.AgentID),
+				goerr.V("version", agentObj.Latest))
+		}
+
+		versions = append(versions, &agent.AgentVersion{
+			AgentUUID:    types.UUID(versionDocData.AgentUUID),
+			Version:      versionDocData.Version,
+			SystemPrompt: versionDocData.SystemPrompt,
+			LLMProvider:  agent.LLMProvider(versionDocData.LLMProvider),
+			LLMModel:     versionDocData.LLMModel,
+			CreatedAt:    versionDocData.CreatedAt,
+			UpdatedAt:    versionDocData.UpdatedAt,
+		})
+	}
+
+	return agents, versions, totalCount, nil
+}
+
+// ListAgentsByStatusWithLatestVersions efficiently retrieves agents with specific status and their latest versions
+func (c *Client) ListAgentsByStatusWithLatestVersions(ctx context.Context, agentStatus agent.Status, offset, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
+	if offset < 0 || limit < 0 {
+		return nil, nil, 0, goerr.New("offset and limit must be non-negative")
+	}
+
+	// Get total count of agents with the specified status using efficient aggregation query
+	baseQuery := c.client.Collection(collectionAgents).
+		Where("status", "==", agentStatus.String())
+	aggregationQuery := baseQuery.NewAggregationQuery().WithCount("total")
+	result, err := aggregationQuery.Get(ctx)
+	if err != nil {
+		return nil, nil, 0, goerr.Wrap(err, "failed to count agents by status",
+			goerr.V("status", agentStatus))
+	}
+
+	countValue, ok := result["total"]
+	if !ok {
+		return nil, nil, 0, goerr.New("count result not found")
+	}
+
+	totalCount, err := extractCountFromAggregation(countValue)
+	if err != nil {
+		return nil, nil, 0, goerr.Wrap(err, "failed to extract count from aggregation result")
+	}
+
+	// Get agents with specified status and pagination
+	query := c.client.Collection(collectionAgents).
+		Where("status", "==", agentStatus.String()).
+		OrderBy(firestore.DocumentID, firestore.Asc)
+	if offset > 0 {
+		query = query.Offset(offset)
+	}
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+
+	iter := query.Documents(ctx)
+	defer iter.Stop()
+
+	var agents []*agent.Agent
+	var agentIDs []types.UUID
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, nil, 0, goerr.Wrap(err, "failed to iterate agents by status",
+				goerr.V("status", agentStatus))
+		}
+
+		var agentDoc agentDoc
+		if err := doc.DataTo(&agentDoc); err != nil {
+			return nil, nil, 0, goerr.Wrap(err, "failed to unmarshal agent data")
+		}
+
+		agentObj := &agent.Agent{
+			ID:          types.UUID(agentDoc.ID),
+			AgentID:     agentDoc.AgentID,
+			Name:        agentDoc.Name,
+			Description: agentDoc.Description,
+			Author:      agentDoc.Author,
+			Status:      agentStatus, // Use the filtered status
+			Latest:      agentDoc.Latest,
+			CreatedAt:   agentDoc.CreatedAt,
+			UpdatedAt:   agentDoc.UpdatedAt,
+		}
+		agents = append(agents, agentObj)
+		agentIDs = append(agentIDs, agentObj.ID)
+	}
+
+	// Batch fetch latest versions for all agents
+	var versions []*agent.AgentVersion
+	for i, agentObj := range agents {
+		// Get latest version for this agent
+		versionDoc, err := c.client.Collection(collectionAgents).Doc(agentIDs[i].String()).Collection(subCollectionVersions).Doc(agentObj.Latest).Get(ctx)
+		if err != nil {
+			if status.Code(err) == codes.NotFound {
+				// If version not found, skip this agent's version
+				versions = append(versions, nil)
+				continue
+			}
+			return nil, nil, 0, goerr.Wrap(err, "failed to get latest version",
+				goerr.V("agent_id", agentObj.AgentID),
+				goerr.V("version", agentObj.Latest))
+		}
+
+		var versionDocData agentVersionDoc
+		if err := versionDoc.DataTo(&versionDocData); err != nil {
+			return nil, nil, 0, goerr.Wrap(err, "failed to unmarshal version data",
+				goerr.V("agent_id", agentObj.AgentID),
+				goerr.V("version", agentObj.Latest))
+		}
+
+		versions = append(versions, &agent.AgentVersion{
+			AgentUUID:    types.UUID(versionDocData.AgentUUID),
+			Version:      versionDocData.Version,
+			SystemPrompt: versionDocData.SystemPrompt,
+			LLMProvider:  agent.LLMProvider(versionDocData.LLMProvider),
+			LLMModel:     versionDocData.LLMModel,
+			CreatedAt:    versionDocData.CreatedAt,
+			UpdatedAt:    versionDocData.UpdatedAt,
+		})
+	}
+
+	return agents, versions, totalCount, nil
+}
+
 // AgentIDExists checks if an agent ID already exists
 func (c *Client) AgentIDExists(ctx context.Context, agentID string) (bool, error) {
 	if agentID == "" {

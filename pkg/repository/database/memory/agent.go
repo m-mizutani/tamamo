@@ -425,6 +425,164 @@ func (c *AgentMemoryClient) ListAgentsWithLatestVersions(ctx context.Context, of
 	return paginatedAgents, versions, totalCount, nil
 }
 
+// ListActiveAgentsWithLatestVersions retrieves a list of active agents with their latest versions (optimized)
+func (c *AgentMemoryClient) ListActiveAgentsWithLatestVersions(ctx context.Context, offset, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
+	if offset < 0 || limit < 0 {
+		return nil, nil, 0, goerr.New("offset and limit must be non-negative")
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	// Filter active agents and convert to slice
+	activeAgents := make([]*agent.Agent, 0)
+	for _, agentObj := range c.agents {
+		// Set default status for backward compatibility
+		status := agentObj.Status
+		if status == "" {
+			status = agent.StatusActive
+		}
+
+		if status == agent.StatusActive {
+			// Create a copy to avoid external modifications
+			agentCopy := *agentObj
+			// Ensure status is set for response
+			if agentCopy.Status == "" {
+				agentCopy.Status = agent.StatusActive
+			}
+			activeAgents = append(activeAgents, &agentCopy)
+		}
+	}
+
+	// Sort by creation time (newest first)
+	sort.Slice(activeAgents, func(i, j int) bool {
+		return activeAgents[i].CreatedAt.After(activeAgents[j].CreatedAt)
+	})
+
+	totalCount := len(activeAgents)
+
+	// Apply pagination
+	start := offset
+	if start > totalCount {
+		start = totalCount
+	}
+
+	end := start + limit
+	if limit == 0 || end > totalCount {
+		end = totalCount
+	}
+
+	if start >= totalCount {
+		return []*agent.Agent{}, []*agent.AgentVersion{}, totalCount, nil
+	}
+
+	paginatedAgents := activeAgents[start:end]
+
+	// Get latest versions for the paginated agents
+	versions := make([]*agent.AgentVersion, 0, len(paginatedAgents))
+	for _, agentObj := range paginatedAgents {
+		agentVersions, exists := c.versions[agentObj.ID]
+		if !exists || len(agentVersions) == 0 {
+			// No versions found for this agent
+			versions = append(versions, nil)
+			continue
+		}
+
+		// Find the latest version
+		latestVersion, exists := agentVersions[agentObj.Latest]
+		if !exists {
+			// Latest version not found
+			versions = append(versions, nil)
+			continue
+		}
+
+		// Create a copy to avoid external modifications
+		versionCopy := *latestVersion
+		versions = append(versions, &versionCopy)
+	}
+
+	return paginatedAgents, versions, totalCount, nil
+}
+
+// ListAgentsByStatusWithLatestVersions retrieves a list of agents with specific status and their latest versions (optimized)
+func (c *AgentMemoryClient) ListAgentsByStatusWithLatestVersions(ctx context.Context, status agent.Status, offset, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
+	if offset < 0 || limit < 0 {
+		return nil, nil, 0, goerr.New("offset and limit must be non-negative")
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	// Filter agents by status and convert to slice
+	filteredAgents := make([]*agent.Agent, 0)
+	for _, agentObj := range c.agents {
+		// Set default status for backward compatibility
+		agentStatus := agentObj.Status
+		if agentStatus == "" {
+			agentStatus = agent.StatusActive
+		}
+
+		if agentStatus == status {
+			// Create a copy to avoid external modifications
+			agentCopy := *agentObj
+			// Ensure status is set for response
+			if agentCopy.Status == "" {
+				agentCopy.Status = agent.StatusActive
+			}
+			filteredAgents = append(filteredAgents, &agentCopy)
+		}
+	}
+
+	// Sort by creation time (newest first)
+	sort.Slice(filteredAgents, func(i, j int) bool {
+		return filteredAgents[i].CreatedAt.After(filteredAgents[j].CreatedAt)
+	})
+
+	totalCount := len(filteredAgents)
+
+	// Apply pagination
+	start := offset
+	if start > totalCount {
+		start = totalCount
+	}
+
+	end := start + limit
+	if limit == 0 || end > totalCount {
+		end = totalCount
+	}
+
+	if start >= totalCount {
+		return []*agent.Agent{}, []*agent.AgentVersion{}, totalCount, nil
+	}
+
+	paginatedAgents := filteredAgents[start:end]
+
+	// Get latest versions for the paginated agents
+	versions := make([]*agent.AgentVersion, 0, len(paginatedAgents))
+	for _, agentObj := range paginatedAgents {
+		agentVersions, exists := c.versions[agentObj.ID]
+		if !exists || len(agentVersions) == 0 {
+			// No versions found for this agent
+			versions = append(versions, nil)
+			continue
+		}
+
+		// Find the latest version
+		latestVersion, exists := agentVersions[agentObj.Latest]
+		if !exists {
+			// Latest version not found
+			versions = append(versions, nil)
+			continue
+		}
+
+		// Create a copy to avoid external modifications
+		versionCopy := *latestVersion
+		versions = append(versions, &versionCopy)
+	}
+
+	return paginatedAgents, versions, totalCount, nil
+}
+
 // AgentIDExists checks if an agent ID already exists
 func (c *AgentMemoryClient) AgentIDExists(ctx context.Context, agentID string) (bool, error) {
 	if agentID == "" {
