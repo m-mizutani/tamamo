@@ -6,11 +6,13 @@ import { ArchivedAgentsPage } from '@/pages/ArchivedAgentsPage'
 import { CreateAgentPage } from '@/pages/CreateAgentPage'
 import { AgentDetailPage } from '@/pages/AgentDetailPage'
 import { AgentVersionHistoryPage } from '@/pages/AgentVersionHistoryPage'
+import { Toaster } from 'sonner'
 
 function App() {
   return (
-    <MainLayout>
-      <Routes>
+    <>
+      <MainLayout>
+        <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/agents" element={<AgentsPage />} />
         <Route path="/agents/archived" element={<ArchivedAgentsPage />} />
@@ -25,6 +27,8 @@ function App() {
         } />
       </Routes>
     </MainLayout>
+    <Toaster richColors position="top-right" />
+    </>
   )
 }
 

@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Users, Loader2, RefreshCw, ChevronLeft, ChevronRight, Archive, CheckSquare, Square, Undo2 } from 'lucide-react'
 import { Agent, AgentListResponse, GET_AGENTS, GET_ALL_AGENTS, GET_AGENTS_BY_STATUS, ARCHIVE_AGENT, UNARCHIVE_AGENT, graphqlRequest } from '@/lib/graphql'
 import { useNavigate } from 'react-router-dom'
-import { ConfirmDialog } from '@/components/ConfirmDialogV2'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { toast } from 'sonner'
 
 const AGENTS_PER_PAGE = 18
 
@@ -116,6 +117,7 @@ export function AgentsPage() {
   const handleBulkArchive = async () => {
     if (selectedAgents.size === 0) return
 
+    const count = selectedAgents.size
     setShowBulkArchiveDialog(false)
     setBulkOperationLoading(true)
     try {
@@ -128,9 +130,12 @@ export function AgentsPage() {
       // Refresh the list and clear selection
       await fetchAgents(currentPage, filter)
       setSelectedAgents(new Set())
+      toast.success(`Successfully archived ${count} agent${count > 1 ? 's' : ''}`)
     } catch (err) {
       console.error('Failed to archive agents:', err)
-      alert('Failed to archive some agents: ' + (err instanceof Error ? err.message : 'Unknown error'))
+      toast.error('Failed to archive agents', {
+        description: err instanceof Error ? err.message : 'Unknown error occurred'
+      })
     } finally {
       setBulkOperationLoading(false)
     }
@@ -139,6 +144,7 @@ export function AgentsPage() {
   const handleBulkUnarchive = async () => {
     if (selectedAgents.size === 0) return
 
+    const count = selectedAgents.size
     setShowBulkUnarchiveDialog(false)
     setBulkOperationLoading(true)
     try {
@@ -151,9 +157,12 @@ export function AgentsPage() {
       // Refresh the list and clear selection
       await fetchAgents(currentPage, filter)
       setSelectedAgents(new Set())
+      toast.success(`Successfully unarchived ${count} agent${count > 1 ? 's' : ''}`)
     } catch (err) {
       console.error('Failed to unarchive agents:', err)
-      alert('Failed to unarchive some agents: ' + (err instanceof Error ? err.message : 'Unknown error'))
+      toast.error('Failed to unarchive agents', {
+        description: err instanceof Error ? err.message : 'Unknown error occurred'
+      })
     } finally {
       setBulkOperationLoading(false)
     }

@@ -8,47 +8,45 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from './ui/alert-dialog';
 
 interface ConfirmDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: 'default' | 'destructive';
-  onConfirm: () => void;
+  confirmVariant?: 'default' | 'destructive';
+  onConfirm: () => void | Promise<void>;
   onCancel?: () => void;
-  trigger: React.ReactNode;
-  disabled?: boolean;
 }
 
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+  open,
+  onOpenChange,
   title,
   description,
-  confirmText = "確認",
-  cancelText = "キャンセル",
-  variant = 'default',
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  confirmVariant = 'default',
   onConfirm,
   onCancel,
-  trigger,
-  disabled = false,
 }) => {
-  const handleConfirm = () => {
-    onConfirm();
+  const handleConfirm = async () => {
+    await onConfirm();
+    onOpenChange(false);
   };
 
   const handleCancel = () => {
     if (onCancel) {
       onCancel();
     }
+    onOpenChange(false);
   };
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild disabled={disabled}>
-        {trigger}
-      </AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
@@ -60,7 +58,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </AlertDialogCancel>
           <AlertDialogAction 
             onClick={handleConfirm}
-            className={variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : ''}
+            className={confirmVariant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : ''}
           >
             {confirmText}
           </AlertDialogAction>

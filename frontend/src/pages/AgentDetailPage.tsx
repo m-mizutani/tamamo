@@ -33,7 +33,7 @@ import {
   UpdateAgentInput
 } from '@/lib/graphql'
 import { Badge } from '@/components/ui/badge'
-import { ConfirmDialog } from '@/components/ConfirmDialogV2'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { CreateVersionDialog } from '@/components/agents/CreateVersionDialog'
 
 const LLM_PROVIDERS = [

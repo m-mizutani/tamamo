@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Archive, Loader2, RefreshCw, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react'
 import { Agent, AgentListResponse, GET_AGENTS_BY_STATUS, UNARCHIVE_AGENT, graphqlRequest } from '@/lib/graphql'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 const AGENTS_PER_PAGE = 18
 
@@ -65,10 +66,12 @@ export function ArchivedAgentsPage() {
       
       // Refresh the list to remove the unarchived agent
       await fetchArchivedAgents(currentPage)
+      toast.success('Agent unarchived successfully')
     } catch (err) {
       console.error('Failed to unarchive agent:', err)
-      // For now, just log the error. In a real app, you'd want to show a proper error message
-      alert('Failed to unarchive agent: ' + (err instanceof Error ? err.message : 'Unknown error'))
+      toast.error('Failed to unarchive agent', {
+        description: err instanceof Error ? err.message : 'Unknown error occurred'
+      })
     } finally {
       setUnarchivingAgents(prev => {
         const newSet = new Set(prev)
