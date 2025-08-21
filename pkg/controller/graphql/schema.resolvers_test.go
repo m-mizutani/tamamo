@@ -910,13 +910,7 @@ func TestMutationResolver_ArchiveAgent_Success(t *testing.T) {
 
 	// Setup mock
 	mockAgentUseCase := &mock.AgentUseCasesMock{
-		ArchiveAgentFunc: func(ctx context.Context, id types.UUID) (*agentmodel.Agent, error) {
-			if id == testAgent.ID {
-				return testAgent, nil
-			}
-			return nil, errors.New("agent not found")
-		},
-		GetAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
+		ArchiveAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
 			if id == testAgent.ID {
 				return testAgentWithVersion, nil
 			}
@@ -968,7 +962,7 @@ func TestMutationResolver_ArchiveAgent_UseCaseError(t *testing.T) {
 
 	// Setup mock to return error
 	mockAgentUseCase := &mock.AgentUseCasesMock{
-		ArchiveAgentFunc: func(ctx context.Context, id types.UUID) (*agentmodel.Agent, error) {
+		ArchiveAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
 			return nil, errors.New("archive failed")
 		},
 	}
@@ -1016,13 +1010,7 @@ func TestMutationResolver_UnarchiveAgent_Success(t *testing.T) {
 
 	// Setup mock
 	mockAgentUseCase := &mock.AgentUseCasesMock{
-		UnarchiveAgentFunc: func(ctx context.Context, id types.UUID) (*agentmodel.Agent, error) {
-			if id == testAgent.ID {
-				return testAgent, nil
-			}
-			return nil, errors.New("agent not found")
-		},
-		GetAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
+		UnarchiveAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
 			if id == testAgent.ID {
 				return testAgentWithVersion, nil
 			}
@@ -1074,7 +1062,7 @@ func TestMutationResolver_UnarchiveAgent_UseCaseError(t *testing.T) {
 
 	// Setup mock to return error
 	mockAgentUseCase := &mock.AgentUseCasesMock{
-		UnarchiveAgentFunc: func(ctx context.Context, id types.UUID) (*agentmodel.Agent, error) {
+		UnarchiveAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
 			return nil, errors.New("unarchive failed")
 		},
 	}

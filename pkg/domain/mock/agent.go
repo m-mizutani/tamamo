@@ -21,7 +21,7 @@ var _ interfaces.AgentUseCases = &AgentUseCasesMock{}
 //
 //		// make and configure a mocked interfaces.AgentUseCases
 //		mockedAgentUseCases := &AgentUseCasesMock{
-//			ArchiveAgentFunc: func(ctx context.Context, id types.UUID) (*agent.Agent, error) {
+//			ArchiveAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
 //				panic("mock out the ArchiveAgent method")
 //			},
 //			CheckAgentIDAvailabilityFunc: func(ctx context.Context, agentID string) (*interfaces.AgentIDAvailability, error) {
@@ -51,7 +51,7 @@ var _ interfaces.AgentUseCases = &AgentUseCasesMock{}
 //			ListAllAgentsFunc: func(ctx context.Context, offset int, limit int) (*interfaces.AgentListResponse, error) {
 //				panic("mock out the ListAllAgents method")
 //			},
-//			UnarchiveAgentFunc: func(ctx context.Context, id types.UUID) (*agent.Agent, error) {
+//			UnarchiveAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
 //				panic("mock out the UnarchiveAgent method")
 //			},
 //			UpdateAgentFunc: func(ctx context.Context, id types.UUID, req *interfaces.UpdateAgentRequest) (*agent.Agent, error) {
@@ -71,7 +71,7 @@ var _ interfaces.AgentUseCases = &AgentUseCasesMock{}
 //	}
 type AgentUseCasesMock struct {
 	// ArchiveAgentFunc mocks the ArchiveAgent method.
-	ArchiveAgentFunc func(ctx context.Context, id types.UUID) (*agent.Agent, error)
+	ArchiveAgentFunc func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error)
 
 	// CheckAgentIDAvailabilityFunc mocks the CheckAgentIDAvailability method.
 	CheckAgentIDAvailabilityFunc func(ctx context.Context, agentID string) (*interfaces.AgentIDAvailability, error)
@@ -101,7 +101,7 @@ type AgentUseCasesMock struct {
 	ListAllAgentsFunc func(ctx context.Context, offset int, limit int) (*interfaces.AgentListResponse, error)
 
 	// UnarchiveAgentFunc mocks the UnarchiveAgent method.
-	UnarchiveAgentFunc func(ctx context.Context, id types.UUID) (*agent.Agent, error)
+	UnarchiveAgentFunc func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error)
 
 	// UpdateAgentFunc mocks the UpdateAgent method.
 	UpdateAgentFunc func(ctx context.Context, id types.UUID, req *interfaces.UpdateAgentRequest) (*agent.Agent, error)
@@ -236,7 +236,7 @@ type AgentUseCasesMock struct {
 }
 
 // ArchiveAgent calls ArchiveAgentFunc.
-func (mock *AgentUseCasesMock) ArchiveAgent(ctx context.Context, id types.UUID) (*agent.Agent, error) {
+func (mock *AgentUseCasesMock) ArchiveAgent(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
 	if mock.ArchiveAgentFunc == nil {
 		panic("AgentUseCasesMock.ArchiveAgentFunc: method is nil but AgentUseCases.ArchiveAgent was just called")
 	}
@@ -612,7 +612,7 @@ func (mock *AgentUseCasesMock) ListAllAgentsCalls() []struct {
 }
 
 // UnarchiveAgent calls UnarchiveAgentFunc.
-func (mock *AgentUseCasesMock) UnarchiveAgent(ctx context.Context, id types.UUID) (*agent.Agent, error) {
+func (mock *AgentUseCasesMock) UnarchiveAgent(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
 	if mock.UnarchiveAgentFunc == nil {
 		panic("AgentUseCasesMock.UnarchiveAgentFunc: method is nil but AgentUseCases.UnarchiveAgent was just called")
 	}

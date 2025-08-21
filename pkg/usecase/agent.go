@@ -467,7 +467,7 @@ func incrementVersion(version string) string {
 }
 
 // ArchiveAgent archives an existing agent
-func (u *agentUseCaseImpl) ArchiveAgent(ctx context.Context, id types.UUID) (*agent.Agent, error) {
+func (u *agentUseCaseImpl) ArchiveAgent(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
 	if !id.IsValid() {
 		return nil, goerr.New("invalid agent ID")
 	}
@@ -488,15 +488,29 @@ func (u *agentUseCaseImpl) ArchiveAgent(ctx context.Context, id types.UUID) (*ag
 		return nil, goerr.Wrap(err, "failed to archive agent")
 	}
 
-	// Return updated agent
+	// Update the agent object with new status
 	agentObj.Status = agent.StatusArchived
 	agentObj.UpdatedAt = time.Now()
 
-	return agentObj, nil
+	// Get the latest version for the response
+	versions, err := u.agentRepo.ListAgentVersions(ctx, id)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get agent versions")
+	}
+
+	var latestVersion *agent.AgentVersion
+	if len(versions) > 0 {
+		latestVersion = versions[0]
+	}
+
+	return &interfaces.AgentWithVersion{
+		Agent:         agentObj,
+		LatestVersion: latestVersion,
+	}, nil
 }
 
 // UnarchiveAgent unarchives an existing agent (sets to active)
-func (u *agentUseCaseImpl) UnarchiveAgent(ctx context.Context, id types.UUID) (*agent.Agent, error) {
+func (u *agentUseCaseImpl) UnarchiveAgent(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
 	if !id.IsValid() {
 		return nil, goerr.New("invalid agent ID")
 	}
@@ -517,11 +531,25 @@ func (u *agentUseCaseImpl) UnarchiveAgent(ctx context.Context, id types.UUID) (*
 		return nil, goerr.Wrap(err, "failed to unarchive agent")
 	}
 
-	// Return updated agent
+	// Update the agent object with new status
 	agentObj.Status = agent.StatusActive
 	agentObj.UpdatedAt = time.Now()
 
-	return agentObj, nil
+	// Get the latest version for the response
+	versions, err := u.agentRepo.ListAgentVersions(ctx, id)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get agent versions")
+	}
+
+	var latestVersion *agent.AgentVersion
+	if len(versions) > 0 {
+		latestVersion = versions[0]
+	}
+
+	return &interfaces.AgentWithVersion{
+		Agent:         agentObj,
+		LatestVersion: latestVersion,
+	}, nil
 }
 
 // ListAgentsByStatus retrieves a list of agents with a specific status

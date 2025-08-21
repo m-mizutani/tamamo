@@ -82,16 +82,9 @@ func (r *mutationResolver) ArchiveAgent(ctx context.Context, id string) (*graphq
 		return nil, goerr.New("invalid agent ID")
 	}
 
-	agent, err := r.agentUseCase.ArchiveAgent(ctx, agentID)
+	agentWithVersion, err := r.agentUseCase.ArchiveAgent(ctx, agentID)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to archive agent")
-	}
-
-	// Get the agent with its latest version for the response
-	agentWithVersion, err := r.agentUseCase.GetAgent(ctx, agent.ID)
-	if err != nil {
-		// Return the archived agent even if we can't get the latest version
-		return convertAgentToGraphQL(agent, nil), nil
 	}
 
 	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil
@@ -104,16 +97,9 @@ func (r *mutationResolver) UnarchiveAgent(ctx context.Context, id string) (*grap
 		return nil, goerr.New("invalid agent ID")
 	}
 
-	agent, err := r.agentUseCase.UnarchiveAgent(ctx, agentID)
+	agentWithVersion, err := r.agentUseCase.UnarchiveAgent(ctx, agentID)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to unarchive agent")
-	}
-
-	// Get the agent with its latest version for the response
-	agentWithVersion, err := r.agentUseCase.GetAgent(ctx, agent.ID)
-	if err != nil {
-		// Return the unarchived agent even if we can't get the latest version
-		return convertAgentToGraphQL(agent, nil), nil
 	}
 
 	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil

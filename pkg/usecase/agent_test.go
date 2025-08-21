@@ -490,8 +490,8 @@ func TestArchiveAgent(t *testing.T) {
 	archivedAgent, err := uc.ArchiveAgent(ctx, createdAgent.ID)
 	gt.NoError(t, err)
 	gt.V(t, archivedAgent).NotNil()
-	gt.Equal(t, archivedAgent.ID, createdAgent.ID)
-	gt.Equal(t, archivedAgent.Status, agent.StatusArchived)
+	gt.Equal(t, archivedAgent.Agent.ID, createdAgent.ID)
+	gt.Equal(t, archivedAgent.Agent.Status, agent.StatusArchived)
 
 	// Verify the agent is archived when retrieved
 	retrievedAgent, err := uc.GetAgent(ctx, createdAgent.ID)
@@ -562,8 +562,8 @@ func TestUnarchiveAgent(t *testing.T) {
 	unarchivedAgent, err := uc.UnarchiveAgent(ctx, createdAgent.ID)
 	gt.NoError(t, err)
 	gt.V(t, unarchivedAgent).NotNil()
-	gt.Equal(t, unarchivedAgent.ID, createdAgent.ID)
-	gt.Equal(t, unarchivedAgent.Status, agent.StatusActive)
+	gt.Equal(t, unarchivedAgent.Agent.ID, createdAgent.ID)
+	gt.Equal(t, unarchivedAgent.Agent.Status, agent.StatusActive)
 
 	// Verify the agent is active when retrieved
 	retrievedAgent, err := uc.GetAgent(ctx, createdAgent.ID)
@@ -690,7 +690,7 @@ func TestArchiveUnarchiveWorkflow(t *testing.T) {
 	// Archive the agent
 	archivedAgent, err := uc.ArchiveAgent(ctx, createdAgent.ID)
 	gt.NoError(t, err)
-	gt.Equal(t, archivedAgent.Status, agent.StatusArchived)
+	gt.Equal(t, archivedAgent.Agent.Status, agent.StatusArchived)
 
 	// Agent should NOT appear in list
 	agentList, err = uc.ListAgents(ctx, 0, 10)
@@ -700,7 +700,7 @@ func TestArchiveUnarchiveWorkflow(t *testing.T) {
 	// Unarchive the agent
 	unarchivedAgent, err := uc.UnarchiveAgent(ctx, createdAgent.ID)
 	gt.NoError(t, err)
-	gt.Equal(t, unarchivedAgent.Status, agent.StatusActive)
+	gt.Equal(t, unarchivedAgent.Agent.Status, agent.StatusActive)
 
 	// Agent should appear in list again
 	agentList, err = uc.ListAgents(ctx, 0, 10)
