@@ -11,8 +11,9 @@ import (
 
 // Service implements Slack operations
 type Service struct {
-	client    *api.Client
-	botUserID string
+	client       *api.Client
+	botUserID    string
+	authTestInfo *api.AuthTestResponse
 }
 
 // New creates a new Slack service
@@ -26,9 +27,18 @@ func New(token string) (*Service, error) {
 	}
 
 	return &Service{
-		client:    client,
-		botUserID: resp.UserID,
+		client:       client,
+		botUserID:    resp.UserID,
+		authTestInfo: resp,
 	}, nil
+}
+
+// GetAuthTestInfo returns the auth test information including team ID
+func (s *Service) GetAuthTestInfo() (*api.AuthTestResponse, error) {
+	if s.authTestInfo == nil {
+		return nil, goerr.New("auth test info not available")
+	}
+	return s.authTestInfo, nil
 }
 
 // Ensure Service implements SlackClient interface

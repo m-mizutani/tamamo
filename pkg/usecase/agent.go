@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/m-mizutani/goerr/v2"
+	"github.com/m-mizutani/tamamo/pkg/controller/http/middleware"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
@@ -63,12 +64,18 @@ func (u *agentUseCaseImpl) CreateAgent(ctx context.Context, req *interfaces.Crea
 		description = *req.Description
 	}
 
+	// Get author from authentication context
+	author := "anonymous"
+	if session, ok := middleware.UserFromContext(ctx); ok && session != nil {
+		author = session.UserID // Slack ID
+	}
+
 	agentObj := &agent.Agent{
 		ID:          types.NewUUID(ctx),
 		AgentID:     req.AgentID,
 		Name:        req.Name,
 		Description: description,
-		Author:      "anonymous",        // As per requirement
+		Author:      author,
 		Status:      agent.StatusActive, // Default to active
 		Latest:      version,
 		CreatedAt:   now,

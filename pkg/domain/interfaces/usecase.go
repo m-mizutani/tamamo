@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
@@ -78,4 +79,18 @@ type AgentUseCases interface {
 	CheckAgentIDAvailability(ctx context.Context, agentID string) (*AgentIDAvailability, error)
 	ValidateAgentID(agentID string) error
 	ValidateVersion(version string) error
+}
+
+// AuthUseCases handles authentication and session management
+type AuthUseCases interface {
+	// OAuth flow
+	GenerateLoginURL(ctx context.Context, state string) (string, error)
+	HandleCallback(ctx context.Context, code string) (*auth.Session, error)
+
+	// Session management
+	GetSession(ctx context.Context, sessionID string) (*auth.Session, error)
+	Logout(ctx context.Context, sessionID string) error
+
+	// Session cleanup (should be called periodically)
+	CleanupExpiredSessions(ctx context.Context) error
 }

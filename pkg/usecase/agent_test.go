@@ -4,10 +4,13 @@ import (
 	"context"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/m-mizutani/gt"
+	"github.com/m-mizutani/tamamo/pkg/controller/http/middleware"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/repository/database/memory"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
@@ -46,7 +49,43 @@ func TestCreateAgent(t *testing.T) {
 	gt.Equal(t, createdAgent.Name, req.Name)
 	gt.Equal(t, createdAgent.Description, *req.Description)
 	gt.Equal(t, createdAgent.Latest, req.Version)
+	gt.Equal(t, createdAgent.Author, "anonymous") // Without auth context, should be anonymous
 	// Note: LatestVersion is not returned in CreateAgent, only in GetAgent
+}
+
+func TestCreateAgent_WithAuthor(t *testing.T) {
+	ctx := context.Background()
+	uc, _ := setupAgentTest(t)
+
+	// Create a session with Slack user ID
+	session := &auth.Session{
+		ID:        types.NewUUID(ctx),
+		UserID:    "U123456789", // Slack user ID
+		UserName:  "Test User",
+		Email:     "test@example.com",
+		TeamID:    "T123456789",
+		TeamName:  "Test Team",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+		CreatedAt: time.Now(),
+	}
+
+	// Add session to context
+	ctxWithAuth := middleware.ContextWithUser(ctx, session)
+
+	req := &interfaces.CreateAgentRequest{
+		AgentID:      "test-agent-with-author",
+		Name:         "Test Agent with Author",
+		Description:  stringPtr("A test agent with author info"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
+		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMModel:     "gpt-4",
+		Version:      "1.0.0",
+	}
+
+	createdAgent, err := uc.CreateAgent(ctxWithAuth, req)
+	gt.NoError(t, err)
+	gt.V(t, createdAgent).NotNil()
+	gt.Equal(t, createdAgent.Author, "U123456789") // Should be the Slack user ID
 }
 
 func TestCreateAgent_InvalidAgentID(t *testing.T) {

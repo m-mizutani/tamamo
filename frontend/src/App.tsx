@@ -6,9 +6,26 @@ import { ArchivedAgentsPage } from '@/pages/ArchivedAgentsPage'
 import { CreateAgentPage } from '@/pages/CreateAgentPage'
 import { AgentDetailPage } from '@/pages/AgentDetailPage'
 import { AgentVersionHistoryPage } from '@/pages/AgentVersionHistoryPage'
+import { LoginPage } from '@/pages/LoginPage'
+import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { Toaster } from 'sonner'
+import { Loader2 } from 'lucide-react'
 
-function App() {
+function AppContent() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
   return (
     <>
       <MainLayout>
@@ -29,6 +46,14 @@ function App() {
     </MainLayout>
     <Toaster richColors position="top-right" />
     </>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

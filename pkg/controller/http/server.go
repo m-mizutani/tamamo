@@ -12,8 +12,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/frontend"
+	auth_controller "github.com/m-mizutani/tamamo/pkg/controller/auth"
 	graphql_controller "github.com/m-mizutani/tamamo/pkg/controller/graphql"
+	"github.com/m-mizutani/tamamo/pkg/controller/http/middleware"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
+	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/utils/errors"
 	"github.com/m-mizutani/tamamo/pkg/utils/safe"
@@ -35,8 +38,11 @@ type Server struct {
 	router         *chi.Mux
 	slackCtrl      *slack_controller.Controller
 	graphqlCtrl    *graphql_controller.Resolver
+	authCtrl       *auth_controller.Controller
+	authUseCase    interfaces.AuthUseCases
 	enableGraphiQL bool
 	slackVerifier  slack.PayloadVerifier
+	noAuth         bool
 }
 
 // Options is a functional option for Server
@@ -70,6 +76,27 @@ func WithGraphiQL(enable bool) Options {
 	}
 }
 
+// WithAuthController sets the authentication controller
+func WithAuthController(ctrl *auth_controller.Controller) Options {
+	return func(s *Server) {
+		s.authCtrl = ctrl
+	}
+}
+
+// WithAuthUseCase sets the authentication use case
+func WithAuthUseCase(useCase interfaces.AuthUseCases) Options {
+	return func(s *Server) {
+		s.authUseCase = useCase
+	}
+}
+
+// WithNoAuth enables no-authentication mode
+func WithNoAuth(noAuth bool) Options {
+	return func(s *Server) {
+		s.noAuth = noAuth
+	}
+}
+
 // New creates a new HTTP server
 func New(opts ...Options) *Server {
 	r := chi.NewRouter()
@@ -85,6 +112,17 @@ func New(opts ...Options) *Server {
 	r.Use(loggingMiddleware)
 	r.Use(panicRecoveryMiddleware)
 
+	// Authentication routes (before auth middleware)
+	if s.authCtrl != nil && !s.noAuth {
+		r.Route("/api/auth", func(r chi.Router) {
+			r.Get("/login", s.authCtrl.HandleLogin)
+			r.Get("/callback", s.authCtrl.HandleCallback)
+			r.Post("/logout", s.authCtrl.HandleLogout)
+			r.Get("/check", s.authCtrl.HandleCheck)
+			r.Get("/me", s.authCtrl.HandleMe)
+		})
+	}
+
 	// Register routes
 	r.Route("/hooks", func(r chi.Router) {
 		r.Route("/slack", func(r chi.Router) {
@@ -97,17 +135,24 @@ func New(opts ...Options) *Server {
 		})
 	})
 
-	// GraphQL endpoints
+	// GraphQL endpoints (with authentication)
 	if s.graphqlCtrl != nil {
-		srv := handler.NewDefaultServer(
-			graphql_controller.NewExecutableSchema(
-				graphql_controller.Config{
-					Resolvers: s.graphqlCtrl,
-				},
-			),
-		)
-		// Add GraphQL-specific logging middleware
-		r.Handle("/graphql", graphQLLoggingMiddleware(srv))
+		r.Route("/graphql", func(r chi.Router) {
+			// Apply authentication middleware if enabled
+			if s.authUseCase != nil && !s.noAuth {
+				r.Use(middleware.AuthMiddleware(s.authUseCase, s.noAuth))
+			}
+
+			srv := handler.NewDefaultServer(
+				graphql_controller.NewExecutableSchema(
+					graphql_controller.Config{
+						Resolvers: s.graphqlCtrl,
+					},
+				),
+			)
+			// Add GraphQL-specific logging middleware
+			r.Handle("/", graphQLLoggingMiddleware(srv))
+		})
 
 		// GraphiQL IDE (optional)
 		if s.enableGraphiQL {
