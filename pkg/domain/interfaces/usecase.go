@@ -84,8 +84,8 @@ type AgentUseCases interface {
 // AuthUseCases handles authentication and session management
 type AuthUseCases interface {
 	// OAuth flow
-	GenerateLoginURL(ctx context.Context) (string, error)
-	HandleCallback(ctx context.Context, code, state string) (*auth.Session, error)
+	GenerateLoginURL(ctx context.Context, state string) (string, error)
+	HandleCallback(ctx context.Context, code string) (*auth.Session, error)
 
 	// Session management
 	GetSession(ctx context.Context, sessionID string) (*auth.Session, error)

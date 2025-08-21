@@ -15,13 +15,11 @@ import (
 func TestAuthUseCase_SessionLifecycle(t *testing.T) {
 	ctx := context.Background()
 	sessionRepo := memory.NewSessionRepository()
-	oauthStateRepo := memory.NewOAuthStateRepository()
 
 	// Note: In real tests, we would mock the Slack OAuth service
 	// For now, we'll test the session management directly
 	uc := usecase.NewAuthUseCase(
 		sessionRepo,
-		oauthStateRepo,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
@@ -102,46 +100,4 @@ func TestAuthUseCase_ExpiredSession(t *testing.T) {
 	gt.Equal(t, getErr, auth.ErrSessionExpired)
 }
 
-func TestOAuthState_CSRF(t *testing.T) {
-	ctx := context.Background()
-	oauthStateRepo := memory.NewOAuthStateRepository()
-
-	t.Run("Valid state", func(t *testing.T) {
-		state, err := auth.NewOAuthState()
-		gt.NoError(t, err)
-		gt.NoError(t, oauthStateRepo.SaveState(ctx, state))
-
-		// Validate and delete state
-		err = oauthStateRepo.ValidateAndDeleteState(ctx, state.State)
-		gt.NoError(t, err)
-
-		// State should be deleted after validation
-		err = oauthStateRepo.ValidateAndDeleteState(ctx, state.State)
-		gt.Error(t, err)
-		gt.Equal(t, err, auth.ErrStateNotFound)
-	})
-
-	t.Run("Expired state", func(t *testing.T) {
-		// Create an expired state
-		expiredState := &auth.OAuthState{
-			State:     "expired-state-token",
-			ExpiresAt: time.Now().Add(-1 * time.Minute), // Expired 1 minute ago
-			CreatedAt: time.Now().Add(-6 * time.Minute),
-		}
-
-		// Note: SaveState will immediately clean up expired states in memory implementation
-		gt.NoError(t, oauthStateRepo.SaveState(ctx, expiredState))
-
-		// Try to validate expired state - it should be not found since it was cleaned up
-		err := oauthStateRepo.ValidateAndDeleteState(ctx, expiredState.State)
-		gt.Error(t, err)
-		// Memory implementation cleans up expired states on save, so it returns NotFound
-		gt.Equal(t, err, auth.ErrStateNotFound)
-	})
-
-	t.Run("Invalid state", func(t *testing.T) {
-		err := oauthStateRepo.ValidateAndDeleteState(ctx, "invalid-state-token")
-		gt.Error(t, err)
-		gt.Equal(t, err, auth.ErrStateNotFound)
-	})
-}
+// TestOAuthState_CSRF tests are removed since OAuth state is now handled via cookies

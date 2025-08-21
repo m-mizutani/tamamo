@@ -19,11 +19,9 @@ import (
 
 func TestAuthController_Login(t *testing.T) {
 	sessionRepo := memory.NewSessionRepository()
-	oauthStateRepo := memory.NewOAuthStateRepository()
 
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
-		oauthStateRepo,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
@@ -45,11 +43,9 @@ func TestAuthController_Login(t *testing.T) {
 
 func TestAuthController_Callback(t *testing.T) {
 	sessionRepo := memory.NewSessionRepository()
-	oauthStateRepo := memory.NewOAuthStateRepository()
 
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
-		oauthStateRepo,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
@@ -83,11 +79,9 @@ func TestAuthController_Callback(t *testing.T) {
 func TestAuthController_Me(t *testing.T) {
 	ctx := context.Background()
 	sessionRepo := memory.NewSessionRepository()
-	oauthStateRepo := memory.NewOAuthStateRepository()
 
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
-		oauthStateRepo,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
@@ -143,11 +137,9 @@ func TestAuthController_Me(t *testing.T) {
 func TestAuthController_Check(t *testing.T) {
 	ctx := context.Background()
 	sessionRepo := memory.NewSessionRepository()
-	oauthStateRepo := memory.NewOAuthStateRepository()
 
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
-		oauthStateRepo,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
@@ -206,11 +198,9 @@ func TestAuthController_Check(t *testing.T) {
 func TestAuthController_Logout(t *testing.T) {
 	ctx := context.Background()
 	sessionRepo := memory.NewSessionRepository()
-	oauthStateRepo := memory.NewOAuthStateRepository()
 
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
-		oauthStateRepo,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",

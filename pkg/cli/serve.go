@@ -163,7 +163,6 @@ func cmdServe() *cli.Command {
 			var repo interfaces.ThreadRepository
 			var agentRepo interfaces.AgentRepository
 			var sessionRepo interfaces.SessionRepository
-			var oauthStateRepo interfaces.OAuthStateRepository
 			firestoreCfg.SetDefaults()
 
 			// Validate Firestore configuration
@@ -186,14 +185,12 @@ func cmdServe() *cli.Command {
 				repo = client
 				agentRepo = client // Firestore client implements both ThreadRepository and AgentRepository
 				sessionRepo = firestore.NewSessionRepository(client.GetClient())
-				oauthStateRepo = firestore.NewOAuthStateRepository(client.GetClient())
 			} else {
 				// Use memory repository as fallback
 				logger.Warn("using in-memory repository (data will be lost on restart)")
 				repo = memory.New()
 				agentRepo = memory.NewAgentMemoryClient()
 				sessionRepo = memory.NewSessionRepository()
-				oauthStateRepo = memory.NewOAuthStateRepository()
 			}
 
 			logger.Info("starting server",
@@ -211,7 +208,7 @@ func cmdServe() *cli.Command {
 			var authUseCase interfaces.AuthUseCases
 			var authCtrl *auth_controller.Controller
 			if authCfg.IsAuthenticationEnabled() {
-				authUseCase, err = authCfg.ConfigureAuthUseCase(sessionRepo, oauthStateRepo, slackSvc)
+				authUseCase, err = authCfg.ConfigureAuthUseCase(sessionRepo, slackSvc)
 				if err != nil {
 					return goerr.Wrap(err, "failed to configure authentication")
 				}
