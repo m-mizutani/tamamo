@@ -68,6 +68,10 @@ func ValidateAgent(agent *Agent) error {
 		return goerr.New("agent description cannot be longer than 1000 characters")
 	}
 
+	if err := ValidateStatus(agent.Status); err != nil {
+		return goerr.Wrap(err, "invalid agent status")
+	}
+
 	if err := ValidateVersion(agent.Latest); err != nil {
 		return goerr.Wrap(err, "invalid latest version")
 	}

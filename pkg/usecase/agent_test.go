@@ -464,3 +464,248 @@ func TestGetAgentVersions_NotFound(t *testing.T) {
 	_, err := uc.GetAgentVersions(ctx, nonExistentID)
 	gt.Error(t, err)
 }
+
+// Archive/Unarchive functionality tests
+
+func TestArchiveAgent(t *testing.T) {
+	ctx := context.Background()
+	uc, _ := setupAgentTest(t)
+
+	// Create test agent
+	req := &interfaces.CreateAgentRequest{
+		AgentID:      "test-archive-agent",
+		Name:         "Test Archive Agent",
+		Description:  stringPtr("A test agent for archiving"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
+		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMModel:     "gpt-4",
+		Version:      "1.0.0",
+	}
+
+	createdAgent, err := uc.CreateAgent(ctx, req)
+	gt.NoError(t, err)
+	gt.Equal(t, createdAgent.Status, agent.StatusActive) // Should be active by default
+
+	// Archive the agent
+	archivedAgent, err := uc.ArchiveAgent(ctx, createdAgent.ID)
+	gt.NoError(t, err)
+	gt.V(t, archivedAgent).NotNil()
+	gt.Equal(t, archivedAgent.Agent.ID, createdAgent.ID)
+	gt.Equal(t, archivedAgent.Agent.Status, agent.StatusArchived)
+
+	// Verify the agent is archived when retrieved
+	retrievedAgent, err := uc.GetAgent(ctx, createdAgent.ID)
+	gt.NoError(t, err)
+	gt.Equal(t, retrievedAgent.Agent.Status, agent.StatusArchived)
+}
+
+func TestArchiveAgent_AlreadyArchived(t *testing.T) {
+	ctx := context.Background()
+	uc, _ := setupAgentTest(t)
+
+	// Create test agent
+	req := &interfaces.CreateAgentRequest{
+		AgentID:      "test-already-archived",
+		Name:         "Test Already Archived Agent",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
+		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMModel:     "gpt-4",
+		Version:      "1.0.0",
+	}
+
+	createdAgent, err := uc.CreateAgent(ctx, req)
+	gt.NoError(t, err)
+
+	// Archive the agent
+	_, err = uc.ArchiveAgent(ctx, createdAgent.ID)
+	gt.NoError(t, err)
+
+	// Try to archive again - should fail
+	_, err = uc.ArchiveAgent(ctx, createdAgent.ID)
+	gt.Error(t, err)
+}
+
+func TestArchiveAgent_NotFound(t *testing.T) {
+	ctx := context.Background()
+	uc, _ := setupAgentTest(t)
+
+	// Try to archive non-existent agent
+	nonExistentID := types.NewUUID(ctx)
+	_, err := uc.ArchiveAgent(ctx, nonExistentID)
+	gt.Error(t, err)
+}
+
+func TestUnarchiveAgent(t *testing.T) {
+	ctx := context.Background()
+	uc, _ := setupAgentTest(t)
+
+	// Create and archive test agent
+	req := &interfaces.CreateAgentRequest{
+		AgentID:      "test-unarchive-agent",
+		Name:         "Test Unarchive Agent",
+		Description:  stringPtr("A test agent for unarchiving"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
+		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMModel:     "gpt-4",
+		Version:      "1.0.0",
+	}
+
+	createdAgent, err := uc.CreateAgent(ctx, req)
+	gt.NoError(t, err)
+
+	// Archive the agent first
+	_, err = uc.ArchiveAgent(ctx, createdAgent.ID)
+	gt.NoError(t, err)
+
+	// Unarchive the agent
+	unarchivedAgent, err := uc.UnarchiveAgent(ctx, createdAgent.ID)
+	gt.NoError(t, err)
+	gt.V(t, unarchivedAgent).NotNil()
+	gt.Equal(t, unarchivedAgent.Agent.ID, createdAgent.ID)
+	gt.Equal(t, unarchivedAgent.Agent.Status, agent.StatusActive)
+
+	// Verify the agent is active when retrieved
+	retrievedAgent, err := uc.GetAgent(ctx, createdAgent.ID)
+	gt.NoError(t, err)
+	gt.Equal(t, retrievedAgent.Agent.Status, agent.StatusActive)
+}
+
+func TestUnarchiveAgent_AlreadyActive(t *testing.T) {
+	ctx := context.Background()
+	uc, _ := setupAgentTest(t)
+
+	// Create test agent (active by default)
+	req := &interfaces.CreateAgentRequest{
+		AgentID:      "test-already-active",
+		Name:         "Test Already Active Agent",
+		Description:  stringPtr("A test agent"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
+		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMModel:     "gpt-4",
+		Version:      "1.0.0",
+	}
+
+	createdAgent, err := uc.CreateAgent(ctx, req)
+	gt.NoError(t, err)
+
+	// Try to unarchive already active agent - should fail
+	_, err = uc.UnarchiveAgent(ctx, createdAgent.ID)
+	gt.Error(t, err)
+}
+
+func TestUnarchiveAgent_NotFound(t *testing.T) {
+	ctx := context.Background()
+	uc, _ := setupAgentTest(t)
+
+	// Try to unarchive non-existent agent
+	nonExistentID := types.NewUUID(ctx)
+	_, err := uc.UnarchiveAgent(ctx, nonExistentID)
+	gt.Error(t, err)
+}
+
+func TestListAgents_OnlyActiveAgents(t *testing.T) {
+	ctx := context.Background()
+	uc, _ := setupAgentTest(t)
+
+	// Create multiple agents
+	activeAgents := make([]*agent.Agent, 0)
+	for i := 0; i < 3; i++ {
+		req := &interfaces.CreateAgentRequest{
+			AgentID:      "active-agent-" + strconv.Itoa(i),
+			Name:         "Active Agent " + strconv.Itoa(i),
+			Description:  stringPtr("An active test agent"),
+			SystemPrompt: stringPtr("You are a helpful assistant."),
+			LLMProvider:  agent.LLMProviderOpenAI,
+			LLMModel:     "gpt-4",
+			Version:      "1.0.0",
+		}
+		createdAgent, err := uc.CreateAgent(ctx, req)
+		gt.NoError(t, err)
+		activeAgents = append(activeAgents, createdAgent)
+	}
+
+	// Create and archive some agents
+	for i := 0; i < 2; i++ {
+		req := &interfaces.CreateAgentRequest{
+			AgentID:      "archived-agent-" + strconv.Itoa(i),
+			Name:         "Archived Agent " + strconv.Itoa(i),
+			Description:  stringPtr("An archived test agent"),
+			SystemPrompt: stringPtr("You are a helpful assistant."),
+			LLMProvider:  agent.LLMProviderOpenAI,
+			LLMModel:     "gpt-4",
+			Version:      "1.0.0",
+		}
+		createdAgent, err := uc.CreateAgent(ctx, req)
+		gt.NoError(t, err)
+
+		// Archive this agent
+		_, err = uc.ArchiveAgent(ctx, createdAgent.ID)
+		gt.NoError(t, err)
+	}
+
+	// List agents should only return active agents
+	agentList, err := uc.ListAgents(ctx, 0, 10)
+	gt.NoError(t, err)
+	gt.Equal(t, len(agentList.Agents), 3) // Only active agents
+	gt.Equal(t, agentList.TotalCount, 3)
+
+	// Verify all returned agents are active
+	returnedAgentIDs := make(map[types.UUID]bool)
+	for _, agentWithVersion := range agentList.Agents {
+		gt.Equal(t, agentWithVersion.Agent.Status, agent.StatusActive)
+		returnedAgentIDs[agentWithVersion.Agent.ID] = true
+	}
+
+	// Verify all our active agents are in the list
+	for _, activeAgent := range activeAgents {
+		gt.True(t, returnedAgentIDs[activeAgent.ID])
+	}
+}
+
+func TestArchiveUnarchiveWorkflow(t *testing.T) {
+	ctx := context.Background()
+	uc, _ := setupAgentTest(t)
+
+	// Create test agent
+	req := &interfaces.CreateAgentRequest{
+		AgentID:      "workflow-test-agent",
+		Name:         "Workflow Test Agent",
+		Description:  stringPtr("A test agent for workflow testing"),
+		SystemPrompt: stringPtr("You are a helpful assistant."),
+		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMModel:     "gpt-4",
+		Version:      "1.0.0",
+	}
+
+	createdAgent, err := uc.CreateAgent(ctx, req)
+	gt.NoError(t, err)
+	gt.Equal(t, createdAgent.Status, agent.StatusActive)
+
+	// Agent should appear in list
+	agentList, err := uc.ListAgents(ctx, 0, 10)
+	gt.NoError(t, err)
+	gt.Equal(t, agentList.TotalCount, 1)
+
+	// Archive the agent
+	archivedAgent, err := uc.ArchiveAgent(ctx, createdAgent.ID)
+	gt.NoError(t, err)
+	gt.Equal(t, archivedAgent.Agent.Status, agent.StatusArchived)
+
+	// Agent should NOT appear in list
+	agentList, err = uc.ListAgents(ctx, 0, 10)
+	gt.NoError(t, err)
+	gt.Equal(t, agentList.TotalCount, 0) // No active agents
+
+	// Unarchive the agent
+	unarchivedAgent, err := uc.UnarchiveAgent(ctx, createdAgent.ID)
+	gt.NoError(t, err)
+	gt.Equal(t, unarchivedAgent.Agent.Status, agent.StatusActive)
+
+	// Agent should appear in list again
+	agentList, err = uc.ListAgents(ctx, 0, 10)
+	gt.NoError(t, err)
+	gt.Equal(t, agentList.TotalCount, 1)
+	gt.Equal(t, agentList.Agents[0].Agent.ID, createdAgent.ID)
+	gt.Equal(t, agentList.Agents[0].Agent.Status, agent.StatusActive)
+}

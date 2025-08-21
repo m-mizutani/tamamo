@@ -26,6 +26,27 @@ func createTestAgent(t *testing.T, repo interfaces.AgentRepository, agentID stri
 		Name:        "Test Agent " + agentID,
 		Description: "A test agent for " + agentID,
 		Author:      "test-author",
+		Status:      agent.StatusActive, // Default to active
+		Latest:      "1.0.0",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	err := repo.CreateAgent(ctx, agentObj)
+	gt.NoError(t, err)
+	return agentObj
+}
+
+// Helper function to create a test agent with specific status
+func createTestAgentWithStatus(t *testing.T, repo interfaces.AgentRepository, agentID string, status agent.Status) *agent.Agent {
+	ctx := context.Background()
+	agentObj := &agent.Agent{
+		ID:          types.NewUUID(ctx),
+		AgentID:     agentID,
+		Name:        "Test Agent " + agentID,
+		Description: "A test agent for " + agentID,
+		Author:      "test-author",
+		Status:      status,
 		Latest:      "1.0.0",
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -65,6 +86,7 @@ func TestMemoryAgentRepository_CreateAgent(t *testing.T) {
 		Name:        "Test Agent",
 		Description: "A test agent",
 		Author:      "test-author",
+		Status:      agent.StatusActive,
 		Latest:      "1.0.0",
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -95,6 +117,7 @@ func TestMemoryAgentRepository_CreateAgent_DuplicateAgentID(t *testing.T) {
 		Name:        "First Agent",
 		Description: "First test agent",
 		Author:      "test-author",
+		Status:      agent.StatusActive,
 		Latest:      "1.0.0",
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -110,6 +133,7 @@ func TestMemoryAgentRepository_CreateAgent_DuplicateAgentID(t *testing.T) {
 		Name:        "Second Agent",
 		Description: "Second test agent",
 		Author:      "test-author",
+		Status:      agent.StatusActive,
 		Latest:      "1.0.0",
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -176,6 +200,7 @@ func TestMemoryAgentRepository_UpdateAgent_NotFound(t *testing.T) {
 		Name:        "Non-existent Agent",
 		Description: "This agent doesn't exist",
 		Author:      "test-author",
+		Status:      agent.StatusActive,
 		Latest:      "1.0.0",
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -631,4 +656,185 @@ func createFirestoreRepo(_ *testing.T) (interfaces.AgentRepository, string) {
 		return nil, "Firestore not available: " + err.Error()
 	}
 	return client, ""
+}
+
+// Status-related repository method tests
+
+func TestMemoryAgentRepository_UpdateAgentStatus(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NewAgentMemoryClient()
+
+	// Create agent with active status
+	testAgent := createTestAgentWithStatus(t, repo, "status-update-test", agent.StatusActive)
+
+	// Update status to archived
+	err := repo.UpdateAgentStatus(ctx, testAgent.ID, agent.StatusArchived)
+	gt.NoError(t, err)
+
+	// Verify status was updated
+	updatedAgent, err := repo.GetAgent(ctx, testAgent.ID)
+	gt.NoError(t, err)
+	gt.Equal(t, updatedAgent.Status, agent.StatusArchived)
+
+	// Update status back to active
+	err = repo.UpdateAgentStatus(ctx, testAgent.ID, agent.StatusActive)
+	gt.NoError(t, err)
+
+	// Verify status was updated again
+	updatedAgent, err = repo.GetAgent(ctx, testAgent.ID)
+	gt.NoError(t, err)
+	gt.Equal(t, updatedAgent.Status, agent.StatusActive)
+}
+
+func TestMemoryAgentRepository_UpdateAgentStatus_NotFound(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NewAgentMemoryClient()
+
+	nonExistentID := types.NewUUID(ctx)
+	err := repo.UpdateAgentStatus(ctx, nonExistentID, agent.StatusArchived)
+	gt.Error(t, err) // Should fail for non-existent agent
+}
+
+func TestMemoryAgentRepository_ListActiveAgents(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NewAgentMemoryClient()
+
+	// Create mixed status agents
+	activeAgent1 := createTestAgentWithStatus(t, repo, "active-1", agent.StatusActive)
+	activeAgent2 := createTestAgentWithStatus(t, repo, "active-2", agent.StatusActive)
+	archivedAgent := createTestAgentWithStatus(t, repo, "archived-1", agent.StatusArchived)
+
+	// List active agents
+	activeAgents, totalCount, err := repo.ListActiveAgents(ctx, 0, 10)
+	gt.NoError(t, err)
+	gt.A(t, activeAgents).Length(2)
+	gt.Equal(t, totalCount, 2)
+
+	// Verify only active agents are returned
+	foundActiveAgent1 := false
+	foundActiveAgent2 := false
+	foundArchivedAgent := false
+	for _, agentObj := range activeAgents {
+		if agentObj.ID == activeAgent1.ID {
+			foundActiveAgent1 = true
+			gt.Equal(t, agentObj.Status, agent.StatusActive)
+		}
+		if agentObj.ID == activeAgent2.ID {
+			foundActiveAgent2 = true
+			gt.Equal(t, agentObj.Status, agent.StatusActive)
+		}
+		if agentObj.ID == archivedAgent.ID {
+			foundArchivedAgent = true
+		}
+	}
+
+	gt.True(t, foundActiveAgent1)
+	gt.True(t, foundActiveAgent2)
+	gt.False(t, foundArchivedAgent) // Archived agent should not be in the list
+}
+
+func TestMemoryAgentRepository_ListActiveAgents_Empty(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NewAgentMemoryClient()
+
+	// Create only archived agents
+	createTestAgentWithStatus(t, repo, "archived-1", agent.StatusArchived)
+	createTestAgentWithStatus(t, repo, "archived-2", agent.StatusArchived)
+
+	// List active agents should return empty
+	activeAgents, totalCount, err := repo.ListActiveAgents(ctx, 0, 10)
+	gt.NoError(t, err)
+	gt.A(t, activeAgents).Length(0)
+	gt.Equal(t, totalCount, 0)
+}
+
+func TestMemoryAgentRepository_ListActiveAgents_Pagination(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NewAgentMemoryClient()
+
+	// Create multiple active agents
+	for i := range 5 {
+		createTestAgentWithStatus(t, repo, "active-pagination-"+strconv.Itoa(i), agent.StatusActive)
+	}
+	// Create some archived agents to verify they're not included
+	for i := range 3 {
+		createTestAgentWithStatus(t, repo, "archived-pagination-"+strconv.Itoa(i), agent.StatusArchived)
+	}
+
+	// Test pagination - first page
+	firstPage, totalCount, err := repo.ListActiveAgents(ctx, 0, 2)
+	gt.NoError(t, err)
+	gt.A(t, firstPage).Length(2)
+	gt.Equal(t, totalCount, 5) // Only active agents counted
+
+	// Test pagination - second page
+	secondPage, totalCount, err := repo.ListActiveAgents(ctx, 2, 2)
+	gt.NoError(t, err)
+	gt.A(t, secondPage).Length(2)
+	gt.Equal(t, totalCount, 5)
+
+	// Test pagination - third page
+	thirdPage, totalCount, err := repo.ListActiveAgents(ctx, 4, 2)
+	gt.NoError(t, err)
+	gt.A(t, thirdPage).Length(1)
+	gt.Equal(t, totalCount, 5)
+}
+
+func TestMemoryAgentRepository_GetAgentByAgentIDActive(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NewAgentMemoryClient()
+
+	// Create active agent
+	activeAgent := createTestAgentWithStatus(t, repo, "active-lookup", agent.StatusActive)
+
+	// Create archived agent with different ID
+	createTestAgentWithStatus(t, repo, "archived-lookup", agent.StatusArchived)
+
+	// Should find active agent
+	foundAgent, err := repo.GetAgentByAgentIDActive(ctx, "active-lookup")
+	gt.NoError(t, err)
+	gt.V(t, foundAgent).NotNil()
+	gt.Equal(t, foundAgent.ID, activeAgent.ID)
+	gt.Equal(t, foundAgent.Status, agent.StatusActive)
+
+	// Should not find archived agent
+	_, err = repo.GetAgentByAgentIDActive(ctx, "archived-lookup")
+	gt.Error(t, err) // Should fail because agent is archived
+
+	// Should not find non-existent agent
+	_, err = repo.GetAgentByAgentIDActive(ctx, "non-existent")
+	gt.Error(t, err) // Should fail because agent doesn't exist
+}
+
+func TestMemoryAgentRepository_StatusBackwardCompatibility(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NewAgentMemoryClient()
+
+	// Create agent without status (simulate old data)
+	agentWithoutStatus := &agent.Agent{
+		ID:          types.NewUUID(ctx),
+		AgentID:     "backward-compat-test",
+		Name:        "Agent Without Status",
+		Description: "Test backward compatibility",
+		Author:      "test-author",
+		Status:      "", // Empty status
+		Latest:      "1.0.0",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	err := repo.CreateAgent(ctx, agentWithoutStatus)
+	gt.NoError(t, err)
+
+	// Should appear in active agents list (backward compatibility)
+	activeAgents, totalCount, err := repo.ListActiveAgents(ctx, 0, 10)
+	gt.NoError(t, err)
+	gt.A(t, activeAgents).Length(1)
+	gt.Equal(t, totalCount, 1)
+
+	// Should be findable by GetAgentByAgentIDActive
+	foundAgent, err := repo.GetAgentByAgentIDActive(ctx, "backward-compat-test")
+	gt.NoError(t, err)
+	gt.V(t, foundAgent).NotNil()
+	gt.Equal(t, foundAgent.Status, agent.StatusActive) // Should default to active
 }

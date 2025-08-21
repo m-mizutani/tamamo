@@ -21,6 +21,9 @@ var _ interfaces.AgentUseCases = &AgentUseCasesMock{}
 //
 //		// make and configure a mocked interfaces.AgentUseCases
 //		mockedAgentUseCases := &AgentUseCasesMock{
+//			ArchiveAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
+//				panic("mock out the ArchiveAgent method")
+//			},
 //			CheckAgentIDAvailabilityFunc: func(ctx context.Context, agentID string) (*interfaces.AgentIDAvailability, error) {
 //				panic("mock out the CheckAgentIDAvailability method")
 //			},
@@ -42,6 +45,15 @@ var _ interfaces.AgentUseCases = &AgentUseCasesMock{}
 //			ListAgentsFunc: func(ctx context.Context, offset int, limit int) (*interfaces.AgentListResponse, error) {
 //				panic("mock out the ListAgents method")
 //			},
+//			ListAgentsByStatusFunc: func(ctx context.Context, status agent.Status, offset int, limit int) (*interfaces.AgentListResponse, error) {
+//				panic("mock out the ListAgentsByStatus method")
+//			},
+//			ListAllAgentsFunc: func(ctx context.Context, offset int, limit int) (*interfaces.AgentListResponse, error) {
+//				panic("mock out the ListAllAgents method")
+//			},
+//			UnarchiveAgentFunc: func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
+//				panic("mock out the UnarchiveAgent method")
+//			},
 //			UpdateAgentFunc: func(ctx context.Context, id types.UUID, req *interfaces.UpdateAgentRequest) (*agent.Agent, error) {
 //				panic("mock out the UpdateAgent method")
 //			},
@@ -58,6 +70,9 @@ var _ interfaces.AgentUseCases = &AgentUseCasesMock{}
 //
 //	}
 type AgentUseCasesMock struct {
+	// ArchiveAgentFunc mocks the ArchiveAgent method.
+	ArchiveAgentFunc func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error)
+
 	// CheckAgentIDAvailabilityFunc mocks the CheckAgentIDAvailability method.
 	CheckAgentIDAvailabilityFunc func(ctx context.Context, agentID string) (*interfaces.AgentIDAvailability, error)
 
@@ -79,6 +94,15 @@ type AgentUseCasesMock struct {
 	// ListAgentsFunc mocks the ListAgents method.
 	ListAgentsFunc func(ctx context.Context, offset int, limit int) (*interfaces.AgentListResponse, error)
 
+	// ListAgentsByStatusFunc mocks the ListAgentsByStatus method.
+	ListAgentsByStatusFunc func(ctx context.Context, status agent.Status, offset int, limit int) (*interfaces.AgentListResponse, error)
+
+	// ListAllAgentsFunc mocks the ListAllAgents method.
+	ListAllAgentsFunc func(ctx context.Context, offset int, limit int) (*interfaces.AgentListResponse, error)
+
+	// UnarchiveAgentFunc mocks the UnarchiveAgent method.
+	UnarchiveAgentFunc func(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error)
+
 	// UpdateAgentFunc mocks the UpdateAgent method.
 	UpdateAgentFunc func(ctx context.Context, id types.UUID, req *interfaces.UpdateAgentRequest) (*agent.Agent, error)
 
@@ -90,6 +114,13 @@ type AgentUseCasesMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// ArchiveAgent holds details about calls to the ArchiveAgent method.
+		ArchiveAgent []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID types.UUID
+		}
 		// CheckAgentIDAvailability holds details about calls to the CheckAgentIDAvailability method.
 		CheckAgentIDAvailability []struct {
 			// Ctx is the ctx argument value.
@@ -141,6 +172,33 @@ type AgentUseCasesMock struct {
 			// Limit is the limit argument value.
 			Limit int
 		}
+		// ListAgentsByStatus holds details about calls to the ListAgentsByStatus method.
+		ListAgentsByStatus []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Status is the status argument value.
+			Status agent.Status
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
+		// ListAllAgents holds details about calls to the ListAllAgents method.
+		ListAllAgents []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
+		// UnarchiveAgent holds details about calls to the UnarchiveAgent method.
+		UnarchiveAgent []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID types.UUID
+		}
 		// UpdateAgent holds details about calls to the UpdateAgent method.
 		UpdateAgent []struct {
 			// Ctx is the ctx argument value.
@@ -161,6 +219,7 @@ type AgentUseCasesMock struct {
 			Version string
 		}
 	}
+	lockArchiveAgent             sync.RWMutex
 	lockCheckAgentIDAvailability sync.RWMutex
 	lockCreateAgent              sync.RWMutex
 	lockCreateAgentVersion       sync.RWMutex
@@ -168,9 +227,48 @@ type AgentUseCasesMock struct {
 	lockGetAgent                 sync.RWMutex
 	lockGetAgentVersions         sync.RWMutex
 	lockListAgents               sync.RWMutex
+	lockListAgentsByStatus       sync.RWMutex
+	lockListAllAgents            sync.RWMutex
+	lockUnarchiveAgent           sync.RWMutex
 	lockUpdateAgent              sync.RWMutex
 	lockValidateAgentID          sync.RWMutex
 	lockValidateVersion          sync.RWMutex
+}
+
+// ArchiveAgent calls ArchiveAgentFunc.
+func (mock *AgentUseCasesMock) ArchiveAgent(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
+	if mock.ArchiveAgentFunc == nil {
+		panic("AgentUseCasesMock.ArchiveAgentFunc: method is nil but AgentUseCases.ArchiveAgent was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  types.UUID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockArchiveAgent.Lock()
+	mock.calls.ArchiveAgent = append(mock.calls.ArchiveAgent, callInfo)
+	mock.lockArchiveAgent.Unlock()
+	return mock.ArchiveAgentFunc(ctx, id)
+}
+
+// ArchiveAgentCalls gets all the calls that were made to ArchiveAgent.
+// Check the length with:
+//
+//	len(mockedAgentUseCases.ArchiveAgentCalls())
+func (mock *AgentUseCasesMock) ArchiveAgentCalls() []struct {
+	Ctx context.Context
+	ID  types.UUID
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  types.UUID
+	}
+	mock.lockArchiveAgent.RLock()
+	calls = mock.calls.ArchiveAgent
+	mock.lockArchiveAgent.RUnlock()
+	return calls
 }
 
 // CheckAgentIDAvailability calls CheckAgentIDAvailabilityFunc.
@@ -429,6 +527,126 @@ func (mock *AgentUseCasesMock) ListAgentsCalls() []struct {
 	return calls
 }
 
+// ListAgentsByStatus calls ListAgentsByStatusFunc.
+func (mock *AgentUseCasesMock) ListAgentsByStatus(ctx context.Context, status agent.Status, offset int, limit int) (*interfaces.AgentListResponse, error) {
+	if mock.ListAgentsByStatusFunc == nil {
+		panic("AgentUseCasesMock.ListAgentsByStatusFunc: method is nil but AgentUseCases.ListAgentsByStatus was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Status agent.Status
+		Offset int
+		Limit  int
+	}{
+		Ctx:    ctx,
+		Status: status,
+		Offset: offset,
+		Limit:  limit,
+	}
+	mock.lockListAgentsByStatus.Lock()
+	mock.calls.ListAgentsByStatus = append(mock.calls.ListAgentsByStatus, callInfo)
+	mock.lockListAgentsByStatus.Unlock()
+	return mock.ListAgentsByStatusFunc(ctx, status, offset, limit)
+}
+
+// ListAgentsByStatusCalls gets all the calls that were made to ListAgentsByStatus.
+// Check the length with:
+//
+//	len(mockedAgentUseCases.ListAgentsByStatusCalls())
+func (mock *AgentUseCasesMock) ListAgentsByStatusCalls() []struct {
+	Ctx    context.Context
+	Status agent.Status
+	Offset int
+	Limit  int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Status agent.Status
+		Offset int
+		Limit  int
+	}
+	mock.lockListAgentsByStatus.RLock()
+	calls = mock.calls.ListAgentsByStatus
+	mock.lockListAgentsByStatus.RUnlock()
+	return calls
+}
+
+// ListAllAgents calls ListAllAgentsFunc.
+func (mock *AgentUseCasesMock) ListAllAgents(ctx context.Context, offset int, limit int) (*interfaces.AgentListResponse, error) {
+	if mock.ListAllAgentsFunc == nil {
+		panic("AgentUseCasesMock.ListAllAgentsFunc: method is nil but AgentUseCases.ListAllAgents was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Offset int
+		Limit  int
+	}{
+		Ctx:    ctx,
+		Offset: offset,
+		Limit:  limit,
+	}
+	mock.lockListAllAgents.Lock()
+	mock.calls.ListAllAgents = append(mock.calls.ListAllAgents, callInfo)
+	mock.lockListAllAgents.Unlock()
+	return mock.ListAllAgentsFunc(ctx, offset, limit)
+}
+
+// ListAllAgentsCalls gets all the calls that were made to ListAllAgents.
+// Check the length with:
+//
+//	len(mockedAgentUseCases.ListAllAgentsCalls())
+func (mock *AgentUseCasesMock) ListAllAgentsCalls() []struct {
+	Ctx    context.Context
+	Offset int
+	Limit  int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Offset int
+		Limit  int
+	}
+	mock.lockListAllAgents.RLock()
+	calls = mock.calls.ListAllAgents
+	mock.lockListAllAgents.RUnlock()
+	return calls
+}
+
+// UnarchiveAgent calls UnarchiveAgentFunc.
+func (mock *AgentUseCasesMock) UnarchiveAgent(ctx context.Context, id types.UUID) (*interfaces.AgentWithVersion, error) {
+	if mock.UnarchiveAgentFunc == nil {
+		panic("AgentUseCasesMock.UnarchiveAgentFunc: method is nil but AgentUseCases.UnarchiveAgent was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  types.UUID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockUnarchiveAgent.Lock()
+	mock.calls.UnarchiveAgent = append(mock.calls.UnarchiveAgent, callInfo)
+	mock.lockUnarchiveAgent.Unlock()
+	return mock.UnarchiveAgentFunc(ctx, id)
+}
+
+// UnarchiveAgentCalls gets all the calls that were made to UnarchiveAgent.
+// Check the length with:
+//
+//	len(mockedAgentUseCases.UnarchiveAgentCalls())
+func (mock *AgentUseCasesMock) UnarchiveAgentCalls() []struct {
+	Ctx context.Context
+	ID  types.UUID
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  types.UUID
+	}
+	mock.lockUnarchiveAgent.RLock()
+	calls = mock.calls.UnarchiveAgent
+	mock.lockUnarchiveAgent.RUnlock()
+	return calls
+}
+
 // UpdateAgent calls UpdateAgentFunc.
 func (mock *AgentUseCasesMock) UpdateAgent(ctx context.Context, id types.UUID, req *interfaces.UpdateAgentRequest) (*agent.Agent, error) {
 	if mock.UpdateAgentFunc == nil {
@@ -561,11 +779,20 @@ var _ interfaces.AgentRepository = &AgentRepositoryMock{}
 //			GetAgentByAgentIDFunc: func(ctx context.Context, agentID string) (*agent.Agent, error) {
 //				panic("mock out the GetAgentByAgentID method")
 //			},
+//			GetAgentByAgentIDActiveFunc: func(ctx context.Context, agentID string) (*agent.Agent, error) {
+//				panic("mock out the GetAgentByAgentIDActive method")
+//			},
 //			GetAgentVersionFunc: func(ctx context.Context, agentUUID types.UUID, version string) (*agent.AgentVersion, error) {
 //				panic("mock out the GetAgentVersion method")
 //			},
 //			GetLatestAgentVersionFunc: func(ctx context.Context, agentUUID types.UUID) (*agent.AgentVersion, error) {
 //				panic("mock out the GetLatestAgentVersion method")
+//			},
+//			ListActiveAgentsFunc: func(ctx context.Context, offset int, limit int) ([]*agent.Agent, int, error) {
+//				panic("mock out the ListActiveAgents method")
+//			},
+//			ListActiveAgentsWithLatestVersionsFunc: func(ctx context.Context, offset int, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
+//				panic("mock out the ListActiveAgentsWithLatestVersions method")
 //			},
 //			ListAgentVersionsFunc: func(ctx context.Context, agentUUID types.UUID) ([]*agent.AgentVersion, error) {
 //				panic("mock out the ListAgentVersions method")
@@ -573,11 +800,20 @@ var _ interfaces.AgentRepository = &AgentRepositoryMock{}
 //			ListAgentsFunc: func(ctx context.Context, offset int, limit int) ([]*agent.Agent, int, error) {
 //				panic("mock out the ListAgents method")
 //			},
+//			ListAgentsByStatusFunc: func(ctx context.Context, status agent.Status, offset int, limit int) ([]*agent.Agent, int, error) {
+//				panic("mock out the ListAgentsByStatus method")
+//			},
+//			ListAgentsByStatusWithLatestVersionsFunc: func(ctx context.Context, status agent.Status, offset int, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
+//				panic("mock out the ListAgentsByStatusWithLatestVersions method")
+//			},
 //			ListAgentsWithLatestVersionsFunc: func(ctx context.Context, offset int, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
 //				panic("mock out the ListAgentsWithLatestVersions method")
 //			},
 //			UpdateAgentFunc: func(ctx context.Context, agentMoqParam *agent.Agent) error {
 //				panic("mock out the UpdateAgent method")
+//			},
+//			UpdateAgentStatusFunc: func(ctx context.Context, id types.UUID, status agent.Status) error {
+//				panic("mock out the UpdateAgentStatus method")
 //			},
 //			UpdateAgentVersionFunc: func(ctx context.Context, version *agent.AgentVersion) error {
 //				panic("mock out the UpdateAgentVersion method")
@@ -607,11 +843,20 @@ type AgentRepositoryMock struct {
 	// GetAgentByAgentIDFunc mocks the GetAgentByAgentID method.
 	GetAgentByAgentIDFunc func(ctx context.Context, agentID string) (*agent.Agent, error)
 
+	// GetAgentByAgentIDActiveFunc mocks the GetAgentByAgentIDActive method.
+	GetAgentByAgentIDActiveFunc func(ctx context.Context, agentID string) (*agent.Agent, error)
+
 	// GetAgentVersionFunc mocks the GetAgentVersion method.
 	GetAgentVersionFunc func(ctx context.Context, agentUUID types.UUID, version string) (*agent.AgentVersion, error)
 
 	// GetLatestAgentVersionFunc mocks the GetLatestAgentVersion method.
 	GetLatestAgentVersionFunc func(ctx context.Context, agentUUID types.UUID) (*agent.AgentVersion, error)
+
+	// ListActiveAgentsFunc mocks the ListActiveAgents method.
+	ListActiveAgentsFunc func(ctx context.Context, offset int, limit int) ([]*agent.Agent, int, error)
+
+	// ListActiveAgentsWithLatestVersionsFunc mocks the ListActiveAgentsWithLatestVersions method.
+	ListActiveAgentsWithLatestVersionsFunc func(ctx context.Context, offset int, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error)
 
 	// ListAgentVersionsFunc mocks the ListAgentVersions method.
 	ListAgentVersionsFunc func(ctx context.Context, agentUUID types.UUID) ([]*agent.AgentVersion, error)
@@ -619,11 +864,20 @@ type AgentRepositoryMock struct {
 	// ListAgentsFunc mocks the ListAgents method.
 	ListAgentsFunc func(ctx context.Context, offset int, limit int) ([]*agent.Agent, int, error)
 
+	// ListAgentsByStatusFunc mocks the ListAgentsByStatus method.
+	ListAgentsByStatusFunc func(ctx context.Context, status agent.Status, offset int, limit int) ([]*agent.Agent, int, error)
+
+	// ListAgentsByStatusWithLatestVersionsFunc mocks the ListAgentsByStatusWithLatestVersions method.
+	ListAgentsByStatusWithLatestVersionsFunc func(ctx context.Context, status agent.Status, offset int, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error)
+
 	// ListAgentsWithLatestVersionsFunc mocks the ListAgentsWithLatestVersions method.
 	ListAgentsWithLatestVersionsFunc func(ctx context.Context, offset int, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error)
 
 	// UpdateAgentFunc mocks the UpdateAgent method.
 	UpdateAgentFunc func(ctx context.Context, agentMoqParam *agent.Agent) error
+
+	// UpdateAgentStatusFunc mocks the UpdateAgentStatus method.
+	UpdateAgentStatusFunc func(ctx context.Context, id types.UUID, status agent.Status) error
 
 	// UpdateAgentVersionFunc mocks the UpdateAgentVersion method.
 	UpdateAgentVersionFunc func(ctx context.Context, version *agent.AgentVersion) error
@@ -672,6 +926,13 @@ type AgentRepositoryMock struct {
 			// AgentID is the agentID argument value.
 			AgentID string
 		}
+		// GetAgentByAgentIDActive holds details about calls to the GetAgentByAgentIDActive method.
+		GetAgentByAgentIDActive []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// AgentID is the agentID argument value.
+			AgentID string
+		}
 		// GetAgentVersion holds details about calls to the GetAgentVersion method.
 		GetAgentVersion []struct {
 			// Ctx is the ctx argument value.
@@ -688,6 +949,24 @@ type AgentRepositoryMock struct {
 			// AgentUUID is the agentUUID argument value.
 			AgentUUID types.UUID
 		}
+		// ListActiveAgents holds details about calls to the ListActiveAgents method.
+		ListActiveAgents []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
+		// ListActiveAgentsWithLatestVersions holds details about calls to the ListActiveAgentsWithLatestVersions method.
+		ListActiveAgentsWithLatestVersions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
 		// ListAgentVersions holds details about calls to the ListAgentVersions method.
 		ListAgentVersions []struct {
 			// Ctx is the ctx argument value.
@@ -699,6 +978,28 @@ type AgentRepositoryMock struct {
 		ListAgents []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
+		// ListAgentsByStatus holds details about calls to the ListAgentsByStatus method.
+		ListAgentsByStatus []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Status is the status argument value.
+			Status agent.Status
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
+		// ListAgentsByStatusWithLatestVersions holds details about calls to the ListAgentsByStatusWithLatestVersions method.
+		ListAgentsByStatusWithLatestVersions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Status is the status argument value.
+			Status agent.Status
 			// Offset is the offset argument value.
 			Offset int
 			// Limit is the limit argument value.
@@ -720,6 +1021,15 @@ type AgentRepositoryMock struct {
 			// AgentMoqParam is the agentMoqParam argument value.
 			AgentMoqParam *agent.Agent
 		}
+		// UpdateAgentStatus holds details about calls to the UpdateAgentStatus method.
+		UpdateAgentStatus []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID types.UUID
+			// Status is the status argument value.
+			Status agent.Status
+		}
 		// UpdateAgentVersion holds details about calls to the UpdateAgentVersion method.
 		UpdateAgentVersion []struct {
 			// Ctx is the ctx argument value.
@@ -728,19 +1038,25 @@ type AgentRepositoryMock struct {
 			Version *agent.AgentVersion
 		}
 	}
-	lockAgentIDExists                sync.RWMutex
-	lockCreateAgent                  sync.RWMutex
-	lockCreateAgentVersion           sync.RWMutex
-	lockDeleteAgent                  sync.RWMutex
-	lockGetAgent                     sync.RWMutex
-	lockGetAgentByAgentID            sync.RWMutex
-	lockGetAgentVersion              sync.RWMutex
-	lockGetLatestAgentVersion        sync.RWMutex
-	lockListAgentVersions            sync.RWMutex
-	lockListAgents                   sync.RWMutex
-	lockListAgentsWithLatestVersions sync.RWMutex
-	lockUpdateAgent                  sync.RWMutex
-	lockUpdateAgentVersion           sync.RWMutex
+	lockAgentIDExists                        sync.RWMutex
+	lockCreateAgent                          sync.RWMutex
+	lockCreateAgentVersion                   sync.RWMutex
+	lockDeleteAgent                          sync.RWMutex
+	lockGetAgent                             sync.RWMutex
+	lockGetAgentByAgentID                    sync.RWMutex
+	lockGetAgentByAgentIDActive              sync.RWMutex
+	lockGetAgentVersion                      sync.RWMutex
+	lockGetLatestAgentVersion                sync.RWMutex
+	lockListActiveAgents                     sync.RWMutex
+	lockListActiveAgentsWithLatestVersions   sync.RWMutex
+	lockListAgentVersions                    sync.RWMutex
+	lockListAgents                           sync.RWMutex
+	lockListAgentsByStatus                   sync.RWMutex
+	lockListAgentsByStatusWithLatestVersions sync.RWMutex
+	lockListAgentsWithLatestVersions         sync.RWMutex
+	lockUpdateAgent                          sync.RWMutex
+	lockUpdateAgentStatus                    sync.RWMutex
+	lockUpdateAgentVersion                   sync.RWMutex
 }
 
 // AgentIDExists calls AgentIDExistsFunc.
@@ -959,6 +1275,42 @@ func (mock *AgentRepositoryMock) GetAgentByAgentIDCalls() []struct {
 	return calls
 }
 
+// GetAgentByAgentIDActive calls GetAgentByAgentIDActiveFunc.
+func (mock *AgentRepositoryMock) GetAgentByAgentIDActive(ctx context.Context, agentID string) (*agent.Agent, error) {
+	if mock.GetAgentByAgentIDActiveFunc == nil {
+		panic("AgentRepositoryMock.GetAgentByAgentIDActiveFunc: method is nil but AgentRepository.GetAgentByAgentIDActive was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		AgentID string
+	}{
+		Ctx:     ctx,
+		AgentID: agentID,
+	}
+	mock.lockGetAgentByAgentIDActive.Lock()
+	mock.calls.GetAgentByAgentIDActive = append(mock.calls.GetAgentByAgentIDActive, callInfo)
+	mock.lockGetAgentByAgentIDActive.Unlock()
+	return mock.GetAgentByAgentIDActiveFunc(ctx, agentID)
+}
+
+// GetAgentByAgentIDActiveCalls gets all the calls that were made to GetAgentByAgentIDActive.
+// Check the length with:
+//
+//	len(mockedAgentRepository.GetAgentByAgentIDActiveCalls())
+func (mock *AgentRepositoryMock) GetAgentByAgentIDActiveCalls() []struct {
+	Ctx     context.Context
+	AgentID string
+} {
+	var calls []struct {
+		Ctx     context.Context
+		AgentID string
+	}
+	mock.lockGetAgentByAgentIDActive.RLock()
+	calls = mock.calls.GetAgentByAgentIDActive
+	mock.lockGetAgentByAgentIDActive.RUnlock()
+	return calls
+}
+
 // GetAgentVersion calls GetAgentVersionFunc.
 func (mock *AgentRepositoryMock) GetAgentVersion(ctx context.Context, agentUUID types.UUID, version string) (*agent.AgentVersion, error) {
 	if mock.GetAgentVersionFunc == nil {
@@ -1032,6 +1384,86 @@ func (mock *AgentRepositoryMock) GetLatestAgentVersionCalls() []struct {
 	mock.lockGetLatestAgentVersion.RLock()
 	calls = mock.calls.GetLatestAgentVersion
 	mock.lockGetLatestAgentVersion.RUnlock()
+	return calls
+}
+
+// ListActiveAgents calls ListActiveAgentsFunc.
+func (mock *AgentRepositoryMock) ListActiveAgents(ctx context.Context, offset int, limit int) ([]*agent.Agent, int, error) {
+	if mock.ListActiveAgentsFunc == nil {
+		panic("AgentRepositoryMock.ListActiveAgentsFunc: method is nil but AgentRepository.ListActiveAgents was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Offset int
+		Limit  int
+	}{
+		Ctx:    ctx,
+		Offset: offset,
+		Limit:  limit,
+	}
+	mock.lockListActiveAgents.Lock()
+	mock.calls.ListActiveAgents = append(mock.calls.ListActiveAgents, callInfo)
+	mock.lockListActiveAgents.Unlock()
+	return mock.ListActiveAgentsFunc(ctx, offset, limit)
+}
+
+// ListActiveAgentsCalls gets all the calls that were made to ListActiveAgents.
+// Check the length with:
+//
+//	len(mockedAgentRepository.ListActiveAgentsCalls())
+func (mock *AgentRepositoryMock) ListActiveAgentsCalls() []struct {
+	Ctx    context.Context
+	Offset int
+	Limit  int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Offset int
+		Limit  int
+	}
+	mock.lockListActiveAgents.RLock()
+	calls = mock.calls.ListActiveAgents
+	mock.lockListActiveAgents.RUnlock()
+	return calls
+}
+
+// ListActiveAgentsWithLatestVersions calls ListActiveAgentsWithLatestVersionsFunc.
+func (mock *AgentRepositoryMock) ListActiveAgentsWithLatestVersions(ctx context.Context, offset int, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
+	if mock.ListActiveAgentsWithLatestVersionsFunc == nil {
+		panic("AgentRepositoryMock.ListActiveAgentsWithLatestVersionsFunc: method is nil but AgentRepository.ListActiveAgentsWithLatestVersions was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Offset int
+		Limit  int
+	}{
+		Ctx:    ctx,
+		Offset: offset,
+		Limit:  limit,
+	}
+	mock.lockListActiveAgentsWithLatestVersions.Lock()
+	mock.calls.ListActiveAgentsWithLatestVersions = append(mock.calls.ListActiveAgentsWithLatestVersions, callInfo)
+	mock.lockListActiveAgentsWithLatestVersions.Unlock()
+	return mock.ListActiveAgentsWithLatestVersionsFunc(ctx, offset, limit)
+}
+
+// ListActiveAgentsWithLatestVersionsCalls gets all the calls that were made to ListActiveAgentsWithLatestVersions.
+// Check the length with:
+//
+//	len(mockedAgentRepository.ListActiveAgentsWithLatestVersionsCalls())
+func (mock *AgentRepositoryMock) ListActiveAgentsWithLatestVersionsCalls() []struct {
+	Ctx    context.Context
+	Offset int
+	Limit  int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Offset int
+		Limit  int
+	}
+	mock.lockListActiveAgentsWithLatestVersions.RLock()
+	calls = mock.calls.ListActiveAgentsWithLatestVersions
+	mock.lockListActiveAgentsWithLatestVersions.RUnlock()
 	return calls
 }
 
@@ -1111,6 +1543,94 @@ func (mock *AgentRepositoryMock) ListAgentsCalls() []struct {
 	return calls
 }
 
+// ListAgentsByStatus calls ListAgentsByStatusFunc.
+func (mock *AgentRepositoryMock) ListAgentsByStatus(ctx context.Context, status agent.Status, offset int, limit int) ([]*agent.Agent, int, error) {
+	if mock.ListAgentsByStatusFunc == nil {
+		panic("AgentRepositoryMock.ListAgentsByStatusFunc: method is nil but AgentRepository.ListAgentsByStatus was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Status agent.Status
+		Offset int
+		Limit  int
+	}{
+		Ctx:    ctx,
+		Status: status,
+		Offset: offset,
+		Limit:  limit,
+	}
+	mock.lockListAgentsByStatus.Lock()
+	mock.calls.ListAgentsByStatus = append(mock.calls.ListAgentsByStatus, callInfo)
+	mock.lockListAgentsByStatus.Unlock()
+	return mock.ListAgentsByStatusFunc(ctx, status, offset, limit)
+}
+
+// ListAgentsByStatusCalls gets all the calls that were made to ListAgentsByStatus.
+// Check the length with:
+//
+//	len(mockedAgentRepository.ListAgentsByStatusCalls())
+func (mock *AgentRepositoryMock) ListAgentsByStatusCalls() []struct {
+	Ctx    context.Context
+	Status agent.Status
+	Offset int
+	Limit  int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Status agent.Status
+		Offset int
+		Limit  int
+	}
+	mock.lockListAgentsByStatus.RLock()
+	calls = mock.calls.ListAgentsByStatus
+	mock.lockListAgentsByStatus.RUnlock()
+	return calls
+}
+
+// ListAgentsByStatusWithLatestVersions calls ListAgentsByStatusWithLatestVersionsFunc.
+func (mock *AgentRepositoryMock) ListAgentsByStatusWithLatestVersions(ctx context.Context, status agent.Status, offset int, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
+	if mock.ListAgentsByStatusWithLatestVersionsFunc == nil {
+		panic("AgentRepositoryMock.ListAgentsByStatusWithLatestVersionsFunc: method is nil but AgentRepository.ListAgentsByStatusWithLatestVersions was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Status agent.Status
+		Offset int
+		Limit  int
+	}{
+		Ctx:    ctx,
+		Status: status,
+		Offset: offset,
+		Limit:  limit,
+	}
+	mock.lockListAgentsByStatusWithLatestVersions.Lock()
+	mock.calls.ListAgentsByStatusWithLatestVersions = append(mock.calls.ListAgentsByStatusWithLatestVersions, callInfo)
+	mock.lockListAgentsByStatusWithLatestVersions.Unlock()
+	return mock.ListAgentsByStatusWithLatestVersionsFunc(ctx, status, offset, limit)
+}
+
+// ListAgentsByStatusWithLatestVersionsCalls gets all the calls that were made to ListAgentsByStatusWithLatestVersions.
+// Check the length with:
+//
+//	len(mockedAgentRepository.ListAgentsByStatusWithLatestVersionsCalls())
+func (mock *AgentRepositoryMock) ListAgentsByStatusWithLatestVersionsCalls() []struct {
+	Ctx    context.Context
+	Status agent.Status
+	Offset int
+	Limit  int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Status agent.Status
+		Offset int
+		Limit  int
+	}
+	mock.lockListAgentsByStatusWithLatestVersions.RLock()
+	calls = mock.calls.ListAgentsByStatusWithLatestVersions
+	mock.lockListAgentsByStatusWithLatestVersions.RUnlock()
+	return calls
+}
+
 // ListAgentsWithLatestVersions calls ListAgentsWithLatestVersionsFunc.
 func (mock *AgentRepositoryMock) ListAgentsWithLatestVersions(ctx context.Context, offset int, limit int) ([]*agent.Agent, []*agent.AgentVersion, int, error) {
 	if mock.ListAgentsWithLatestVersionsFunc == nil {
@@ -1184,6 +1704,46 @@ func (mock *AgentRepositoryMock) UpdateAgentCalls() []struct {
 	mock.lockUpdateAgent.RLock()
 	calls = mock.calls.UpdateAgent
 	mock.lockUpdateAgent.RUnlock()
+	return calls
+}
+
+// UpdateAgentStatus calls UpdateAgentStatusFunc.
+func (mock *AgentRepositoryMock) UpdateAgentStatus(ctx context.Context, id types.UUID, status agent.Status) error {
+	if mock.UpdateAgentStatusFunc == nil {
+		panic("AgentRepositoryMock.UpdateAgentStatusFunc: method is nil but AgentRepository.UpdateAgentStatus was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		ID     types.UUID
+		Status agent.Status
+	}{
+		Ctx:    ctx,
+		ID:     id,
+		Status: status,
+	}
+	mock.lockUpdateAgentStatus.Lock()
+	mock.calls.UpdateAgentStatus = append(mock.calls.UpdateAgentStatus, callInfo)
+	mock.lockUpdateAgentStatus.Unlock()
+	return mock.UpdateAgentStatusFunc(ctx, id, status)
+}
+
+// UpdateAgentStatusCalls gets all the calls that were made to UpdateAgentStatus.
+// Check the length with:
+//
+//	len(mockedAgentRepository.UpdateAgentStatusCalls())
+func (mock *AgentRepositoryMock) UpdateAgentStatusCalls() []struct {
+	Ctx    context.Context
+	ID     types.UUID
+	Status agent.Status
+} {
+	var calls []struct {
+		Ctx    context.Context
+		ID     types.UUID
+		Status agent.Status
+	}
+	mock.lockUpdateAgentStatus.RLock()
+	calls = mock.calls.UpdateAgentStatus
+	mock.lockUpdateAgentStatus.RUnlock()
 	return calls
 }
 

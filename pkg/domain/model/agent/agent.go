@@ -12,6 +12,7 @@ type Agent struct {
 	Name        string     `json:"name"`
 	Description string     `json:"description"`
 	Author      string     `json:"author"`
+	Status      Status     `json:"status"`
 	Latest      string     `json:"latest"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
