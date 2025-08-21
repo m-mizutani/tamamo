@@ -87,13 +87,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let errorMessage = 'Authentication failed';
       switch (authError) {
         case 'invalid_state':
-          errorMessage = 'Invalid authentication state. Please try again.';
+          errorMessage = 'Security validation failed. Your authentication session may have expired or been tampered with. Please try logging in again. If this persists, clear your browser cookies and cache.';
           break;
         case 'auth_failed':
-          errorMessage = 'Authentication failed. Please try again.';
+          errorMessage = 'Slack authentication failed. This could be due to insufficient permissions, cancelled authorization, or a temporary issue with Slack. Please ensure you have the necessary permissions and try again.';
           break;
         case 'invalid_request':
-          errorMessage = 'Invalid authentication request.';
+          errorMessage = 'The authentication request was malformed or missing required parameters. This might be a configuration issue. Please contact your administrator if this problem continues.';
+          break;
+        case 'invalid_scope':
+          errorMessage = 'The requested Slack permissions are invalid or not configured correctly. Please contact your administrator to fix the OAuth scope configuration.';
+          break;
+        case 'access_denied':
+          errorMessage = 'Access was denied during Slack authentication. You may not have permission to use this application with your Slack workspace. Please contact your workspace administrator.';
+          break;
+        default:
+          errorMessage = `Authentication error: ${authError}. Please try logging in again or contact support if the issue persists.`;
           break;
       }
       setError(errorMessage);

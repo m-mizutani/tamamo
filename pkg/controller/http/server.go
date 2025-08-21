@@ -14,6 +14,7 @@ import (
 	"github.com/m-mizutani/tamamo/frontend"
 	auth_controller "github.com/m-mizutani/tamamo/pkg/controller/auth"
 	graphql_controller "github.com/m-mizutani/tamamo/pkg/controller/graphql"
+	"github.com/m-mizutani/tamamo/pkg/controller/http/middleware"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
@@ -139,7 +140,7 @@ func New(opts ...Options) *Server {
 		r.Route("/graphql", func(r chi.Router) {
 			// Apply authentication middleware if enabled
 			if s.authUseCase != nil && !s.noAuth {
-				r.Use(AuthMiddleware(s.authUseCase, s.noAuth))
+				r.Use(middleware.AuthMiddleware(s.authUseCase, s.noAuth))
 			}
 
 			srv := handler.NewDefaultServer(
