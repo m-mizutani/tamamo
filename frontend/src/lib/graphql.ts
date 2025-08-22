@@ -8,7 +8,14 @@ export const GET_AGENTS = `
         agentId
         name
         description
-        author
+        author {
+          id
+          slackName
+          displayName
+          email
+          createdAt
+          updatedAt
+        }
         status
         latest
         createdAt
@@ -32,7 +39,14 @@ export const GET_AGENTS_BY_STATUS = `
         agentId
         name
         description
-        author
+        author {
+          id
+          slackName
+          displayName
+          email
+          createdAt
+          updatedAt
+        }
         status
         latest
         createdAt
@@ -56,7 +70,14 @@ export const GET_ALL_AGENTS = `
         agentId
         name
         description
-        author
+        author {
+          id
+          slackName
+          displayName
+          email
+          createdAt
+          updatedAt
+        }
         status
         latest
         createdAt
@@ -79,7 +100,13 @@ export const GET_AGENT = `
       agentId
       name
       description
-      author
+      author {
+        id
+        slackName
+        email
+        createdAt
+        updatedAt
+      }
       status
       latest
       createdAt
@@ -109,7 +136,13 @@ export const CREATE_AGENT = `
       agentId
       name
       description
-      author
+      author {
+        id
+        slackName
+        email
+        createdAt
+        updatedAt
+      }
       status
       latest
       createdAt
@@ -130,7 +163,13 @@ export const UPDATE_AGENT = `
       agentId
       name
       description
-      author
+      author {
+        id
+        slackName
+        email
+        createdAt
+        updatedAt
+      }
       status
       latest
       createdAt
@@ -157,7 +196,13 @@ export const ARCHIVE_AGENT = `
       agentId
       name
       description
-      author
+      author {
+        id
+        slackName
+        email
+        createdAt
+        updatedAt
+      }
       status
       latest
       createdAt
@@ -178,7 +223,13 @@ export const UNARCHIVE_AGENT = `
       agentId
       name
       description
-      author
+      author {
+        id
+        slackName
+        email
+        createdAt
+        updatedAt
+      }
       status
       latest
       createdAt
@@ -220,15 +271,51 @@ export const GET_AGENT_VERSIONS = `
   }
 `;
 
+// User queries
+export const GET_USER = `
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      id
+      slackName
+      displayName
+      email
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_CURRENT_USER = `
+  query GetCurrentUser {
+    currentUser {
+      id
+      slackName
+      displayName
+      email
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 // Type definitions
 export type AgentStatus = 'ACTIVE' | 'ARCHIVED';
+
+export interface User {
+  id: string;
+  slackName: string;
+  displayName: string;
+  email?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Agent {
   id: string;
   agentId: string;
   name: string;
   description: string;
-  author: string;
+  author: User;
   status: AgentStatus;
   latest: string;
   createdAt: string;

@@ -45,7 +45,7 @@ func TestQueryResolver_Thread_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -67,7 +67,7 @@ func TestQueryResolver_Thread_InvalidID(t *testing.T) {
 	mockRepo := &mock.ThreadRepositoryMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with invalid ID
@@ -91,7 +91,7 @@ func TestQueryResolver_Thread_RepositoryError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -115,7 +115,7 @@ func TestThreadResolver_ID(t *testing.T) {
 	mockRepo := &mock.ThreadRepositoryMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil)
 	threadResolver := resolver.Thread()
 
 	// Execute test
@@ -138,7 +138,7 @@ func TestQueryResolver_Thread_NotFound(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -161,7 +161,7 @@ func TestQueryResolver_Threads_WithNilParameters(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with nil parameters
@@ -203,7 +203,7 @@ func TestQueryResolver_Threads_WithValidParameters(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with valid parameters
@@ -235,7 +235,7 @@ func TestQueryResolver_Threads_RepositoryError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -259,7 +259,7 @@ func TestQueryResolver_Threads_LimitCapping(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with excessive limit
@@ -322,7 +322,7 @@ func TestMutationResolver_CreateAgent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input
@@ -360,7 +360,7 @@ func TestMutationResolver_CreateAgent_UseCaseError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input
@@ -426,7 +426,7 @@ func TestMutationResolver_UpdateAgent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input
@@ -452,7 +452,7 @@ func TestMutationResolver_UpdateAgent_InvalidID(t *testing.T) {
 	mockAgentUseCase := &mock.AgentUseCasesMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input
@@ -485,7 +485,7 @@ func TestMutationResolver_DeleteAgent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -508,7 +508,7 @@ func TestMutationResolver_DeleteAgent_UseCaseError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -541,7 +541,7 @@ func TestMutationResolver_CreateAgentVersion_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input
@@ -605,7 +605,7 @@ func TestQueryResolver_Agent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -628,7 +628,7 @@ func TestQueryResolver_Agent_InvalidID(t *testing.T) {
 	mockAgentUseCase := &mock.AgentUseCasesMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with invalid ID
@@ -702,7 +702,7 @@ func TestQueryResolver_Agents_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -739,7 +739,7 @@ func TestQueryResolver_Agents_DefaultPagination(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with nil parameters
@@ -770,7 +770,7 @@ func TestQueryResolver_CheckAgentIDAvailability_Available(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -797,7 +797,7 @@ func TestQueryResolver_CheckAgentIDAvailability_Taken(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -855,7 +855,7 @@ func TestMutationResolver_UpdateAgent_SystemPromptOnly(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input with only system prompt update (100 characters)
@@ -919,7 +919,7 @@ func TestMutationResolver_ArchiveAgent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -944,7 +944,7 @@ func TestMutationResolver_ArchiveAgent_InvalidID(t *testing.T) {
 	mockAgentUseCase := &mock.AgentUseCasesMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test with invalid ID
@@ -968,7 +968,7 @@ func TestMutationResolver_ArchiveAgent_UseCaseError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -1019,7 +1019,7 @@ func TestMutationResolver_UnarchiveAgent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -1044,7 +1044,7 @@ func TestMutationResolver_UnarchiveAgent_InvalidID(t *testing.T) {
 	mockAgentUseCase := &mock.AgentUseCasesMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test with invalid ID
@@ -1068,7 +1068,7 @@ func TestMutationResolver_UnarchiveAgent_UseCaseError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -1124,7 +1124,7 @@ func TestQueryResolver_AgentsByStatus_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -1162,7 +1162,7 @@ func TestQueryResolver_AgentsByStatus_DefaultPagination(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with nil parameters
@@ -1244,7 +1244,7 @@ func TestQueryResolver_AllAgents_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test

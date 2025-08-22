@@ -23,6 +23,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/repository/database/firestore"
 	"github.com/m-mizutani/tamamo/pkg/repository/database/memory"
 	"github.com/m-mizutani/tamamo/pkg/repository/storage"
+	"github.com/m-mizutani/tamamo/pkg/service/slack"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
 	"github.com/urfave/cli/v3"
 )
@@ -163,6 +164,7 @@ func cmdServe() *cli.Command {
 			var repo interfaces.ThreadRepository
 			var agentRepo interfaces.AgentRepository
 			var sessionRepo interfaces.SessionRepository
+			var userRepo interfaces.UserRepository
 			firestoreCfg.SetDefaults()
 
 			// Validate Firestore configuration
@@ -185,12 +187,14 @@ func cmdServe() *cli.Command {
 				repo = client
 				agentRepo = client // Firestore client implements both ThreadRepository and AgentRepository
 				sessionRepo = firestore.NewSessionRepository(client.GetClient())
+				userRepo = firestore.NewUserRepository(client.GetClient())
 			} else {
 				// Use memory repository as fallback
 				logger.Warn("using in-memory repository (data will be lost on restart)")
 				repo = memory.New()
 				agentRepo = memory.NewAgentMemoryClient()
 				sessionRepo = memory.NewSessionRepository()
+				userRepo = memory.NewUserRepository()
 			}
 
 			logger.Info("starting server",
@@ -204,15 +208,21 @@ func cmdServe() *cli.Command {
 				return goerr.Wrap(err, "failed to configure slack service")
 			}
 
+			// Create avatar service
+			avatarService := slack.NewAvatarService(slackSvc)
+
+			// Create user use case
+			userUseCase := usecase.NewUserUseCase(userRepo, avatarService, slackSvc)
+
 			// Configure authentication use case
 			var authUseCase interfaces.AuthUseCases
 			var authCtrl *auth_controller.Controller
 			if authCfg.IsAuthenticationEnabled() {
-				authUseCase, err = authCfg.ConfigureAuthUseCase(sessionRepo, slackSvc)
+				authUseCase, err = authCfg.ConfigureAuthUseCase(sessionRepo, userUseCase, slackSvc)
 				if err != nil {
 					return goerr.Wrap(err, "failed to configure authentication")
 				}
-				authCtrl = auth_controller.NewController(authUseCase, authCfg.FrontendURL, isProduction)
+				authCtrl = auth_controller.NewController(authUseCase, userUseCase, authCfg.FrontendURL, isProduction)
 				logger.Info("authentication enabled")
 			} else {
 				logger.Warn("authentication disabled - running in anonymous mode")
@@ -233,12 +243,16 @@ func cmdServe() *cli.Command {
 
 			// Create agent use case
 			agentUseCase := usecase.NewAgentUseCases(agentRepo)
-			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase)
+			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase, userUseCase)
+
+			// Create user controller
+			userCtrl := server.NewUserController(userUseCase)
 
 			// Build HTTP server options
 			serverOptions := []server.Options{
 				server.WithSlackController(slackCtrl),
 				server.WithGraphQLController(graphqlCtrl),
+				server.WithUserController(userCtrl),
 				server.WithGraphiQL(enableGraphiQL),
 				server.WithSlackVerifier(slackCfg.Verifier()),
 				server.WithNoAuth(authCfg.NoAuthentication),

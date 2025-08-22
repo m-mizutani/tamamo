@@ -50,6 +50,27 @@ type agentDoc struct {
 	UpdatedAt   time.Time `firestore:"updated_at"`
 }
 
+// toAgent converts agentDoc to domain Agent
+func (d *agentDoc) toAgent() *agent.Agent {
+	// Set default status for backward compatibility
+	status := agent.Status(d.Status)
+	if status == "" {
+		status = agent.StatusActive
+	}
+
+	return &agent.Agent{
+		ID:          types.UUID(d.ID),
+		AgentID:     d.AgentID,
+		Name:        d.Name,
+		Description: d.Description,
+		Author:      types.UserID(d.Author),
+		Status:      status,
+		Latest:      d.Latest,
+		CreatedAt:   d.CreatedAt,
+		UpdatedAt:   d.UpdatedAt,
+	}
+}
+
 // AgentVersion Firestore document structure
 type agentVersionDoc struct {
 	AgentUUID    string    `firestore:"agent_uuid"`
@@ -87,7 +108,7 @@ func (c *Client) CreateAgent(ctx context.Context, agentObj *agent.Agent) error {
 		AgentID:     agentObj.AgentID,
 		Name:        agentObj.Name,
 		Description: agentObj.Description,
-		Author:      agentObj.Author,
+		Author:      agentObj.Author.String(),
 		Status:      agentObj.Status.String(),
 		Latest:      agentObj.Latest,
 		CreatedAt:   agentObj.CreatedAt,
@@ -123,23 +144,7 @@ func (c *Client) GetAgent(ctx context.Context, id types.UUID) (*agent.Agent, err
 		return nil, goerr.Wrap(err, "failed to unmarshal agent data", goerr.V("id", id.String()))
 	}
 
-	// Set default status for backward compatibility
-	status := agent.Status(agentDoc.Status)
-	if status == "" {
-		status = agent.StatusActive
-	}
-
-	return &agent.Agent{
-		ID:          types.UUID(agentDoc.ID),
-		AgentID:     agentDoc.AgentID,
-		Name:        agentDoc.Name,
-		Description: agentDoc.Description,
-		Author:      agentDoc.Author,
-		Status:      status,
-		Latest:      agentDoc.Latest,
-		CreatedAt:   agentDoc.CreatedAt,
-		UpdatedAt:   agentDoc.UpdatedAt,
-	}, nil
+	return agentDoc.toAgent(), nil
 }
 
 // GetAgentByAgentID retrieves an agent by AgentID
@@ -164,23 +169,7 @@ func (c *Client) GetAgentByAgentID(ctx context.Context, agentID string) (*agent.
 		return nil, goerr.Wrap(err, "failed to unmarshal agent data", goerr.V("agent_id", agentID))
 	}
 
-	// Set default status for backward compatibility
-	status := agent.Status(agentDoc.Status)
-	if status == "" {
-		status = agent.StatusActive
-	}
-
-	return &agent.Agent{
-		ID:          types.UUID(agentDoc.ID),
-		AgentID:     agentDoc.AgentID,
-		Name:        agentDoc.Name,
-		Description: agentDoc.Description,
-		Author:      agentDoc.Author,
-		Status:      status,
-		Latest:      agentDoc.Latest,
-		CreatedAt:   agentDoc.CreatedAt,
-		UpdatedAt:   agentDoc.UpdatedAt,
-	}, nil
+	return agentDoc.toAgent(), nil
 }
 
 // UpdateAgent updates an existing agent
@@ -205,7 +194,7 @@ func (c *Client) UpdateAgent(ctx context.Context, agentObj *agent.Agent) error {
 		AgentID:     agentObj.AgentID,
 		Name:        agentObj.Name,
 		Description: agentObj.Description,
-		Author:      agentObj.Author,
+		Author:      agentObj.Author.String(),
 		Status:      agentObj.Status.String(),
 		Latest:      agentObj.Latest,
 		CreatedAt:   agentObj.CreatedAt,
@@ -313,7 +302,7 @@ func (c *Client) ListAgents(ctx context.Context, offset, limit int) ([]*agent.Ag
 			AgentID:     agentDoc.AgentID,
 			Name:        agentDoc.Name,
 			Description: agentDoc.Description,
-			Author:      agentDoc.Author,
+			Author:      types.UserID(agentDoc.Author),
 			Status:      status,
 			Latest:      agentDoc.Latest,
 			CreatedAt:   agentDoc.CreatedAt,
@@ -555,7 +544,7 @@ func (c *Client) ListAgentsWithLatestVersions(ctx context.Context, offset, limit
 			AgentID:     agentDoc.AgentID,
 			Name:        agentDoc.Name,
 			Description: agentDoc.Description,
-			Author:      agentDoc.Author,
+			Author:      types.UserID(agentDoc.Author),
 			Latest:      agentDoc.Latest,
 			CreatedAt:   agentDoc.CreatedAt,
 			UpdatedAt:   agentDoc.UpdatedAt,
@@ -661,7 +650,7 @@ func (c *Client) ListActiveAgentsWithLatestVersions(ctx context.Context, offset,
 			AgentID:     agentDoc.AgentID,
 			Name:        agentDoc.Name,
 			Description: agentDoc.Description,
-			Author:      agentDoc.Author,
+			Author:      types.UserID(agentDoc.Author),
 			Status:      agent.StatusActive, // Already filtered for active
 			Latest:      agentDoc.Latest,
 			CreatedAt:   agentDoc.CreatedAt,
@@ -770,7 +759,7 @@ func (c *Client) ListAgentsByStatusWithLatestVersions(ctx context.Context, agent
 			AgentID:     agentDoc.AgentID,
 			Name:        agentDoc.Name,
 			Description: agentDoc.Description,
-			Author:      agentDoc.Author,
+			Author:      types.UserID(agentDoc.Author),
 			Status:      agentStatus, // Use the filtered status
 			Latest:      agentDoc.Latest,
 			CreatedAt:   agentDoc.CreatedAt,
@@ -918,7 +907,7 @@ func (c *Client) ListActiveAgents(ctx context.Context, offset, limit int) ([]*ag
 			AgentID:     agentDoc.AgentID,
 			Name:        agentDoc.Name,
 			Description: agentDoc.Description,
-			Author:      agentDoc.Author,
+			Author:      types.UserID(agentDoc.Author),
 			Status:      agent.StatusActive, // Already filtered for active
 			Latest:      agentDoc.Latest,
 			CreatedAt:   agentDoc.CreatedAt,
@@ -988,7 +977,7 @@ func (c *Client) ListAgentsByStatus(ctx context.Context, status agent.Status, of
 			AgentID:     agentDoc.AgentID,
 			Name:        agentDoc.Name,
 			Description: agentDoc.Description,
-			Author:      agentDoc.Author,
+			Author:      types.UserID(agentDoc.Author),
 			Status:      status, // Use the filtered status
 			Latest:      agentDoc.Latest,
 			CreatedAt:   agentDoc.CreatedAt,
@@ -1040,7 +1029,7 @@ func (c *Client) GetAgentByAgentIDActive(ctx context.Context, agentID string) (*
 		AgentID:     agentDoc.AgentID,
 		Name:        agentDoc.Name,
 		Description: agentDoc.Description,
-		Author:      agentDoc.Author,
+		Author:      types.UserID(agentDoc.Author),
 		Status:      agent.StatusActive, // Already filtered for active
 		Latest:      agentDoc.Latest,
 		CreatedAt:   agentDoc.CreatedAt,

@@ -21,6 +21,9 @@ var _ interfaces.SlackClient = &SlackClientMock{}
 //
 //		// make and configure a mocked interfaces.SlackClient
 //		mockedSlackClient := &SlackClientMock{
+//			GetUserProfileFunc: func(ctx context.Context, userID string) (*interfaces.SlackUserProfile, error) {
+//				panic("mock out the GetUserProfile method")
+//			},
 //			IsBotUserFunc: func(userID string) bool {
 //				panic("mock out the IsBotUser method")
 //			},
@@ -34,6 +37,9 @@ var _ interfaces.SlackClient = &SlackClientMock{}
 //
 //	}
 type SlackClientMock struct {
+	// GetUserProfileFunc mocks the GetUserProfile method.
+	GetUserProfileFunc func(ctx context.Context, userID string) (*interfaces.SlackUserProfile, error)
+
 	// IsBotUserFunc mocks the IsBotUser method.
 	IsBotUserFunc func(userID string) bool
 
@@ -42,6 +48,13 @@ type SlackClientMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetUserProfile holds details about calls to the GetUserProfile method.
+		GetUserProfile []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// UserID is the userID argument value.
+			UserID string
+		}
 		// IsBotUser holds details about calls to the IsBotUser method.
 		IsBotUser []struct {
 			// UserID is the userID argument value.
@@ -59,8 +72,45 @@ type SlackClientMock struct {
 			Text string
 		}
 	}
-	lockIsBotUser   sync.RWMutex
-	lockPostMessage sync.RWMutex
+	lockGetUserProfile sync.RWMutex
+	lockIsBotUser      sync.RWMutex
+	lockPostMessage    sync.RWMutex
+}
+
+// GetUserProfile calls GetUserProfileFunc.
+func (mock *SlackClientMock) GetUserProfile(ctx context.Context, userID string) (*interfaces.SlackUserProfile, error) {
+	if mock.GetUserProfileFunc == nil {
+		panic("SlackClientMock.GetUserProfileFunc: method is nil but SlackClient.GetUserProfile was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		UserID string
+	}{
+		Ctx:    ctx,
+		UserID: userID,
+	}
+	mock.lockGetUserProfile.Lock()
+	mock.calls.GetUserProfile = append(mock.calls.GetUserProfile, callInfo)
+	mock.lockGetUserProfile.Unlock()
+	return mock.GetUserProfileFunc(ctx, userID)
+}
+
+// GetUserProfileCalls gets all the calls that were made to GetUserProfile.
+// Check the length with:
+//
+//	len(mockedSlackClient.GetUserProfileCalls())
+func (mock *SlackClientMock) GetUserProfileCalls() []struct {
+	Ctx    context.Context
+	UserID string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		UserID string
+	}
+	mock.lockGetUserProfile.RLock()
+	calls = mock.calls.GetUserProfile
+	mock.lockGetUserProfile.RUnlock()
+	return calls
 }
 
 // IsBotUser calls IsBotUserFunc.

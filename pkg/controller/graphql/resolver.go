@@ -11,12 +11,14 @@ import (
 type Resolver struct {
 	threadRepo   interfaces.ThreadRepository
 	agentUseCase interfaces.AgentUseCases
+	userUseCase  interfaces.UserUseCases
 }
 
 // NewResolver creates a new resolver instance
-func NewResolver(threadRepo interfaces.ThreadRepository, agentUseCase interfaces.AgentUseCases) *Resolver {
+func NewResolver(threadRepo interfaces.ThreadRepository, agentUseCase interfaces.AgentUseCases, userUseCase interfaces.UserUseCases) *Resolver {
 	return &Resolver{
 		threadRepo:   threadRepo,
 		agentUseCase: agentUseCase,
+		userUseCase:  userUseCase,
 	}
 }

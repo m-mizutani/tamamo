@@ -35,6 +35,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { CreateVersionDialog } from '@/components/agents/CreateVersionDialog'
+import { UserDisplay } from '@/components/UserDisplay'
 
 const LLM_PROVIDERS = [
   { value: 'OPENAI', label: 'OpenAI' },
@@ -553,7 +554,7 @@ export function AgentDetailPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Author</Label>
-                <p className="text-sm text-muted-foreground">{agent.author}</p>
+                <UserDisplay user={agent.author} size={24} />
               </div>
               
               <div className="space-y-2">

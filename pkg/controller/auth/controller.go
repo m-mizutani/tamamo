@@ -15,21 +15,23 @@ import (
 )
 
 const (
-	sessionCookieName = "tamamo_session"
+	sessionCookieName    = "tamamo_session"
 	oauthStateCookieName = "oauth_state"
 )
 
 // Controller handles authentication HTTP endpoints
 type Controller struct {
-	authUseCase  interfaces.AuthUseCases
-	frontendURL  string
+	authUseCase interfaces.AuthUseCases
+	userUseCase interfaces.UserUseCases
+	frontendURL string
 	isProduction bool
 }
 
 // NewController creates a new authentication controller
-func NewController(authUseCase interfaces.AuthUseCases, frontendURL string, isProduction bool) *Controller {
+func NewController(authUseCase interfaces.AuthUseCases, userUseCase interfaces.UserUseCases, frontendURL string, isProduction bool) *Controller {
 	return &Controller{
 		authUseCase:  authUseCase,
+		userUseCase:  userUseCase,
 		frontendURL:  frontendURL,
 		isProduction: isProduction,
 	}
@@ -191,7 +193,7 @@ func (c *Controller) HandleMe(w http.ResponseWriter, r *http.Request) {
 
 	// Return user information
 	c.writeJSON(w, http.StatusOK, &UserResponse{
-		ID:       session.UserID,
+		ID:       session.UserID.String(),
 		Name:     session.UserName,
 		Email:    session.Email,
 		TeamID:   session.TeamID,
@@ -224,15 +226,26 @@ func (c *Controller) HandleCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get full user information to include DisplayName
+	user, err := c.userUseCase.GetUserByID(ctx, session.UserID)
+	if err != nil {
+		ctxlog.From(ctx).Error("Failed to get user information", "error", err, "user_id", session.UserID)
+		c.writeJSON(w, http.StatusOK, &AuthCheckResponse{
+			Authenticated: false,
+		})
+		return
+	}
+
 	// Return authentication status
 	c.writeJSON(w, http.StatusOK, &AuthCheckResponse{
 		Authenticated: true,
 		User: &UserResponse{
-			ID:       session.UserID,
-			Name:     session.UserName,
-			Email:    session.Email,
-			TeamID:   session.TeamID,
-			TeamName: session.TeamName,
+			ID:          session.UserID.String(),
+			Name:        session.UserName,
+			DisplayName: user.DisplayName,
+			Email:       session.Email,
+			TeamID:      session.TeamID,
+			TeamName:    session.TeamName,
 		},
 	})
 }
@@ -299,4 +312,116 @@ func (c *Controller) writeError(w http.ResponseWriter, status int, message strin
 			Message: message,
 		},
 	})
+}
+
+// Middleware creates authentication middleware
+func (c *Controller) Middleware(required bool) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			logger := ctxlog.From(ctx)
+
+			// Skip authentication for auth endpoints
+			if c.isAuthEndpoint(r.URL.Path) {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Try to get session from cookie
+			session, err := c.getSessionFromRequest(ctx, r)
+			if err != nil {
+				if required {
+					logger.Debug("authentication required but no valid session found", "error", err)
+					c.clearSessionCookie(w)
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					return
+				}
+				// For optional auth, continue without session
+			} else {
+				// Add session to context
+				ctx = ContextWithUser(ctx, session)
+			}
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// RequiredAuth creates required authentication middleware
+func (c *Controller) RequiredAuth() func(http.Handler) http.Handler {
+	return c.Middleware(true)
+}
+
+// OptionalAuth creates optional authentication middleware
+func (c *Controller) OptionalAuth() func(http.Handler) http.Handler {
+	return c.Middleware(false)
+}
+
+// getSessionFromRequest extracts session from request cookie
+func (c *Controller) getSessionFromRequest(ctx context.Context, r *http.Request) (*auth.Session, error) {
+	cookie, err := r.Cookie(sessionCookieName)
+	if err != nil {
+		return nil, goerr.Wrap(err, "no session cookie found")
+	}
+
+	session, err := c.authUseCase.GetSession(ctx, cookie.Value)
+	if err != nil {
+		return nil, goerr.Wrap(err, "invalid session")
+	}
+
+	return session, nil
+}
+
+// isAuthEndpoint checks if the path is an authentication endpoint
+func (c *Controller) isAuthEndpoint(path string) bool {
+	authPaths := []string{
+		"/api/auth/login",
+		"/api/auth/callback",
+		"/api/auth/logout",
+		"/api/auth/check",
+		"/api/auth/me",
+		"/health",
+	}
+
+	for _, authPath := range authPaths {
+		if path == authPath {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Context management for user sessions
+
+type contextKey string
+
+const (
+	userContextKey contextKey = "user"
+)
+
+// ContextWithUser adds a user session to the context
+func ContextWithUser(ctx context.Context, session *auth.Session) context.Context {
+	return context.WithValue(ctx, userContextKey, session)
+}
+
+// UserFromContext extracts the user session from the context
+func UserFromContext(ctx context.Context) (*auth.Session, bool) {
+	session, ok := ctx.Value(userContextKey).(*auth.Session)
+	return session, ok
+}
+
+// RequireUserFromContext extracts the user session from the context and panics if not found
+func RequireUserFromContext(ctx context.Context) *auth.Session {
+	session, ok := UserFromContext(ctx)
+	if !ok {
+		panic("user not found in context")
+	}
+	return session
+}
+
+// GetSessionFromContext retrieves session from context (deprecated: use UserFromContext)
+func GetSessionFromContext(ctx context.Context) *auth.Session {
+	session, _ := UserFromContext(ctx)
+	return session
 }

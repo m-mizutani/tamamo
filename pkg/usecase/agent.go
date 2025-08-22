@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/m-mizutani/goerr/v2"
-	"github.com/m-mizutani/tamamo/pkg/controller/http/middleware"
+	auth_controller "github.com/m-mizutani/tamamo/pkg/controller/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
@@ -65,9 +65,9 @@ func (u *agentUseCaseImpl) CreateAgent(ctx context.Context, req *interfaces.Crea
 	}
 
 	// Get author from authentication context
-	author := "anonymous"
-	if session, ok := middleware.UserFromContext(ctx); ok && session != nil {
-		author = session.UserID // Slack ID
+	author := types.AnonymousUserID
+	if session, ok := auth_controller.UserFromContext(ctx); ok && session != nil {
+		author = session.UserID
 	}
 
 	agentObj := &agent.Agent{

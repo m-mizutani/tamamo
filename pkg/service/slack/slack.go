@@ -78,6 +78,38 @@ func (s *Service) IsBotUser(userID string) bool {
 	return s.botUserID == userID
 }
 
+// GetUserProfile retrieves user profile information from Slack
+func (s *Service) GetUserProfile(ctx context.Context, userID string) (*interfaces.SlackUserProfile, error) {
+	user, err := s.client.GetUserInfo(userID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get user info from Slack", goerr.V("user_id", userID))
+	}
+
+	return &interfaces.SlackUserProfile{
+		ID:          user.ID,
+		Name:        user.Name,
+		DisplayName: user.Profile.DisplayName,
+		Email:       user.Profile.Email,
+		Profile: struct {
+			Image24   string `json:"image_24"`
+			Image32   string `json:"image_32"`
+			Image48   string `json:"image_48"`
+			Image72   string `json:"image_72"`
+			Image192  string `json:"image_192"`
+			Image512  string `json:"image_512"`
+			ImageOrig string `json:"image_original"`
+		}{
+			Image24:   user.Profile.Image24,
+			Image32:   user.Profile.Image32,
+			Image48:   user.Profile.Image48,
+			Image72:   user.Profile.Image72,
+			Image192:  user.Profile.Image192,
+			Image512:  user.Profile.Image512,
+			ImageOrig: user.Profile.ImageOriginal,
+		},
+	}, nil
+}
+
 // ThreadService provides thread-specific operations
 type ThreadService struct {
 	service   *Service

@@ -18,8 +18,12 @@ func TestAuthUseCase_SessionLifecycle(t *testing.T) {
 
 	// Note: In real tests, we would mock the Slack OAuth service
 	// For now, we'll test the session management directly
+	userRepo := memory.NewUserRepository()
+	userUseCase := usecase.NewUserUseCase(userRepo, nil, nil)
+
 	uc := usecase.NewAuthUseCase(
 		sessionRepo,
+		userUseCase,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
@@ -27,7 +31,7 @@ func TestAuthUseCase_SessionLifecycle(t *testing.T) {
 
 	t.Run("Create and retrieve session", func(t *testing.T) {
 		// Create a test session
-		session := auth.NewSession(ctx, "U123456", "Test User", "test@example.com", "T123456", "Test Team")
+		session := auth.NewSession(ctx, types.UserID("01234567-89ab-cdef-0123-456789abcdef"), "Test User", "test@example.com", "T123456", "Test Team")
 		gt.NoError(t, sessionRepo.CreateSession(ctx, session))
 
 		// Retrieve the session
@@ -46,7 +50,7 @@ func TestAuthUseCase_SessionLifecycle(t *testing.T) {
 
 	t.Run("Logout deletes session", func(t *testing.T) {
 		// Create a test session
-		session := auth.NewSession(ctx, "U234567", "Another User", "another@example.com", "T234567", "Another Team")
+		session := auth.NewSession(ctx, types.UserID("02345678-9abc-def0-1234-56789abcdef0"), "Another User", "another@example.com", "T234567", "Another Team")
 		gt.NoError(t, sessionRepo.CreateSession(ctx, session))
 
 		// Logout
@@ -69,8 +73,12 @@ func TestAuthUseCase_ExpiredSession(t *testing.T) {
 	ctx := context.Background()
 	sessionRepo := memory.NewSessionRepository()
 
+	userRepo := memory.NewUserRepository()
+	userUseCase := usecase.NewUserUseCase(userRepo, nil, nil)
+
 	uc := usecase.NewAuthUseCase(
 		sessionRepo,
+		userUseCase,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
@@ -81,7 +89,7 @@ func TestAuthUseCase_ExpiredSession(t *testing.T) {
 
 	session := &auth.Session{
 		ID:        sessionID,
-		UserID:    "U345678",
+		UserID:    types.UserID("03456789-abcd-ef01-2345-6789abcdef01"),
 		UserName:  "Expired User",
 		Email:     "expired@example.com",
 		TeamID:    "T345678",

@@ -23,6 +23,7 @@ resolver:
 # if they match it will use them, otherwise it will generate them.
 autobind:
   - "github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+  - "github.com/m-mizutani/tamamo/pkg/domain/model/user"
 
 # This section declares type mapping between the GraphQL and go type systems
 #
@@ -66,3 +67,6 @@ models:
   Any:
     model:
       - github.com/99designs/gqlgen/graphql.Any
+  User:
+    model:
+      - github.com/m-mizutani/tamamo/pkg/domain/model/user.User

@@ -1,19 +1,36 @@
 package graphql
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	agentmodel "github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	graphql1 "github.com/m-mizutani/tamamo/pkg/domain/model/graphql"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/utils/logging"
 )
 
 // convertAgentToGraphQL converts domain Agent to GraphQL Agent
-func convertAgentToGraphQL(a *agentmodel.Agent, latestVersion *agentmodel.AgentVersion) *graphql1.Agent {
+func convertAgentToGraphQL(ctx context.Context, a *agentmodel.Agent, latestVersion *agentmodel.AgentVersion, userUseCase interfaces.UserUseCases) *graphql1.Agent {
 	if a == nil {
 		return nil
+	}
+
+	// Fetch the author user data
+	var authorUser *user.User
+	if userUseCase != nil {
+		u, err := userUseCase.GetUserByID(ctx, a.Author)
+		if err != nil {
+			// Log the error but don't fail the entire conversion
+			logging.Default().Warn("Failed to fetch user data for agent author",
+				slog.String("agent_id", a.ID.String()),
+				slog.String("author_id", a.Author.String()),
+				slog.String("error", err.Error()))
+		} else {
+			authorUser = u
+		}
 	}
 
 	result := &graphql1.Agent{
@@ -21,7 +38,7 @@ func convertAgentToGraphQL(a *agentmodel.Agent, latestVersion *agentmodel.AgentV
 		AgentID:     a.AgentID,
 		Name:        a.Name,
 		Description: a.Description,
-		Author:      a.Author,
+		Author:      authorUser,
 		Status:      convertAgentStatusToGraphQL(a.Status),
 		Latest:      a.Latest,
 		CreatedAt:   a.CreatedAt,

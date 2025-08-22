@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 )
 
 type Agent struct {
@@ -17,7 +18,7 @@ type Agent struct {
 	AgentID       string        `json:"agentId"`
 	Name          string        `json:"name"`
 	Description   string        `json:"description"`
-	Author        string        `json:"author"`
+	Author        *user.User    `json:"author"`
 	Status        AgentStatus   `json:"status"`
 	Latest        string        `json:"latest"`
 	CreatedAt     time.Time     `json:"createdAt"`

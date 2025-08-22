@@ -20,13 +20,14 @@ type authUseCaseImpl struct {
 // NewAuthUseCase creates a new authentication use case
 func NewAuthUseCase(
 	sessionRepo interfaces.SessionRepository,
+	userUseCase interfaces.UserUseCases,
 	clientID, clientSecret, frontendURL string,
 ) interfaces.AuthUseCases {
 	// Construct redirect URI from frontend URL
 	redirectURI := fmt.Sprintf("%s/api/auth/callback", frontendURL)
 
 	slackOAuth := authservice.NewSlackOAuthService(clientID, clientSecret, redirectURI)
-	tokenExchange := authservice.NewTokenExchangeService(slackOAuth)
+	tokenExchange := authservice.NewTokenExchangeService(slackOAuth, userUseCase)
 
 	return &authUseCaseImpl{
 		sessionRepo:   sessionRepo,
@@ -40,9 +41,10 @@ func NewAuthUseCase(
 func NewAuthUseCaseWithSlackOAuth(
 	sessionRepo interfaces.SessionRepository,
 	slackOAuth *authservice.SlackOAuthService,
+	userUseCase interfaces.UserUseCases,
 	frontendURL string,
 ) interfaces.AuthUseCases {
-	tokenExchange := authservice.NewTokenExchangeService(slackOAuth)
+	tokenExchange := authservice.NewTokenExchangeService(slackOAuth, userUseCase)
 
 	return &authUseCaseImpl{
 		sessionRepo:   sessionRepo,

@@ -19,15 +19,18 @@ import (
 
 func TestAuthController_Login(t *testing.T) {
 	sessionRepo := memory.NewSessionRepository()
+	userRepo := memory.NewUserRepository()
+	userUseCase := usecase.NewUserUseCase(userRepo, nil, nil)
 
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
+		userUseCase,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
 
 	// Test login redirect
 	req := httptest.NewRequest(http.MethodGet, "/api/auth/login", nil)
@@ -44,14 +47,18 @@ func TestAuthController_Login(t *testing.T) {
 func TestAuthController_Callback(t *testing.T) {
 	sessionRepo := memory.NewSessionRepository()
 
+	userRepo := memory.NewUserRepository()
+	userUseCase := usecase.NewUserUseCase(userRepo, nil, nil)
+
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
+		userUseCase,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
 
 	t.Run("Missing parameters", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/auth/callback", nil)
@@ -80,14 +87,18 @@ func TestAuthController_Me(t *testing.T) {
 	ctx := context.Background()
 	sessionRepo := memory.NewSessionRepository()
 
+	userRepo := memory.NewUserRepository()
+	userUseCase := usecase.NewUserUseCase(userRepo, nil, nil)
+
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
+		userUseCase,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
 
 	t.Run("No session", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
@@ -103,7 +114,7 @@ func TestAuthController_Me(t *testing.T) {
 		sessionID := types.NewUUID(ctx)
 		session := &authmodel.Session{
 			ID:        sessionID,
-			UserID:    "U123456",
+			UserID:    types.UserID("01234567-89ab-cdef-0123-456789abcdef"),
 			UserName:  "Test User",
 			Email:     "test@example.com",
 			TeamID:    "T123456",
@@ -128,7 +139,7 @@ func TestAuthController_Me(t *testing.T) {
 
 		var response authctrl.UserResponse
 		gt.NoError(t, json.NewDecoder(rec.Body).Decode(&response))
-		gt.Equal(t, response.ID, session.UserID)
+		gt.Equal(t, response.ID, session.UserID.String())
 		gt.Equal(t, response.Name, session.UserName)
 		gt.Equal(t, response.Email, session.Email)
 	})
@@ -138,14 +149,18 @@ func TestAuthController_Check(t *testing.T) {
 	ctx := context.Background()
 	sessionRepo := memory.NewSessionRepository()
 
+	userRepo := memory.NewUserRepository()
+	userUseCase := usecase.NewUserUseCase(userRepo, nil, nil)
+
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
+		userUseCase,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
 
 	t.Run("Not authenticated", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/auth/check", nil)
@@ -165,7 +180,7 @@ func TestAuthController_Check(t *testing.T) {
 		sessionID := types.NewUUID(ctx)
 		session := &authmodel.Session{
 			ID:        sessionID,
-			UserID:    "U123456",
+			UserID:    types.UserID("01234567-89ab-cdef-0123-456789abcdef"),
 			UserName:  "Test User",
 			Email:     "test@example.com",
 			TeamID:    "T123456",
@@ -191,7 +206,7 @@ func TestAuthController_Check(t *testing.T) {
 		var response authctrl.AuthCheckResponse
 		gt.NoError(t, json.NewDecoder(rec.Body).Decode(&response))
 		gt.Equal(t, response.Authenticated, true)
-		gt.Equal(t, response.User.ID, session.UserID)
+		gt.Equal(t, response.User.ID, session.UserID.String())
 	})
 }
 
@@ -199,14 +214,18 @@ func TestAuthController_Logout(t *testing.T) {
 	ctx := context.Background()
 	sessionRepo := memory.NewSessionRepository()
 
+	userRepo := memory.NewUserRepository()
+	userUseCase := usecase.NewUserUseCase(userRepo, nil, nil)
+
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
+		userUseCase,
 		"test-client-id",
 		"test-client-secret",
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
 
 	// Create a session
 	sessionID := types.NewUUID(ctx)
