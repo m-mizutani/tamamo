@@ -263,10 +263,10 @@ export function AgentDetailPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/agents')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Agents
+        <div className="flex items-center">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/agents')} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="mr-1 h-3 w-3" />
+            <span className="text-xs">Back to Agents</span>
           </Button>
         </div>
         <div className="flex items-center justify-center py-12">
@@ -280,10 +280,10 @@ export function AgentDetailPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/agents')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Agents
+        <div className="flex items-center">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/agents')} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="mr-1 h-3 w-3" />
+            <span className="text-xs">Back to Agents</span>
           </Button>
         </div>
         <div className="text-center py-12">
@@ -302,10 +302,10 @@ export function AgentDetailPage() {
   if (!agent) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/agents')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Agents
+        <div className="flex items-center">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/agents')} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="mr-1 h-3 w-3" />
+            <span className="text-xs">Back to Agents</span>
           </Button>
         </div>
         <div className="text-center py-12">
@@ -317,23 +317,26 @@ export function AgentDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Small Back Button */}
+      <div className="flex items-center">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/agents')} className="text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="mr-1 h-3 w-3" />
+          <span className="text-xs">Back to Agents</span>
+        </Button>
+      </div>
+      
+      {/* Main Agent Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/agents')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Agents
-          </Button>
-          <div>
-            <div className="flex items-center space-x-3">
-              <h1 className="text-3xl font-bold tracking-tight">{agent.name}</h1>
-              <Badge variant={agent.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                {agent.status === 'ACTIVE' ? 'Active' : 'Archived'}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground">
-              {agent.agentId} • v{agent.latest}
-            </p>
+        <div>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-3xl font-bold tracking-tight">{agent.name}</h1>
+            <Badge variant={agent.status === 'ACTIVE' ? 'default' : 'secondary'}>
+              {agent.status === 'ACTIVE' ? 'Active' : 'Archived'}
+            </Badge>
           </div>
+          <p className="text-muted-foreground mt-1">
+            {agent.agentId} • v{agent.latest}
+          </p>
         </div>
         
         <div className="flex items-center space-x-2">
