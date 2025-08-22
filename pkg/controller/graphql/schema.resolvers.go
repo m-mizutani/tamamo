@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	goerr "github.com/m-mizutani/goerr/v2"
+	"github.com/m-mizutani/tamamo/pkg/controller/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	graphql1 "github.com/m-mizutani/tamamo/pkg/domain/model/graphql"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
@@ -340,23 +341,13 @@ func (r *queryResolver) User(ctx context.Context, id string) (*user.User, error)
 
 // CurrentUser is the resolver for the currentUser field.
 func (r *queryResolver) CurrentUser(ctx context.Context) (*user.User, error) {
-	// In anonymous mode, return nil
-	userID := ctx.Value("userID")
-	if userID == nil {
+	session, ok := auth.UserFromContext(ctx)
+	if !ok {
+		// Not authenticated, or in anonymous mode.
 		return nil, nil
 	}
 
-	userIDStr, ok := userID.(string)
-	if !ok {
-		return nil, goerr.New("invalid user ID in context")
-	}
-
-	id := types.UserID(userIDStr)
-	if !id.IsValid() {
-		return nil, goerr.New("invalid user ID format")
-	}
-
-	u, err := r.userUseCase.GetUserByID(ctx, id)
+	u, err := r.userUseCase.GetUserByID(ctx, session.UserID)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to get current user")
 	}
