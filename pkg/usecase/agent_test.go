@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/m-mizutani/gt"
-	"github.com/m-mizutani/tamamo/pkg/controller/http/middleware"
+	auth_controller "github.com/m-mizutani/tamamo/pkg/controller/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
@@ -49,7 +49,7 @@ func TestCreateAgent(t *testing.T) {
 	gt.Equal(t, createdAgent.Name, req.Name)
 	gt.Equal(t, createdAgent.Description, *req.Description)
 	gt.Equal(t, createdAgent.Latest, req.Version)
-	gt.Equal(t, createdAgent.Author, "anonymous") // Without auth context, should be anonymous
+	gt.Equal(t, createdAgent.Author, types.AnonymousUserID) // Without auth context, should be anonymous
 	// Note: LatestVersion is not returned in CreateAgent, only in GetAgent
 }
 
@@ -60,7 +60,7 @@ func TestCreateAgent_WithAuthor(t *testing.T) {
 	// Create a session with Slack user ID
 	session := &auth.Session{
 		ID:        types.NewUUID(ctx),
-		UserID:    "U123456789", // Slack user ID
+		UserID:    types.UserID("U123456789"), // User ID (originally from Slack)
 		UserName:  "Test User",
 		Email:     "test@example.com",
 		TeamID:    "T123456789",
@@ -70,7 +70,7 @@ func TestCreateAgent_WithAuthor(t *testing.T) {
 	}
 
 	// Add session to context
-	ctxWithAuth := middleware.ContextWithUser(ctx, session)
+	ctxWithAuth := auth_controller.ContextWithUser(ctx, session)
 
 	req := &interfaces.CreateAgentRequest{
 		AgentID:      "test-agent-with-author",
@@ -85,7 +85,7 @@ func TestCreateAgent_WithAuthor(t *testing.T) {
 	createdAgent, err := uc.CreateAgent(ctxWithAuth, req)
 	gt.NoError(t, err)
 	gt.V(t, createdAgent).NotNil()
-	gt.Equal(t, createdAgent.Author, "U123456789") // Should be the Slack user ID
+	gt.Equal(t, createdAgent.Author, types.UserID("U123456789")) // Should be the User ID
 }
 
 func TestCreateAgent_InvalidAgentID(t *testing.T) {

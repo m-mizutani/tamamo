@@ -34,6 +34,8 @@ When making changes, before finishing the task, always:
 - Run `golangci-lint run ./...` to check lint error
 - Run `gosec -exclude-generated -quiet ./...` to check security issue
 - Run `go test ./...` to check side effect
+- **For GraphQL changes: Run `task graphql` and verify no compilation errors**
+- **For GraphQL changes: Check frontend GraphQL queries are updated accordingly**
 
 ### Language
 
@@ -55,6 +57,61 @@ All comment and character literal in source code must be in English
 - **All Slack responses MUST be sent as thread replies (with thread_ts)**
 - Never send messages to the channel directly unless explicitly required
 
+### GraphQL Development Workflow
+
+**🚨 CRITICAL: GraphQL changes require a specific workflow to avoid runtime errors 🚨**
+
+When modifying GraphQL schemas or domain models that affect GraphQL:
+
+#### 1. Schema Changes
+- Always update `graphql/schema.graphql` first
+- Ensure all new fields have appropriate types and nullability
+- Consider backward compatibility for existing clients
+
+#### 2. Code Generation (MANDATORY)
+- **ALWAYS run `task graphql` (or `task g`) after schema changes**
+- This regenerates `pkg/controller/graphql/generated.go` and related files
+- Generated code must be committed along with schema changes
+
+#### 3. Domain Model Updates
+- If adding fields to domain models, update all related structures:
+  - Domain model struct (e.g., `pkg/domain/model/user/user.go`)
+  - Repository layer (Firestore and Memory implementations)
+  - Constructor functions and update methods
+  - GraphQL interface types if used
+
+#### 4. Testing Updates
+- Update all test mocks to include new fields
+- Update test data creation (e.g., `NewUser` calls)
+- Update usecase constructor calls if signatures changed
+- Run tests early and often during development
+
+#### 5. Frontend Synchronization
+- Update TypeScript interfaces in `frontend/src/lib/graphql.ts`
+- Update GraphQL queries to include new fields
+- Update UI components to use new fields with appropriate fallbacks
+
+#### 6. Verification Checklist
+Before completing GraphQL-related changes:
+- [ ] `task graphql` executed successfully
+- [ ] `go vet ./...` passes without GraphQL field errors
+- [ ] `go test ./...` passes (especially mock-related tests)
+- [ ] Frontend GraphQL queries include new fields
+- [ ] Server restart planned (GraphQL schema cache)
+- [ ] Browser cache clear planned (client-side GraphQL cache)
+
+#### 7. Common Pitfalls to Avoid
+- **Never commit schema changes without regenerating GraphQL code**
+- **Never modify generated GraphQL files manually**
+- **Always update test mocks when adding interface methods**
+- **Remember that both frontend and backend caches need clearing after schema changes**
+- **Check that all constructor signatures are updated consistently**
+
+#### 8. Deployment Notes
+- GraphQL schema changes require server restart to take effect
+- Consider client cache invalidation strategies
+- Test with real data to ensure proper field resolution
+
 ## Common Development Commands
 
 ### Building and Testing
@@ -67,6 +124,12 @@ All comment and character literal in source code must be in English
 ### Code Generation
 - `go install github.com/matryer/moq@latest` - Install moq for mock generation
 - `moq -out pkg/domain/mock/interfaces.go ./pkg/domain/interfaces SlackClient` - Generate mocks
+
+### GraphQL Development
+- `task graphql` (alias: `task g`) - Regenerate GraphQL schema and resolvers
+- `task` - Run all code generation (includes GraphQL and mocks)
+- **Always run after modifying `graphql/schema.graphql`**
+- **Always verify generated code compiles before committing**
 
 ## Important Development Guidelines
 

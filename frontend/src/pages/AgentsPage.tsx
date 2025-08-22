@@ -6,6 +6,7 @@ import { Plus, Users, Loader2, RefreshCw, ChevronLeft, ChevronRight, Archive, Ch
 import { Agent, AgentListResponse, GET_AGENTS, GET_ALL_AGENTS, GET_AGENTS_BY_STATUS, ARCHIVE_AGENT, UNARCHIVE_AGENT, graphqlRequest } from '@/lib/graphql'
 import { useNavigate } from 'react-router-dom'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { UserDisplayCompact } from '@/components/UserDisplay'
 import { toast } from 'sonner'
 
 const AGENTS_PER_PAGE = 18
@@ -424,8 +425,11 @@ export function AgentsPage() {
               <p className="text-sm text-muted-foreground line-clamp-2">
                 {agent.description}
               </p>
-              <div className="mt-3 text-xs text-muted-foreground">
-                Created {new Date(agent.createdAt).toLocaleDateString()}
+              <div className="mt-3 flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">
+                  Created {new Date(agent.createdAt).toLocaleDateString()}
+                </div>
+                <UserDisplayCompact user={agent.author} size={16} />
               </div>
               {agent.latestVersion && (
                 <div className="mt-2 text-xs text-muted-foreground">

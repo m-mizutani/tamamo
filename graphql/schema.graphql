@@ -25,12 +25,21 @@ type ThreadsResponse {
   totalCount: Int!
 }
 
+type User {
+  id: ID!
+  slackName: String!
+  displayName: String!
+  email: String
+  createdAt: Time!
+  updatedAt: Time!
+}
+
 type Agent {
   id: ID!
   agentId: String!
   name: String!
   description: String!
-  author: String!
+  author: User!
   status: AgentStatus!
   latest: String!
   createdAt: Time!
@@ -96,6 +105,9 @@ type Query {
   agentsByStatus(status: AgentStatus!, offset: Int, limit: Int): AgentListResponse!
   agentVersions(agentUuid: ID!): [AgentVersion!]!
   checkAgentIdAvailability(agentId: String!): AgentIdAvailability!
+  
+  user(id: ID!): User
+  currentUser: User
 }
 
 type Mutation {

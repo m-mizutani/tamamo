@@ -14,7 +14,6 @@ import (
 	"github.com/m-mizutani/tamamo/frontend"
 	auth_controller "github.com/m-mizutani/tamamo/pkg/controller/auth"
 	graphql_controller "github.com/m-mizutani/tamamo/pkg/controller/graphql"
-	"github.com/m-mizutani/tamamo/pkg/controller/http/middleware"
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
@@ -39,6 +38,7 @@ type Server struct {
 	slackCtrl      *slack_controller.Controller
 	graphqlCtrl    *graphql_controller.Resolver
 	authCtrl       *auth_controller.Controller
+	userCtrl       *UserController
 	authUseCase    interfaces.AuthUseCases
 	enableGraphiQL bool
 	slackVerifier  slack.PayloadVerifier
@@ -73,6 +73,13 @@ func WithGraphQLController(ctrl *graphql_controller.Resolver) Options {
 func WithGraphiQL(enable bool) Options {
 	return func(s *Server) {
 		s.enableGraphiQL = enable
+	}
+}
+
+// WithUserController sets the User controller
+func WithUserController(ctrl *UserController) Options {
+	return func(s *Server) {
+		s.userCtrl = ctrl
 	}
 }
 
@@ -139,8 +146,8 @@ func New(opts ...Options) *Server {
 	if s.graphqlCtrl != nil {
 		r.Route("/graphql", func(r chi.Router) {
 			// Apply authentication middleware if enabled
-			if s.authUseCase != nil && !s.noAuth {
-				r.Use(middleware.AuthMiddleware(s.authUseCase, s.noAuth))
+			if s.authCtrl != nil && !s.noAuth {
+				r.Use(s.authCtrl.RequiredAuth())
 			}
 
 			srv := handler.NewDefaultServer(
@@ -158,6 +165,25 @@ func New(opts ...Options) *Server {
 		if s.enableGraphiQL {
 			r.Handle("/graphiql", playground.Handler("GraphQL playground", "/graphql"))
 		}
+	}
+
+	// User API endpoints
+	if s.userCtrl != nil {
+		r.Route("/api/users", func(r chi.Router) {
+			// Public endpoints (for avatar serving)
+			r.Get("/{userID}/avatar", s.userCtrl.HandleGetUserAvatar)
+
+			// Protected endpoints (require authentication)
+			if s.authCtrl != nil && !s.noAuth {
+				r.Group(func(r chi.Router) {
+					r.Use(s.authCtrl.RequiredAuth())
+					r.Get("/{userID}", s.userCtrl.HandleGetUserInfo)
+				})
+			} else {
+				// If no auth, allow access to user info
+				r.Get("/{userID}", s.userCtrl.HandleGetUserInfo)
+			}
+		})
 	}
 
 	// Health check endpoint

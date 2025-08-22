@@ -12,18 +12,20 @@ tasks:
       - go install github.com/matryer/moq@latest
       - moq -out pkg/domain/mock/slack.go -pkg mock ./pkg/domain/interfaces SlackClient ThreadRepository HistoryRepository StorageAdapter
       - moq -out pkg/domain/mock/agent.go -pkg mock ./pkg/domain/interfaces AgentUseCases AgentRepository
+      - moq -out pkg/domain/mock/user.go -pkg mock ./pkg/domain/interfaces UserUseCases UserRepository UserAvatarService
     sources:
       - pkg/domain/interfaces/*.go
     generates:
       - pkg/domain/mock/slack.go
       - pkg/domain/mock/agent.go
+      - pkg/domain/mock/user.go
 
   graphql:
     aliases: [g]
     desc: Generate GraphQL code
     cmds:
-      - go get -tool github.com/99designs/gqlgen@v0.17.78
-      - go tool gqlgen generate
+      - go install github.com/99designs/gqlgen@v0.17.78
+      - go run github.com/99designs/gqlgen generate
     sources:
       - gqlgen.yml
       - graphql/*.graphql

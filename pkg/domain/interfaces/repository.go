@@ -6,6 +6,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
 
@@ -84,4 +85,12 @@ type OAuthStateRepository interface {
 	SaveState(ctx context.Context, state *auth.OAuthState) error
 	GetState(ctx context.Context, state string) (*auth.OAuthState, error)
 	ValidateAndDeleteState(ctx context.Context, state string) error
+}
+
+// UserRepository manages user persistence
+type UserRepository interface {
+	GetByID(ctx context.Context, id types.UserID) (*user.User, error)
+	GetBySlackIDAndTeamID(ctx context.Context, slackID, teamID string) (*user.User, error)
+	Create(ctx context.Context, user *user.User) error
+	Update(ctx context.Context, user *user.User) error
 }

@@ -12,18 +12,20 @@ import (
 
 // Client is an in-memory implementation of ThreadRepository and HistoryRepository
 type Client struct {
-	mu        sync.RWMutex
-	threads   map[types.ThreadID]*slack.Thread
-	messages  map[types.ThreadID][]*slack.Message
-	histories map[types.HistoryID]*slack.History
+	mu          sync.RWMutex
+	threads     map[types.ThreadID]*slack.Thread
+	messages    map[types.ThreadID][]*slack.Message
+	histories   map[types.HistoryID]*slack.History
+	userStorage *userStorage
 }
 
 // New creates a new in-memory client
 func New() *Client {
 	return &Client{
-		threads:   make(map[types.ThreadID]*slack.Thread),
-		messages:  make(map[types.ThreadID][]*slack.Message),
-		histories: make(map[types.HistoryID]*slack.History),
+		threads:     make(map[types.ThreadID]*slack.Thread),
+		messages:    make(map[types.ThreadID][]*slack.Message),
+		histories:   make(map[types.HistoryID]*slack.History),
+		userStorage: newUserStorage(),
 	}
 }
 

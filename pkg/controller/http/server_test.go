@@ -36,7 +36,7 @@ func TestServer_GraphQLEndpoint(t *testing.T) {
 	agentUseCase := usecase.NewAgentUseCases(agentRepo)
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, agentUseCase)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, agentUseCase, nil)
 
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
@@ -65,7 +65,7 @@ func TestServer_GraphQLQuery_Threads(t *testing.T) {
 	gt.NoError(t, err)
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
@@ -139,7 +139,7 @@ func TestServer_GraphQLQuery_Thread_Success(t *testing.T) {
 	gt.NoError(t, err)
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
@@ -199,7 +199,7 @@ func TestServer_GraphQLQuery_Thread_InvalidID(t *testing.T) {
 	memRepo := memory.New()
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
@@ -249,7 +249,7 @@ func TestServer_GraphiQLEndpoint_Disabled(t *testing.T) {
 	memRepo := memory.New()
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server without GraphiQL enabled
 	httpServer := server.New(
@@ -272,7 +272,7 @@ func TestServer_GraphiQLEndpoint_Enabled(t *testing.T) {
 	memRepo := memory.New()
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server with GraphiQL enabled
 	httpServer := server.New(
@@ -296,7 +296,7 @@ func TestServer_GraphQLQuery_Thread_NotFound(t *testing.T) {
 	memRepo := memory.New()
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
@@ -355,7 +355,7 @@ func TestServer_GraphQLQuery_InvalidSyntax(t *testing.T) {
 	memRepo := memory.New()
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
@@ -392,7 +392,7 @@ func TestServer_GraphQLQuery_InvalidJSON(t *testing.T) {
 	memRepo := memory.New()
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
@@ -417,7 +417,7 @@ func TestServer_GraphQLQuery_EmptyQuery(t *testing.T) {
 	memRepo := memory.New()
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
@@ -450,7 +450,7 @@ func TestServer_GraphQLQuery_UnsupportedHTTPMethod(t *testing.T) {
 	memRepo := memory.New()
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(
@@ -481,7 +481,7 @@ func TestServer_GraphQLQuery_ConcurrentRequests(t *testing.T) {
 	}
 
 	// Create GraphQL controller
-	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil)
+	graphqlCtrl := graphql_controller.NewResolver(memRepo, nil, nil)
 
 	// Create HTTP server with GraphQL controller
 	httpServer := server.New(

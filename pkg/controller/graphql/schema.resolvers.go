@@ -9,9 +9,11 @@ import (
 	"fmt"
 
 	goerr "github.com/m-mizutani/goerr/v2"
+	"github.com/m-mizutani/tamamo/pkg/controller/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	graphql1 "github.com/m-mizutani/tamamo/pkg/domain/model/graphql"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
 
@@ -32,7 +34,7 @@ func (r *mutationResolver) CreateAgent(ctx context.Context, input graphql1.Creat
 		return nil, goerr.Wrap(err, "failed to retrieve newly created agent with version")
 	}
 
-	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil
+	return convertAgentToGraphQL(ctx, agentWithVersion.Agent, agentWithVersion.LatestVersion, r.userUseCase), nil
 }
 
 // UpdateAgent is the resolver for the updateAgent field.
@@ -57,7 +59,7 @@ func (r *mutationResolver) UpdateAgent(ctx context.Context, id string, input gra
 		return nil, goerr.Wrap(err, "failed to get agent with version")
 	}
 
-	return convertAgentToGraphQL(agent, agentWithVersion.LatestVersion), nil
+	return convertAgentToGraphQL(ctx, agent, agentWithVersion.LatestVersion, r.userUseCase), nil
 }
 
 // DeleteAgent is the resolver for the deleteAgent field.
@@ -87,7 +89,7 @@ func (r *mutationResolver) ArchiveAgent(ctx context.Context, id string) (*graphq
 		return nil, goerr.Wrap(err, "failed to archive agent")
 	}
 
-	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil
+	return convertAgentToGraphQL(ctx, agentWithVersion.Agent, agentWithVersion.LatestVersion, r.userUseCase), nil
 }
 
 // UnarchiveAgent is the resolver for the unarchiveAgent field.
@@ -102,7 +104,7 @@ func (r *mutationResolver) UnarchiveAgent(ctx context.Context, id string) (*grap
 		return nil, goerr.Wrap(err, "failed to unarchive agent")
 	}
 
-	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil
+	return convertAgentToGraphQL(ctx, agentWithVersion.Agent, agentWithVersion.LatestVersion, r.userUseCase), nil
 }
 
 // CreateAgentVersion is the resolver for the createAgentVersion field.
@@ -174,7 +176,7 @@ func (r *queryResolver) Agent(ctx context.Context, id string) (*graphql1.Agent, 
 		return nil, goerr.Wrap(err, "failed to get agent")
 	}
 
-	return convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion), nil
+	return convertAgentToGraphQL(ctx, agentWithVersion.Agent, agentWithVersion.LatestVersion, r.userUseCase), nil
 }
 
 // AgentByAgentID is the resolver for the agentByAgentId field.
@@ -209,7 +211,7 @@ func (r *queryResolver) Agents(ctx context.Context, offset *int, limit *int) (*g
 	// Convert to GraphQL format
 	graphqlAgents := make([]*graphql1.Agent, 0, len(response.Agents))
 	for _, agentWithVersion := range response.Agents {
-		graphqlAgents = append(graphqlAgents, convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion))
+		graphqlAgents = append(graphqlAgents, convertAgentToGraphQL(ctx, agentWithVersion.Agent, agentWithVersion.LatestVersion, r.userUseCase))
 	}
 
 	return &graphql1.AgentListResponse{
@@ -245,7 +247,7 @@ func (r *queryResolver) AllAgents(ctx context.Context, offset *int, limit *int) 
 	// Convert to GraphQL format
 	graphqlAgents := make([]*graphql1.Agent, 0, len(response.Agents))
 	for _, agentWithVersion := range response.Agents {
-		graphqlAgents = append(graphqlAgents, convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion))
+		graphqlAgents = append(graphqlAgents, convertAgentToGraphQL(ctx, agentWithVersion.Agent, agentWithVersion.LatestVersion, r.userUseCase))
 	}
 
 	return &graphql1.AgentListResponse{
@@ -295,7 +297,7 @@ func (r *queryResolver) AgentsByStatus(ctx context.Context, status graphql1.Agen
 	// Convert to GraphQL format
 	graphqlAgents := make([]*graphql1.Agent, 0, len(response.Agents))
 	for _, agentWithVersion := range response.Agents {
-		graphqlAgents = append(graphqlAgents, convertAgentToGraphQL(agentWithVersion.Agent, agentWithVersion.LatestVersion))
+		graphqlAgents = append(graphqlAgents, convertAgentToGraphQL(ctx, agentWithVersion.Agent, agentWithVersion.LatestVersion, r.userUseCase))
 	}
 
 	return &graphql1.AgentListResponse{
@@ -322,9 +324,45 @@ func (r *queryResolver) CheckAgentIDAvailability(ctx context.Context, agentID st
 	}, nil
 }
 
+// User is the resolver for the user field.
+func (r *queryResolver) User(ctx context.Context, id string) (*user.User, error) {
+	userID := types.UserID(id)
+	if !userID.IsValid() {
+		return nil, goerr.New("invalid user ID")
+	}
+
+	u, err := r.userUseCase.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get user")
+	}
+
+	return u, nil
+}
+
+// CurrentUser is the resolver for the currentUser field.
+func (r *queryResolver) CurrentUser(ctx context.Context) (*user.User, error) {
+	session, ok := auth.UserFromContext(ctx)
+	if !ok {
+		// Not authenticated, or in anonymous mode.
+		return nil, nil
+	}
+
+	u, err := r.userUseCase.GetUserByID(ctx, session.UserID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get current user")
+	}
+
+	return u, nil
+}
+
 // ID is the resolver for the id field.
 func (r *threadResolver) ID(ctx context.Context, obj *slack.Thread) (string, error) {
 	return string(obj.ID), nil
+}
+
+// ID is the resolver for the id field.
+func (r *userResolver) ID(ctx context.Context, obj *user.User) (string, error) {
+	return obj.ID.String(), nil
 }
 
 // Mutation returns MutationResolver implementation.
@@ -336,6 +374,10 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 // Thread returns ThreadResolver implementation.
 func (r *Resolver) Thread() ThreadResolver { return &threadResolver{r} }
 
+// User returns UserResolver implementation.
+func (r *Resolver) User() UserResolver { return &userResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type threadResolver struct{ *Resolver }
+type userResolver struct{ *Resolver }

@@ -14,7 +14,8 @@ func TestNewResolver(t *testing.T) {
 	mockRepo := &mock.ThreadRepositoryMock{}
 	agentRepo := memory.NewAgentMemoryClient()
 	agentUseCase := usecase.NewAgentUseCases(agentRepo)
-	resolver := graphql.NewResolver(mockRepo, agentUseCase)
+	mockUserUseCase := &mock.UserUseCasesMock{}
+	resolver := graphql.NewResolver(mockRepo, agentUseCase, mockUserUseCase)
 
 	gt.V(t, resolver).NotNil()
 }
@@ -23,7 +24,8 @@ func TestResolver_DependencyInjection(t *testing.T) {
 	mockRepo := &mock.ThreadRepositoryMock{}
 	agentRepo := memory.NewAgentMemoryClient()
 	agentUseCase := usecase.NewAgentUseCases(agentRepo)
-	resolver := graphql.NewResolver(mockRepo, agentUseCase)
+	mockUserUseCase := &mock.UserUseCasesMock{}
+	resolver := graphql.NewResolver(mockRepo, agentUseCase, mockUserUseCase)
 
 	// Verify that resolver can be created with mock repository
 	gt.V(t, resolver).NotNil()

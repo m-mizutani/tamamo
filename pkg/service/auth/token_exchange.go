@@ -4,18 +4,21 @@ import (
 	"context"
 
 	"github.com/m-mizutani/goerr/v2"
+	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 )
 
 // TokenExchangeService handles the OAuth token exchange process
 type TokenExchangeService struct {
-	slackOAuth *SlackOAuthService
+	slackOAuth  *SlackOAuthService
+	userUseCase interfaces.UserUseCases
 }
 
 // NewTokenExchangeService creates a new token exchange service
-func NewTokenExchangeService(slackOAuth *SlackOAuthService) *TokenExchangeService {
+func NewTokenExchangeService(slackOAuth *SlackOAuthService, userUseCase interfaces.UserUseCases) *TokenExchangeService {
 	return &TokenExchangeService{
-		slackOAuth: slackOAuth,
+		slackOAuth:  slackOAuth,
+		userUseCase: userUseCase,
 	}
 }
 
@@ -39,10 +42,22 @@ func (s *TokenExchangeService) ExchangeCodeForSession(ctx context.Context, code 
 		return nil, goerr.Wrap(err, "failed to get user info")
 	}
 
+	// Get or create user using the user management system
+	user, err := s.userUseCase.GetOrCreateUser(
+		ctx,
+		tokenResp.AuthedUser.ID,
+		userInfo.Name,
+		userInfo.Email,
+		tokenResp.Team.ID,
+	)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get or create user")
+	}
+
 	// Create session with user information
 	session := auth.NewSession(
 		ctx,
-		tokenResp.AuthedUser.ID,
+		user.ID,
 		userInfo.Name,
 		userInfo.Email,
 		tokenResp.Team.ID,

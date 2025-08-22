@@ -70,6 +70,7 @@ func (x *Auth) Validate() error {
 // ConfigureAuthUseCase creates an authentication use case
 func (x *Auth) ConfigureAuthUseCase(
 	sessionRepo interfaces.SessionRepository,
+	userUseCase interfaces.UserUseCases,
 	slackService *slackservice.Service,
 ) (interfaces.AuthUseCases, error) {
 	// If no-authentication mode, return nil (will be handled by middleware)
@@ -107,6 +108,7 @@ func (x *Auth) ConfigureAuthUseCase(
 	return usecase.NewAuthUseCaseWithSlackOAuth(
 		sessionRepo,
 		slackOAuth,
+		userUseCase,
 		x.FrontendURL,
 	), nil
 }

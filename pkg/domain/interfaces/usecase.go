@@ -6,6 +6,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
 
@@ -93,4 +94,13 @@ type AuthUseCases interface {
 
 	// Session cleanup (should be called periodically)
 	CleanupExpiredSessions(ctx context.Context) error
+}
+
+// UserUseCases handles user management
+type UserUseCases interface {
+	GetOrCreateUser(ctx context.Context, slackID, slackName, email, teamID string) (*user.User, error)
+	GetUserByID(ctx context.Context, userID types.UserID) (*user.User, error)
+	UpdateUser(ctx context.Context, user *user.User) error
+	GetUserAvatar(ctx context.Context, userID types.UserID, size int) ([]byte, error)
+	InvalidateUserAvatarCache(ctx context.Context, userID types.UserID) error
 }
