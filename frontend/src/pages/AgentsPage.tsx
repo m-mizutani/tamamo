@@ -14,7 +14,7 @@ const AGENTS_PER_PAGE = 18
 type AgentFilter = 'active' | 'archived' | 'all'
 
 export function AgentsPage() {
-  const [agents, setAgents] = useState<Agent[]>([])
+  const [agents, setAgents] = useState<Agent[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalCount, setTotalCount] = useState(0)
@@ -108,7 +108,7 @@ export function AgentsPage() {
   }
 
   const handleSelectAll = (selected: boolean) => {
-    if (selected) {
+    if (selected && agents) {
       setSelectedAgents(new Set(agents.map(agent => agent.id)))
     } else {
       setSelectedAgents(new Set())
@@ -186,74 +186,6 @@ export function AgentsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {filter === 'active' ? 'Active Agents' : filter === 'archived' ? 'Archived Agents' : 'All Agents'}
-            </h1>
-            <p className="text-muted-foreground">
-              Manage your AI agents and their configurations
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={() => navigate('/agents/archived')}>
-              <Archive className="mr-2 h-4 w-4" />
-              Archived
-            </Button>
-            <Button onClick={handleCreateAgent}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Agent
-            </Button>
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-muted-foreground">Loading agents...</span>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {filter === 'active' ? 'Active Agents' : filter === 'archived' ? 'Archived Agents' : 'All Agents'}
-            </h1>
-            <p className="text-muted-foreground">
-              Manage your AI agents and their configurations
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={() => navigate('/agents/archived')}>
-              <Archive className="mr-2 h-4 w-4" />
-              Archived
-            </Button>
-            <Button onClick={handleCreateAgent}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Agent
-            </Button>
-          </div>
-        </div>
-        <div className="text-center py-12">
-          <div className="text-destructive mb-4">
-            <p className="text-lg font-medium">Failed to load agents</p>
-            <p className="text-sm text-muted-foreground">{error}</p>
-          </div>
-          <Button onClick={() => fetchAgents(currentPage, filter)} variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Retry
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -269,14 +201,18 @@ export function AgentsPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={() => navigate('/agents/archived')}>
-            <Archive className="mr-2 h-4 w-4" />
-            Archived
-          </Button>
-          <Button onClick={handleCreateAgent}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Agent
-          </Button>
+          {!loading && (
+            <>
+              <Button variant="outline" onClick={() => navigate('/agents/archived')}>
+                <Archive className="mr-2 h-4 w-4" />
+                Archived
+              </Button>
+              <Button onClick={handleCreateAgent}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Agent
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -352,28 +288,63 @@ export function AgentsPage() {
         )}
       </div>
 
-      {/* Select All */}
-      {agents.length > 0 && (
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleSelectAll(!selectedAgents.size || selectedAgents.size < agents.length)}
-            className="h-8"
-          >
-            {selectedAgents.size === agents.length ? (
-              <CheckSquare className="mr-1 h-3 w-3" />
-            ) : (
-              <Square className="mr-1 h-3 w-3" />
-            )}
-            {selectedAgents.size === agents.length ? 'Deselect All' : 'Select All'}
+      {/* Main Content Area */}
+      {agents === null || loading ? (
+        /* Loading State */
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-muted-foreground">Loading agents...</span>
+        </div>
+      ) : error ? (
+        /* Error State */
+        <div className="text-center py-12">
+          <div className="text-destructive mb-4">
+            <p className="text-lg font-medium">Failed to load agents</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </div>
+          <Button onClick={() => fetchAgents(currentPage, filter)} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
           </Button>
         </div>
-      )}
+      ) : agents.length === 0 ? (
+        /* No Agents State */
+        <div className="text-center py-12">
+          <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-semibold">No agents yet</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Get started by creating your first AI agent.
+          </p>
+          <Button className="mt-4" onClick={handleCreateAgent}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Agent
+          </Button>
+        </div>
+      ) : (
+        /* Agents List State */
+        <>
+          {/* Select All */}
+          {agents.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSelectAll(!selectedAgents.size || selectedAgents.size < agents.length)}
+                className="h-8"
+              >
+                {selectedAgents.size === agents.length ? (
+                  <CheckSquare className="mr-1 h-3 w-3" />
+                ) : (
+                  <Square className="mr-1 h-3 w-3" />
+                )}
+                {selectedAgents.size === agents.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            </div>
+          )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {agents.map((agent) => (
-          <Card 
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {agents.map((agent) => (
+              <Card 
             key={agent.id} 
             className={`relative hover:shadow-md transition-shadow ${
               selectedAgents.has(agent.id) ? 'ring-2 ring-blue-500' : ''
@@ -437,56 +408,44 @@ export function AgentsPage() {
                 </div>
               )}
             </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {startItem}-{endItem} of {totalCount} agents
+              </Card>
+            ))}
           </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreviousPage}
-              disabled={currentPage <= 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <div className="flex items-center space-x-1">
-              <span className="text-sm font-medium">
-                Page {currentPage} of {totalPages}
-              </span>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {startItem}-{endItem} of {totalCount} agents
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePreviousPage}
+                  disabled={currentPage <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center space-x-1">
+                  <span className="text-sm font-medium">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNextPage}
+                  disabled={currentPage >= totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextPage}
-              disabled={currentPage >= totalPages}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {agents.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-semibold">No agents yet</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Get started by creating your first AI agent.
-          </p>
-          <Button className="mt-4" onClick={handleCreateAgent}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Agent
-          </Button>
-        </div>
+          )}
+        </>
       )}
 
       {/* Bulk Archive Confirmation Dialog */}
