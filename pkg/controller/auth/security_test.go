@@ -10,11 +10,44 @@ import (
 
 	"github.com/m-mizutani/gt"
 	authctrl "github.com/m-mizutani/tamamo/pkg/controller/auth"
+	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
+	"github.com/m-mizutani/tamamo/pkg/domain/mock"
 	authmodel "github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/repository/database/memory"
+	"github.com/m-mizutani/tamamo/pkg/service/slack"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
 )
+
+func createMockSlackClientForSecurity() *mock.SlackClientMock {
+	return &mock.SlackClientMock{
+		GetUserProfileFunc: func(ctx context.Context, userID string) (*interfaces.SlackUserProfile, error) {
+			return &interfaces.SlackUserProfile{
+				ID:          userID,
+				Name:        "Test User",
+				DisplayName: "Test Display Name",
+				Email:       "test@example.com",
+				Profile: struct {
+					Image24   string `json:"image_24"`
+					Image32   string `json:"image_32"`
+					Image48   string `json:"image_48"`
+					Image72   string `json:"image_72"`
+					Image192  string `json:"image_192"`
+					Image512  string `json:"image_512"`
+					ImageOrig string `json:"image_original"`
+				}{
+					Image24:   "https://example.com/avatar_24.jpg",
+					Image32:   "https://example.com/avatar_32.jpg",
+					Image48:   "https://example.com/avatar_48.jpg",
+					Image72:   "https://example.com/avatar_72.jpg",
+					Image192:  "https://example.com/avatar_192.jpg",
+					Image512:  "https://example.com/avatar_512.jpg",
+					ImageOrig: "https://example.com/avatar_original.jpg",
+				},
+			}, nil
+		},
+	}
+}
 
 // TestAuthSecurity_SessionCookieTampering tests security against cookie tampering
 func TestAuthSecurity_SessionCookieTampering(t *testing.T) {
@@ -22,7 +55,9 @@ func TestAuthSecurity_SessionCookieTampering(t *testing.T) {
 	sessionRepo := memory.NewSessionRepository()
 
 	userRepo := memory.NewUserRepository()
-	userUseCase := usecase.NewUserUseCase(userRepo, nil, nil)
+	mockSlackClient := createMockSlackClientForSecurity()
+	avatarService := slack.NewAvatarService(mockSlackClient)
+	userUseCase := usecase.NewUserUseCase(userRepo, avatarService, mockSlackClient)
 
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
@@ -34,11 +69,15 @@ func TestAuthSecurity_SessionCookieTampering(t *testing.T) {
 
 	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
 
+	// Create a test user first
+	testUser, err := userUseCase.GetOrCreateUser(ctx, "U123456789", "Test User", "test@example.com", "T123456")
+	gt.NoError(t, err)
+
 	// Create a valid session
 	sessionID := types.NewUUID(ctx)
 	validSession := &authmodel.Session{
 		ID:        sessionID,
-		UserID:    types.UserID("01234567-89ab-cdef-0123-456789abcdef"),
+		UserID:    testUser.ID,
 		UserName:  "Test User",
 		Email:     "test@example.com",
 		TeamID:    "T123456",
@@ -192,7 +231,9 @@ func TestAuthSecurity_SessionFixation(t *testing.T) {
 	sessionRepo := memory.NewSessionRepository()
 
 	userRepo := memory.NewUserRepository()
-	userUseCase := usecase.NewUserUseCase(userRepo, nil, nil)
+	mockSlackClient := createMockSlackClientForSecurity()
+	avatarService := slack.NewAvatarService(mockSlackClient)
+	userUseCase := usecase.NewUserUseCase(userRepo, avatarService, mockSlackClient)
 
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,
@@ -205,11 +246,15 @@ func TestAuthSecurity_SessionFixation(t *testing.T) {
 	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
 
 	t.Run("PredictableSessionID", func(t *testing.T) {
+		// Create a test user first
+		testUser, err := userUseCase.GetOrCreateUser(ctx, "U987654321", "Fake User", "fake@example.com", "T123456")
+		gt.NoError(t, err)
+
 		// Attempt to create a session with a predictable ID
 		predictableID := types.UUID("00000000-0000-0000-0000-000000000001")
 		fakeSession := &authmodel.Session{
 			ID:        predictableID,
-			UserID:    types.UserID("01234567-89ab-cdef-0123-456789abcdef"),
+			UserID:    testUser.ID,
 			UserName:  "Fake User",
 			Email:     "fake@example.com",
 			TeamID:    "T123456",
@@ -247,7 +292,9 @@ func TestAuthSecurity_UserIDValidation(t *testing.T) {
 	sessionRepo := memory.NewSessionRepository()
 
 	userRepo := memory.NewUserRepository()
-	userUseCase := usecase.NewUserUseCase(userRepo, nil, nil)
+	mockSlackClient := createMockSlackClientForSecurity()
+	avatarService := slack.NewAvatarService(mockSlackClient)
+	userUseCase := usecase.NewUserUseCase(userRepo, avatarService, mockSlackClient)
 
 	authUseCase := usecase.NewAuthUseCase(
 		sessionRepo,

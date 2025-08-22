@@ -21,9 +21,9 @@ const (
 
 // Controller handles authentication HTTP endpoints
 type Controller struct {
-	authUseCase interfaces.AuthUseCases
-	userUseCase interfaces.UserUseCases
-	frontendURL string
+	authUseCase  interfaces.AuthUseCases
+	userUseCase  interfaces.UserUseCases
+	frontendURL  string
 	isProduction bool
 }
 
