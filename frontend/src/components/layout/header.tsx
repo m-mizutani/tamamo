@@ -11,22 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UserAvatarById } from "@/components/UserAvatar";
+import { getInitials } from "@/lib/utils";
 
 export function Header() {
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
     await logout();
-  };
-
-  const getUserInitials = () => {
-    if (!user) return "U";
-    const displayName = user.display_name || user.name;
-    const names = displayName.split(" ");
-    if (names.length >= 2) {
-      return `${names[0][0]}${names[1][0]}`.toUpperCase();
-    }
-    return displayName.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -51,7 +42,7 @@ export function Header() {
                     <UserAvatarById 
                       userId={user.id} 
                       size={32}
-                      fallbackText={getUserInitials()}
+                      fallbackText={getInitials(user.display_name || user.name)}
                     />
                   </Button>
                 </DropdownMenuTrigger>
