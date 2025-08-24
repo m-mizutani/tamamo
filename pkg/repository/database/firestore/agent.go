@@ -331,7 +331,7 @@ func (c *Client) CreateAgentVersion(ctx context.Context, version *agent.AgentVer
 
 	// Ensure provider is normalized before saving
 	normalizedProvider := types.LLMProviderFromString(string(version.LLMProvider))
-	
+
 	doc := &agentVersionDoc{
 		AgentUUID:    version.AgentUUID.String(),
 		Version:      version.Version,
@@ -383,7 +383,7 @@ func (c *Client) GetAgentVersion(ctx context.Context, agentUUID types.UUID, vers
 
 	// Normalize provider to ensure lowercase format
 	provider := types.LLMProviderFromString(versionDoc.LLMProvider)
-	
+
 	return &agent.AgentVersion{
 		AgentUUID:    types.UUID(versionDoc.AgentUUID),
 		Version:      versionDoc.Version,
@@ -464,7 +464,7 @@ func (c *Client) UpdateAgentVersion(ctx context.Context, version *agent.AgentVer
 
 	// Ensure provider is normalized before saving
 	normalizedProvider := types.LLMProviderFromString(string(version.LLMProvider))
-	
+
 	doc := &agentVersionDoc{
 		AgentUUID:    version.AgentUUID.String(),
 		Version:      version.Version,

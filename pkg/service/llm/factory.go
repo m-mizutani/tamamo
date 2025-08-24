@@ -33,7 +33,7 @@ type Factory struct {
 // NewFactory creates a new LLM factory
 func NewFactory(config *llm.ProvidersConfig, credentials map[types.LLMProvider]Credential) (*Factory, error) {
 	logger := logging.Default()
-	
+
 	f := &Factory{
 		config:      config,
 		credentials: credentials,
@@ -51,7 +51,7 @@ func NewFactory(config *llm.ProvidersConfig, credentials map[types.LLMProvider]C
 		case types.LLMProviderGemini:
 			hasCredentials = cred.ProjectID != "" && cred.Location != ""
 		}
-		
+
 		if hasCredentials {
 			logger.Info("LLM provider credentials configured",
 				slog.String("provider", string(providerType)),
@@ -70,7 +70,7 @@ func NewFactory(config *llm.ProvidersConfig, credentials map[types.LLMProvider]C
 			slog.String("provider", config.Defaults.Provider),
 			slog.String("model", config.Defaults.Model),
 		)
-		
+
 		ctx := context.Background()
 		defaultClient, err := f.CreateClient(ctx, config.Defaults.Provider, config.Defaults.Model)
 		if err != nil {
@@ -82,7 +82,7 @@ func NewFactory(config *llm.ProvidersConfig, credentials map[types.LLMProvider]C
 			return nil, goerr.Wrap(err, "failed to create default LLM client")
 		}
 		f.defaultClient = defaultClient
-		
+
 		logger.Info("Default LLM client created successfully",
 			slog.String("provider", config.Defaults.Provider),
 			slog.String("model", config.Defaults.Model),
@@ -153,14 +153,14 @@ func (f *Factory) CreateClient(ctx context.Context, provider, model string) (gol
 
 	// Cache the client
 	f.clients[cacheKey] = client
-	
+
 	// Log successful client creation
 	logging.Default().Info("LLM client created",
 		slog.String("provider", provider),
 		slog.String("model", model),
 		slog.String("cache_key", cacheKey),
 	)
-	
+
 	return client, nil
 }
 

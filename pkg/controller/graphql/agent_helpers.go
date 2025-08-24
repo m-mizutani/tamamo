@@ -57,7 +57,7 @@ func convertAgentToGraphQL(ctx context.Context, a *agentmodel.Agent, latestVersi
 	if a.Latest != "" {
 		latest = &a.Latest
 	}
-	
+
 	result := &graphql1.Agent{
 		ID:          a.ID.String(),
 		AgentID:     a.AgentID,
@@ -85,7 +85,7 @@ func convertAgentVersionToGraphQL(v *agentmodel.AgentVersion) *graphql1.AgentVer
 
 	var llmProvider *graphql1.LLMProvider
 	var llmModel *string
-	
+
 	// Only set LLM fields if they have values
 	if v.LLMProvider != "" {
 		provider := convertLLMProviderToGraphQL(v.LLMProvider)
@@ -94,7 +94,7 @@ func convertAgentVersionToGraphQL(v *agentmodel.AgentVersion) *graphql1.AgentVer
 	if v.LLMModel != "" {
 		llmModel = &v.LLMModel
 	}
-	
+
 	return &graphql1.AgentVersion{
 		AgentUUID:    v.AgentUUID.String(),
 		Version:      v.Version,

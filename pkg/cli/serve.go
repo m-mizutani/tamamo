@@ -103,7 +103,7 @@ func cmdServe() *cli.Command {
 			logger.Info("LLM providers configuration loaded",
 				"provider_count", len(providersConfig.Providers),
 			)
-			
+
 			// Log each provider and its models
 			for id, provider := range providersConfig.Providers {
 				modelNames := make([]string, len(provider.Models))
@@ -117,7 +117,7 @@ func cmdServe() *cli.Command {
 					"models", modelNames,
 				)
 			}
-			
+
 			// Log default configuration
 			if providersConfig.Defaults.Provider != "" {
 				logger.Info("Default LLM configuration",
@@ -125,7 +125,7 @@ func cmdServe() *cli.Command {
 					"model", providersConfig.Defaults.Model,
 				)
 			}
-			
+
 			// Log fallback configuration
 			if providersConfig.Fallback.Enabled {
 				logger.Info("Fallback LLM configuration",
@@ -138,7 +138,7 @@ func cmdServe() *cli.Command {
 					"enabled", false,
 				)
 			}
-			
+
 			// Build LLM factory
 			logger.Info("Building LLM factory")
 			llmFactory, err := llmCfg.BuildFactory(ctx, providersConfig)

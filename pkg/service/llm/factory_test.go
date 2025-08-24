@@ -77,7 +77,7 @@ func TestFactory_ValidateProviderModel(t *testing.T) {
 			},
 			// No defaults set
 		}
-		
+
 		// Create factory with no credentials
 		emptyCredentials := map[types.LLMProvider]llm.Credential{}
 		factory, err := llm.NewFactory(configWithoutDefault, emptyCredentials)
