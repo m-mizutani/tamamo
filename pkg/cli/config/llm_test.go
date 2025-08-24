@@ -42,8 +42,8 @@ func TestLLMConfig_LoadAndValidate(t *testing.T) {
 		gt.Equal(t, len(openai.Models), 2)
 
 		// Verify defaults
-		gt.Equal(t, providersConfig.Defaults.Provider, "openai")
-		gt.Equal(t, providersConfig.Defaults.Model, "gpt-5-2025-08-07")
+		gt.Equal(t, providersConfig.Defaults.Provider, "gemini")
+		gt.Equal(t, providersConfig.Defaults.Model, "gemini-2.0-flash")
 
 		// Verify fallback
 		gt.Equal(t, providersConfig.Fallback.Enabled, true)
@@ -105,6 +105,9 @@ func TestLLMConfig_BuildFactory(t *testing.T) {
 			ClaudeAPIKey:   "test-claude-key",
 			GeminiProject:  "test-project",
 			GeminiLocation: "us-central1",
+			// Override default to OpenAI for testing to avoid Gemini client creation
+			DefaultProvider: "openai",
+			DefaultModel:    "gpt-5-2025-08-07",
 		}
 		providersConfig, err := llmConfig.LoadAndValidate()
 		gt.NoError(t, err)
@@ -116,6 +119,7 @@ func TestLLMConfig_BuildFactory(t *testing.T) {
 
 		// Verify factory has configuration
 		gt.NotEqual(t, factory.GetConfig(), nil)
+		// Default client should be OpenAI
 		gt.NotEqual(t, factory.GetDefaultClient(), nil)
 	})
 
