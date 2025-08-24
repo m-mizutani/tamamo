@@ -1,0 +1,3 @@
+providers:
+  - this is not valid structure
+    models: should be a map

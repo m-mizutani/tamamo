@@ -11,7 +11,6 @@ import (
 
 	"github.com/m-mizutani/ctxlog"
 	"github.com/m-mizutani/goerr/v2"
-	"github.com/m-mizutani/gollem/llm/gemini"
 	"github.com/m-mizutani/tamamo/pkg/adapters/cs"
 	mem_adapter "github.com/m-mizutani/tamamo/pkg/adapters/memory"
 	"github.com/m-mizutani/tamamo/pkg/cli/config"
@@ -34,9 +33,7 @@ func cmdServe() *cli.Command {
 		slackCfg       config.Slack
 		firestoreCfg   config.Firestore
 		authCfg        config.Auth
-		geminiProject  string
-		geminiModel    string
-		geminiLocation string
+		llmCfg         config.LLMConfig
 		storageBucket  string
 		storagePrefix  string
 		enableGraphiQL bool
@@ -51,27 +48,6 @@ func cmdServe() *cli.Command {
 			Usage:       "Listen address (default: 127.0.0.1:8080)",
 			Value:       "127.0.0.1:8080",
 			Destination: &addr,
-		},
-		&cli.StringFlag{
-			Name:        "gemini-project-id",
-			Sources:     cli.EnvVars("TAMAMO_GEMINI_PROJECT_ID"),
-			Usage:       "Google Cloud Project ID for Gemini API (required)",
-			Required:    true,
-			Destination: &geminiProject,
-		},
-		&cli.StringFlag{
-			Name:        "gemini-model",
-			Sources:     cli.EnvVars("TAMAMO_GEMINI_MODEL"),
-			Usage:       "Gemini model to use",
-			Value:       "gemini-2.0-flash",
-			Destination: &geminiModel,
-		},
-		&cli.StringFlag{
-			Name:        "gemini-location",
-			Sources:     cli.EnvVars("TAMAMO_GEMINI_LOCATION"),
-			Usage:       "Google Cloud location for Gemini API",
-			Value:       "us-central1",
-			Destination: &geminiLocation,
 		},
 		&cli.StringFlag{
 			Name:        "storage-bucket",
@@ -101,6 +77,7 @@ func cmdServe() *cli.Command {
 	flags = append(flags, slackCfg.Flags()...)
 	flags = append(flags, firestoreCfg.Flags()...)
 	flags = append(flags, authCfg.Flags()...)
+	flags = append(flags, llmCfg.Flags()...)
 
 	return &cli.Command{
 		Name:    "serve",
@@ -115,21 +92,60 @@ func cmdServe() *cli.Command {
 				return goerr.Wrap(err, "invalid authentication configuration")
 			}
 
-			// Validate Gemini configuration
-			if geminiProject == "" {
-				return goerr.New("gemini-project-id is required")
+			// Load and validate LLM configuration
+			logger.Info("loading LLM providers configuration")
+			providersConfig, err := llmCfg.LoadAndValidate()
+			if err != nil {
+				return goerr.Wrap(err, "failed to load LLM configuration")
 			}
 
-			// Initialize Gemini client
-			logger.Info("initializing Gemini client",
-				"project_id", geminiProject,
-				"location", geminiLocation,
-				"model", geminiModel,
+			// Log detailed provider information
+			logger.Info("LLM providers configuration loaded",
+				"provider_count", len(providersConfig.Providers),
 			)
-			geminiClient, err := gemini.New(ctx, geminiProject, geminiLocation, gemini.WithModel(geminiModel))
-			if err != nil {
-				return goerr.Wrap(err, "failed to create Gemini client")
+			
+			// Log each provider and its models
+			for id, provider := range providersConfig.Providers {
+				modelNames := make([]string, len(provider.Models))
+				for i, model := range provider.Models {
+					modelNames[i] = model.ID
+				}
+				logger.Info("LLM provider enabled",
+					"provider_id", id,
+					"display_name", provider.DisplayName,
+					"model_count", len(provider.Models),
+					"models", modelNames,
+				)
 			}
+			
+			// Log default configuration
+			if providersConfig.Defaults.Provider != "" {
+				logger.Info("Default LLM configuration",
+					"provider", providersConfig.Defaults.Provider,
+					"model", providersConfig.Defaults.Model,
+				)
+			}
+			
+			// Log fallback configuration
+			if providersConfig.Fallback.Enabled {
+				logger.Info("Fallback LLM configuration",
+					"enabled", true,
+					"provider", providersConfig.Fallback.Provider,
+					"model", providersConfig.Fallback.Model,
+				)
+			} else {
+				logger.Info("Fallback LLM configuration",
+					"enabled", false,
+				)
+			}
+			
+			// Build LLM factory
+			logger.Info("Building LLM factory")
+			llmFactory, err := llmCfg.BuildFactory(ctx, providersConfig)
+			if err != nil {
+				return goerr.Wrap(err, "failed to build LLM factory")
+			}
+			logger.Info("LLM factory built successfully")
 
 			// Configure storage adapter
 			var storageAdapter interfaces.StorageAdapter
@@ -234,8 +250,7 @@ func cmdServe() *cli.Command {
 				usecase.WithRepository(repo),
 				usecase.WithAgentRepository(agentRepo),
 				usecase.WithStorageRepository(storageRepo),
-				usecase.WithLLMClient(geminiClient),
-				usecase.WithLLMModel(geminiModel),
+				usecase.WithLLMFactory(llmFactory),
 			)
 
 			// Create controllers
@@ -243,7 +258,7 @@ func cmdServe() *cli.Command {
 
 			// Create agent use case
 			agentUseCase := usecase.NewAgentUseCases(agentRepo)
-			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase, userUseCase)
+			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase, userUseCase, llmFactory)
 
 			// Create user controller
 			userCtrl := server.NewUserController(userUseCase)

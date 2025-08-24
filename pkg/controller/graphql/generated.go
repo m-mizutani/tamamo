@@ -84,6 +84,27 @@ type ComplexityRoot struct {
 		Version      func(childComplexity int) int
 	}
 
+	LLMConfig struct {
+		DefaultModel     func(childComplexity int) int
+		DefaultProvider  func(childComplexity int) int
+		FallbackEnabled  func(childComplexity int) int
+		FallbackModel    func(childComplexity int) int
+		FallbackProvider func(childComplexity int) int
+		Providers        func(childComplexity int) int
+	}
+
+	LLMModel struct {
+		Description func(childComplexity int) int
+		DisplayName func(childComplexity int) int
+		ID          func(childComplexity int) int
+	}
+
+	LLMProviderInfo struct {
+		DisplayName func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Models      func(childComplexity int) int
+	}
+
 	Mutation struct {
 		ArchiveAgent       func(childComplexity int, id string) int
 		CreateAgent        func(childComplexity int, input graphql1.CreateAgentInput) int
@@ -91,6 +112,8 @@ type ComplexityRoot struct {
 		DeleteAgent        func(childComplexity int, id string) int
 		UnarchiveAgent     func(childComplexity int, id string) int
 		UpdateAgent        func(childComplexity int, id string, input graphql1.UpdateAgentInput) int
+		UpdateDefaultLlm   func(childComplexity int, provider string, model string) int
+		UpdateFallbackLlm  func(childComplexity int, enabled bool, provider *string, model *string) int
 	}
 
 	Query struct {
@@ -102,6 +125,7 @@ type ComplexityRoot struct {
 		AllAgents                func(childComplexity int, offset *int, limit *int) int
 		CheckAgentIDAvailability func(childComplexity int, agentID string) int
 		CurrentUser              func(childComplexity int) int
+		LlmConfig                func(childComplexity int) int
 		Thread                   func(childComplexity int, id string) int
 		Threads                  func(childComplexity int, offset *int, limit *int) int
 		User                     func(childComplexity int, id string) int
@@ -138,6 +162,8 @@ type MutationResolver interface {
 	ArchiveAgent(ctx context.Context, id string) (*graphql1.Agent, error)
 	UnarchiveAgent(ctx context.Context, id string) (*graphql1.Agent, error)
 	CreateAgentVersion(ctx context.Context, input graphql1.CreateAgentVersionInput) (*graphql1.AgentVersion, error)
+	UpdateDefaultLlm(ctx context.Context, provider string, model string) (*graphql1.LLMConfig, error)
+	UpdateFallbackLlm(ctx context.Context, enabled bool, provider *string, model *string) (*graphql1.LLMConfig, error)
 }
 type QueryResolver interface {
 	Thread(ctx context.Context, id string) (*slack.Thread, error)
@@ -151,6 +177,7 @@ type QueryResolver interface {
 	CheckAgentIDAvailability(ctx context.Context, agentID string) (*graphql1.AgentIDAvailability, error)
 	User(ctx context.Context, id string) (*user.User, error)
 	CurrentUser(ctx context.Context) (*user.User, error)
+	LlmConfig(ctx context.Context) (*graphql1.LLMConfig, error)
 }
 type ThreadResolver interface {
 	ID(ctx context.Context, obj *slack.Thread) (string, error)
@@ -325,6 +352,90 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.AgentVersion.Version(childComplexity), true
 
+	case "LLMConfig.defaultModel":
+		if e.complexity.LLMConfig.DefaultModel == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.DefaultModel(childComplexity), true
+
+	case "LLMConfig.defaultProvider":
+		if e.complexity.LLMConfig.DefaultProvider == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.DefaultProvider(childComplexity), true
+
+	case "LLMConfig.fallbackEnabled":
+		if e.complexity.LLMConfig.FallbackEnabled == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.FallbackEnabled(childComplexity), true
+
+	case "LLMConfig.fallbackModel":
+		if e.complexity.LLMConfig.FallbackModel == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.FallbackModel(childComplexity), true
+
+	case "LLMConfig.fallbackProvider":
+		if e.complexity.LLMConfig.FallbackProvider == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.FallbackProvider(childComplexity), true
+
+	case "LLMConfig.providers":
+		if e.complexity.LLMConfig.Providers == nil {
+			break
+		}
+
+		return e.complexity.LLMConfig.Providers(childComplexity), true
+
+	case "LLMModel.description":
+		if e.complexity.LLMModel.Description == nil {
+			break
+		}
+
+		return e.complexity.LLMModel.Description(childComplexity), true
+
+	case "LLMModel.displayName":
+		if e.complexity.LLMModel.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.LLMModel.DisplayName(childComplexity), true
+
+	case "LLMModel.id":
+		if e.complexity.LLMModel.ID == nil {
+			break
+		}
+
+		return e.complexity.LLMModel.ID(childComplexity), true
+
+	case "LLMProviderInfo.displayName":
+		if e.complexity.LLMProviderInfo.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.LLMProviderInfo.DisplayName(childComplexity), true
+
+	case "LLMProviderInfo.id":
+		if e.complexity.LLMProviderInfo.ID == nil {
+			break
+		}
+
+		return e.complexity.LLMProviderInfo.ID(childComplexity), true
+
+	case "LLMProviderInfo.models":
+		if e.complexity.LLMProviderInfo.Models == nil {
+			break
+		}
+
+		return e.complexity.LLMProviderInfo.Models(childComplexity), true
+
 	case "Mutation.archiveAgent":
 		if e.complexity.Mutation.ArchiveAgent == nil {
 			break
@@ -396,6 +507,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.UpdateAgent(childComplexity, args["id"].(string), args["input"].(graphql1.UpdateAgentInput)), true
+
+	case "Mutation.updateDefaultLLM":
+		if e.complexity.Mutation.UpdateDefaultLlm == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateDefaultLLM_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateDefaultLlm(childComplexity, args["provider"].(string), args["model"].(string)), true
+
+	case "Mutation.updateFallbackLLM":
+		if e.complexity.Mutation.UpdateFallbackLlm == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateFallbackLLM_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateFallbackLlm(childComplexity, args["enabled"].(bool), args["provider"].(*string), args["model"].(*string)), true
 
 	case "Query.agent":
 		if e.complexity.Query.Agent == nil {
@@ -487,6 +622,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.CurrentUser(childComplexity), true
+
+	case "Query.llmConfig":
+		if e.complexity.Query.LlmConfig == nil {
+			break
+		}
+
+		return e.complexity.Query.LlmConfig(childComplexity), true
 
 	case "Query.thread":
 		if e.complexity.Query.Thread == nil {
@@ -773,7 +915,7 @@ type Agent {
   description: String!
   author: User!
   status: AgentStatus!
-  latest: String!
+  latest: String
   createdAt: Time!
   updatedAt: Time!
   latestVersion: AgentVersion
@@ -783,8 +925,8 @@ type AgentVersion {
   agentUuid: ID!
   version: String!
   systemPrompt: String!
-  llmProvider: LLMProvider!
-  llmModel: String!
+  llmProvider: LLMProvider
+  llmModel: String
   createdAt: Time!
   updatedAt: Time!
 }
@@ -797,6 +939,27 @@ type AgentListResponse {
 type AgentIdAvailability {
   available: Boolean!
   message: String!
+}
+
+type LLMModel {
+  id: String!
+  displayName: String!
+  description: String!
+}
+
+type LLMProviderInfo {
+  id: String!
+  displayName: String!
+  models: [LLMModel!]!
+}
+
+type LLMConfig {
+  providers: [LLMProviderInfo!]!
+  defaultProvider: String!
+  defaultModel: String!
+  fallbackEnabled: Boolean!
+  fallbackProvider: String!
+  fallbackModel: String!
 }
 
 input CreateAgentInput {
@@ -840,6 +1003,8 @@ type Query {
   
   user(id: ID!): User
   currentUser: User
+  
+  llmConfig: LLMConfig!
 }
 
 type Mutation {
@@ -849,6 +1014,9 @@ type Mutation {
   archiveAgent(id: ID!): Agent!
   unarchiveAgent(id: ID!): Agent!
   createAgentVersion(input: CreateAgentVersionInput!): AgentVersion!
+  
+  updateDefaultLLM(provider: String!, model: String!): LLMConfig!
+  updateFallbackLLM(enabled: Boolean!, provider: String, model: String): LLMConfig!
 }
 
 schema {
@@ -930,6 +1098,43 @@ func (ec *executionContext) field_Mutation_updateAgent_args(ctx context.Context,
 		return nil, err
 	}
 	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateDefaultLLM_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "provider", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["provider"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "model", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["model"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateFallbackLLM_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "enabled", ec.unmarshalNBoolean2bool)
+	if err != nil {
+		return nil, err
+	}
+	args["enabled"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "provider", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["provider"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "model", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["model"] = arg2
 	return args, nil
 }
 
@@ -1430,14 +1635,11 @@ func (ec *executionContext) _Agent_latest(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Agent_latest(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1949,14 +2151,11 @@ func (ec *executionContext) _AgentVersion_llmProvider(ctx context.Context, field
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(graphql1.LLMProvider)
+	res := resTmp.(*graphql1.LLMProvider)
 	fc.Result = res
-	return ec.marshalNLLMProvider2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProvider(ctx, field.Selections, res)
+	return ec.marshalOLLMProvider2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProvider(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AgentVersion_llmProvider(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1993,14 +2192,11 @@ func (ec *executionContext) _AgentVersion_llmModel(ctx context.Context, field gr
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AgentVersion_llmModel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2099,6 +2295,550 @@ func (ec *executionContext) fieldContext_AgentVersion_updatedAt(_ context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_providers(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_providers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Providers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*graphql1.LLMProviderInfo)
+	fc.Result = res
+	return ec.marshalNLLMProviderInfo2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProviderInfoᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_providers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LLMProviderInfo_id(ctx, field)
+			case "displayName":
+				return ec.fieldContext_LLMProviderInfo_displayName(ctx, field)
+			case "models":
+				return ec.fieldContext_LLMProviderInfo_models(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LLMProviderInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_defaultProvider(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_defaultProvider(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefaultProvider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_defaultProvider(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_defaultModel(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_defaultModel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefaultModel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_defaultModel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_fallbackEnabled(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_fallbackEnabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FallbackEnabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_fallbackEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_fallbackProvider(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_fallbackProvider(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FallbackProvider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_fallbackProvider(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMConfig_fallbackModel(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMConfig_fallbackModel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FallbackModel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMConfig_fallbackModel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMModel_id(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMModel) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMModel_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMModel_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMModel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMModel_displayName(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMModel) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMModel_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMModel_displayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMModel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMModel_description(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMModel) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMModel_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMModel_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMModel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMProviderInfo_id(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMProviderInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMProviderInfo_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMProviderInfo_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMProviderInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMProviderInfo_displayName(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMProviderInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMProviderInfo_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMProviderInfo_displayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMProviderInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LLMProviderInfo_models(ctx context.Context, field graphql.CollectedField, obj *graphql1.LLMProviderInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LLMProviderInfo_models(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Models, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*graphql1.LLMModel)
+	fc.Result = res
+	return ec.marshalNLLMModel2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMModelᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LLMProviderInfo_models(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LLMProviderInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LLMModel_id(ctx, field)
+			case "displayName":
+				return ec.fieldContext_LLMModel_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_LLMModel_description(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LLMModel", field.Name)
 		},
 	}
 	return fc, nil
@@ -2532,6 +3272,144 @@ func (ec *executionContext) fieldContext_Mutation_createAgentVersion(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createAgentVersion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateDefaultLLM(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateDefaultLLM(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateDefaultLlm(rctx, fc.Args["provider"].(string), fc.Args["model"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.LLMConfig)
+	fc.Result = res
+	return ec.marshalNLLMConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateDefaultLLM(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "providers":
+				return ec.fieldContext_LLMConfig_providers(ctx, field)
+			case "defaultProvider":
+				return ec.fieldContext_LLMConfig_defaultProvider(ctx, field)
+			case "defaultModel":
+				return ec.fieldContext_LLMConfig_defaultModel(ctx, field)
+			case "fallbackEnabled":
+				return ec.fieldContext_LLMConfig_fallbackEnabled(ctx, field)
+			case "fallbackProvider":
+				return ec.fieldContext_LLMConfig_fallbackProvider(ctx, field)
+			case "fallbackModel":
+				return ec.fieldContext_LLMConfig_fallbackModel(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LLMConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateDefaultLLM_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateFallbackLLM(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateFallbackLLM(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateFallbackLlm(rctx, fc.Args["enabled"].(bool), fc.Args["provider"].(*string), fc.Args["model"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.LLMConfig)
+	fc.Result = res
+	return ec.marshalNLLMConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateFallbackLLM(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "providers":
+				return ec.fieldContext_LLMConfig_providers(ctx, field)
+			case "defaultProvider":
+				return ec.fieldContext_LLMConfig_defaultProvider(ctx, field)
+			case "defaultModel":
+				return ec.fieldContext_LLMConfig_defaultModel(ctx, field)
+			case "fallbackEnabled":
+				return ec.fieldContext_LLMConfig_fallbackEnabled(ctx, field)
+			case "fallbackProvider":
+				return ec.fieldContext_LLMConfig_fallbackProvider(ctx, field)
+			case "fallbackModel":
+				return ec.fieldContext_LLMConfig_fallbackModel(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LLMConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateFallbackLLM_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3244,6 +4122,64 @@ func (ec *executionContext) fieldContext_Query_currentUser(_ context.Context, fi
 				return ec.fieldContext_User_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_llmConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_llmConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().LlmConfig(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.LLMConfig)
+	fc.Result = res
+	return ec.marshalNLLMConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_llmConfig(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "providers":
+				return ec.fieldContext_LLMConfig_providers(ctx, field)
+			case "defaultProvider":
+				return ec.fieldContext_LLMConfig_defaultProvider(ctx, field)
+			case "defaultModel":
+				return ec.fieldContext_LLMConfig_defaultModel(ctx, field)
+			case "fallbackEnabled":
+				return ec.fieldContext_LLMConfig_fallbackEnabled(ctx, field)
+			case "fallbackProvider":
+				return ec.fieldContext_LLMConfig_fallbackProvider(ctx, field)
+			case "fallbackModel":
+				return ec.fieldContext_LLMConfig_fallbackModel(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LLMConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -6195,9 +7131,6 @@ func (ec *executionContext) _Agent(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "latest":
 			out.Values[i] = ec._Agent_latest(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "createdAt":
 			out.Values[i] = ec._Agent_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6349,14 +7282,8 @@ func (ec *executionContext) _AgentVersion(ctx context.Context, sel ast.Selection
 			}
 		case "llmProvider":
 			out.Values[i] = ec._AgentVersion_llmProvider(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "llmModel":
 			out.Values[i] = ec._AgentVersion_llmModel(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "createdAt":
 			out.Values[i] = ec._AgentVersion_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6364,6 +7291,168 @@ func (ec *executionContext) _AgentVersion(ctx context.Context, sel ast.Selection
 			}
 		case "updatedAt":
 			out.Values[i] = ec._AgentVersion_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var lLMConfigImplementors = []string{"LLMConfig"}
+
+func (ec *executionContext) _LLMConfig(ctx context.Context, sel ast.SelectionSet, obj *graphql1.LLMConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, lLMConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LLMConfig")
+		case "providers":
+			out.Values[i] = ec._LLMConfig_providers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "defaultProvider":
+			out.Values[i] = ec._LLMConfig_defaultProvider(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "defaultModel":
+			out.Values[i] = ec._LLMConfig_defaultModel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fallbackEnabled":
+			out.Values[i] = ec._LLMConfig_fallbackEnabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fallbackProvider":
+			out.Values[i] = ec._LLMConfig_fallbackProvider(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fallbackModel":
+			out.Values[i] = ec._LLMConfig_fallbackModel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var lLMModelImplementors = []string{"LLMModel"}
+
+func (ec *executionContext) _LLMModel(ctx context.Context, sel ast.SelectionSet, obj *graphql1.LLMModel) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, lLMModelImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LLMModel")
+		case "id":
+			out.Values[i] = ec._LLMModel_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "displayName":
+			out.Values[i] = ec._LLMModel_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._LLMModel_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var lLMProviderInfoImplementors = []string{"LLMProviderInfo"}
+
+func (ec *executionContext) _LLMProviderInfo(ctx context.Context, sel ast.SelectionSet, obj *graphql1.LLMProviderInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, lLMProviderInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LLMProviderInfo")
+		case "id":
+			out.Values[i] = ec._LLMProviderInfo_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "displayName":
+			out.Values[i] = ec._LLMProviderInfo_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "models":
+			out.Values[i] = ec._LLMProviderInfo_models(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -6447,6 +7536,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createAgentVersion":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createAgentVersion(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateDefaultLLM":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateDefaultLLM(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateFallbackLLM":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateFallbackLLM(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -6711,6 +7814,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_currentUser(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "llmConfig":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_llmConfig(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -7529,6 +8654,74 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) marshalNLLMConfig2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMConfig(ctx context.Context, sel ast.SelectionSet, v graphql1.LLMConfig) graphql.Marshaler {
+	return ec._LLMConfig(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLLMConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMConfig(ctx context.Context, sel ast.SelectionSet, v *graphql1.LLMConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LLMConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLLMModel2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMModelᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql1.LLMModel) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLLMModel2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMModel(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLLMModel2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMModel(ctx context.Context, sel ast.SelectionSet, v *graphql1.LLMModel) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LLMModel(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNLLMProvider2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProvider(ctx context.Context, v any) (graphql1.LLMProvider, error) {
 	var res graphql1.LLMProvider
 	err := res.UnmarshalGQL(v)
@@ -7537,6 +8730,60 @@ func (ec *executionContext) unmarshalNLLMProvider2githubᚗcomᚋmᚑmizutaniᚋ
 
 func (ec *executionContext) marshalNLLMProvider2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProvider(ctx context.Context, sel ast.SelectionSet, v graphql1.LLMProvider) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNLLMProviderInfo2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProviderInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql1.LLMProviderInfo) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLLMProviderInfo2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProviderInfo(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLLMProviderInfo2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐLLMProviderInfo(ctx context.Context, sel ast.SelectionSet, v *graphql1.LLMProviderInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LLMProviderInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

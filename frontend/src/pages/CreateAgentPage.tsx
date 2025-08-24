@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,26 +11,17 @@ import {
   CreateAgentInput, 
   CREATE_AGENT, 
   CHECK_AGENT_ID_AVAILABILITY, 
+  GET_LLM_CONFIG,
   graphqlRequest,
-  AgentIdAvailability 
+  AgentIdAvailability,
+  LLMConfig 
 } from '@/lib/graphql'
-
-const LLM_PROVIDERS = [
-  { value: 'OPENAI', label: 'OpenAI' },
-  { value: 'CLAUDE', label: 'Claude' },
-  { value: 'GEMINI', label: 'Gemini' },
-] as const
-
-const COMMON_MODELS = {
-  OPENAI: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-  CLAUDE: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'],
-  GEMINI: ['gemini-pro', 'gemini-flash-2.5', 'gemini-1.5-pro'],
-}
 
 export function CreateAgentPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [llmConfig, setLlmConfig] = useState<LLMConfig | null>(null)
   const [agentIdStatus, setAgentIdStatus] = useState<{
     checking: boolean
     availability: AgentIdAvailability | null
@@ -41,10 +32,27 @@ export function CreateAgentPage() {
     name: '',
     description: '',
     systemPrompt: '',
-    llmProvider: 'OPENAI',
-    llmModel: 'gpt-4',
+    llmProvider: undefined,  // No hardcoded default
+    llmModel: undefined,
     version: '1.0.0'
   })
+
+  // Fetch LLM configuration on mount
+  useEffect(() => {
+    graphqlRequest<{ llmConfig: LLMConfig }>(GET_LLM_CONFIG)
+      .then(response => {
+        setLlmConfig(response.llmConfig)
+        // Set default provider and model from config
+        if (response.llmConfig.defaultProvider && response.llmConfig.defaultModel) {
+          setFormData(prev => ({
+            ...prev,
+            llmProvider: response.llmConfig.defaultProvider.toUpperCase() as 'OPENAI' | 'CLAUDE' | 'GEMINI',
+            llmModel: response.llmConfig.defaultModel
+          }))
+        }
+      })
+      .catch(err => console.error('Failed to fetch LLM config:', err))
+  }, [])
 
   const checkAgentIdAvailability = async (agentId: string) => {
     if (!agentId || agentId.length < 2) {
@@ -86,11 +94,14 @@ export function CreateAgentPage() {
   }
 
   const handleProviderChange = (provider: 'OPENAI' | 'CLAUDE' | 'GEMINI') => {
-    const defaultModel = COMMON_MODELS[provider][0]
+    // Find the provider config and set the first available model
+    const providerConfig = llmConfig?.providers.find(p => p.id === provider.toLowerCase())
+    const firstModel = providerConfig?.models[0]?.id || ''
+    
     setFormData(prev => ({
       ...prev,
       llmProvider: provider,
-      llmModel: defaultModel
+      llmModel: firstModel
     }))
   }
 
@@ -267,12 +278,12 @@ export function CreateAgentPage() {
                 <Label htmlFor="provider">LLM Provider *</Label>
                 <Select value={formData.llmProvider} onValueChange={handleProviderChange}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select a provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    {LLM_PROVIDERS.map(provider => (
-                      <SelectItem key={provider.value} value={provider.value}>
-                        {provider.label}
+                    {llmConfig?.providers.map(provider => (
+                      <SelectItem key={provider.id} value={provider.id.toUpperCase()}>
+                        {provider.displayName}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -286,14 +297,21 @@ export function CreateAgentPage() {
                   onValueChange={(value: string) => setFormData(prev => ({ ...prev, llmModel: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {COMMON_MODELS[formData.llmProvider].map(model => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
+                    {llmConfig?.providers
+                      .find(p => p.id === formData.llmProvider?.toLowerCase())
+                      ?.models.map(model => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.displayName}
+                          {model.description && (
+                            <span className="text-xs text-muted-foreground ml-2">
+                              ({model.description})
+                            </span>
+                          )}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

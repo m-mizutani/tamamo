@@ -298,8 +298,30 @@ export const GET_CURRENT_USER = `
   }
 `;
 
+export const GET_LLM_CONFIG = `
+  query GetLLMConfig {
+    llmConfig {
+      providers {
+        id
+        displayName
+        models {
+          id
+          displayName
+          description
+        }
+      }
+      defaultProvider
+      defaultModel
+      fallbackEnabled
+      fallbackProvider
+      fallbackModel
+    }
+  }
+`;
+
 // Type definitions
 export type AgentStatus = 'ACTIVE' | 'ARCHIVED';
+export type LLMProvider = 'OPENAI' | 'CLAUDE' | 'GEMINI';
 
 export interface User {
   id: string;
@@ -317,7 +339,7 @@ export interface Agent {
   description: string;
   author: User;
   status: AgentStatus;
-  latest: string;
+  latest?: string;  // Optional for backward compatibility
   createdAt: string;
   updatedAt: string;
   latestVersion?: AgentVersion;
@@ -327,8 +349,8 @@ export interface AgentVersion {
   agentUuid: string;
   version: string;
   systemPrompt: string;
-  llmProvider: 'OPENAI' | 'CLAUDE' | 'GEMINI';
-  llmModel: string;
+  llmProvider?: 'OPENAI' | 'CLAUDE' | 'GEMINI';  // Optional for backward compatibility
+  llmModel?: string;  // Optional for backward compatibility
   createdAt: string;
   updatedAt: string;
 }
@@ -348,8 +370,8 @@ export interface CreateAgentInput {
   name: string;
   description?: string;
   systemPrompt?: string;
-  llmProvider: 'OPENAI' | 'CLAUDE' | 'GEMINI';
-  llmModel: string;
+  llmProvider?: 'OPENAI' | 'CLAUDE' | 'GEMINI';  // Optional
+  llmModel?: string;  // Optional
   version?: string;
 }
 
@@ -368,6 +390,28 @@ export interface CreateAgentVersionInput {
   systemPrompt?: string;
   llmProvider: 'OPENAI' | 'CLAUDE' | 'GEMINI';
   llmModel: string;
+}
+
+// LLM Configuration types
+export interface LLMModel {
+  id: string;
+  displayName: string;
+  description: string;
+}
+
+export interface LLMProviderInfo {
+  id: string;
+  displayName: string;
+  models: LLMModel[];
+}
+
+export interface LLMConfig {
+  providers: LLMProviderInfo[];
+  defaultProvider: string;
+  defaultModel: string;
+  fallbackEnabled: boolean;
+  fallbackProvider: string;
+  fallbackModel: string;
 }
 
 // GraphQL client utility

@@ -37,7 +37,7 @@ func TestCreateAgent(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent for testing purposes"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -77,7 +77,7 @@ func TestCreateAgent_WithAuthor(t *testing.T) {
 		Name:         "Test Agent with Author",
 		Description:  stringPtr("A test agent with author info"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -98,7 +98,7 @@ func TestCreateAgent_InvalidAgentID(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -117,7 +117,7 @@ func TestCreateAgent_InvalidVersion(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "invalid-version",
 	}
@@ -135,7 +135,7 @@ func TestCreateAgent_DuplicateAgentID(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -159,7 +159,7 @@ func TestGetAgent(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -198,7 +198,7 @@ func TestListAgents(t *testing.T) {
 			Name:         "Test Agent " + strconv.Itoa(i),
 			Description:  stringPtr("A test agent"),
 			SystemPrompt: stringPtr("You are a helpful assistant."),
-			LLMProvider:  agent.LLMProviderOpenAI,
+			LLMProvider:  types.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			Version:      "1.0.0",
 		}
@@ -224,7 +224,7 @@ func TestListAgents_Pagination(t *testing.T) {
 			Name:         "Test Agent " + strconv.Itoa(i),
 			Description:  stringPtr("A test agent"),
 			SystemPrompt: stringPtr("You are a helpful assistant."),
-			LLMProvider:  agent.LLMProviderOpenAI,
+			LLMProvider:  types.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			Version:      "1.0.0",
 		}
@@ -249,7 +249,7 @@ func TestUpdateAgent(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -281,7 +281,7 @@ func TestUpdateAgent_AgentID(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -324,7 +324,7 @@ func TestDeleteAgent(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -367,7 +367,7 @@ func TestCheckAgentIDAvailability(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -392,7 +392,7 @@ func TestCreateAgentVersion(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -405,7 +405,7 @@ func TestCreateAgentVersion(t *testing.T) {
 		AgentUUID:    createdAgent.ID,
 		Version:      "1.1.0",
 		SystemPrompt: stringPtr("You are an improved helpful assistant."),
-		LLMProvider:  agent.LLMProviderClaude,
+		LLMProvider:  types.LLMProviderClaude,
 		LLMModel:     "claude-3-opus",
 	}
 
@@ -429,7 +429,7 @@ func TestCreateAgentVersion_InvalidVersion(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -442,7 +442,7 @@ func TestCreateAgentVersion_InvalidVersion(t *testing.T) {
 		AgentUUID:    createdAgent.ID,
 		Version:      "invalid-version",
 		SystemPrompt: stringPtr("You are an improved helpful assistant."),
-		LLMProvider:  agent.LLMProviderClaude,
+		LLMProvider:  types.LLMProviderClaude,
 		LLMModel:     "claude-3-opus",
 	}
 
@@ -460,7 +460,7 @@ func TestGetAgentVersions(t *testing.T) {
 		Name:         "Test Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -475,7 +475,7 @@ func TestGetAgentVersions(t *testing.T) {
 			AgentUUID:    createdAgent.ID,
 			Version:      version,
 			SystemPrompt: stringPtr("Updated system prompt for " + version),
-			LLMProvider:  agent.LLMProviderClaude,
+			LLMProvider:  types.LLMProviderClaude,
 			LLMModel:     "claude-3-opus",
 		}
 		_, err := uc.CreateAgentVersion(ctx, versionReq)
@@ -516,7 +516,7 @@ func TestArchiveAgent(t *testing.T) {
 		Name:         "Test Archive Agent",
 		Description:  stringPtr("A test agent for archiving"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -548,7 +548,7 @@ func TestArchiveAgent_AlreadyArchived(t *testing.T) {
 		Name:         "Test Already Archived Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -585,7 +585,7 @@ func TestUnarchiveAgent(t *testing.T) {
 		Name:         "Test Unarchive Agent",
 		Description:  stringPtr("A test agent for unarchiving"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -620,7 +620,7 @@ func TestUnarchiveAgent_AlreadyActive(t *testing.T) {
 		Name:         "Test Already Active Agent",
 		Description:  stringPtr("A test agent"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}
@@ -655,7 +655,7 @@ func TestListAgents_OnlyActiveAgents(t *testing.T) {
 			Name:         "Active Agent " + strconv.Itoa(i),
 			Description:  stringPtr("An active test agent"),
 			SystemPrompt: stringPtr("You are a helpful assistant."),
-			LLMProvider:  agent.LLMProviderOpenAI,
+			LLMProvider:  types.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			Version:      "1.0.0",
 		}
@@ -671,7 +671,7 @@ func TestListAgents_OnlyActiveAgents(t *testing.T) {
 			Name:         "Archived Agent " + strconv.Itoa(i),
 			Description:  stringPtr("An archived test agent"),
 			SystemPrompt: stringPtr("You are a helpful assistant."),
-			LLMProvider:  agent.LLMProviderOpenAI,
+			LLMProvider:  types.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			Version:      "1.0.0",
 		}
@@ -712,7 +712,7 @@ func TestArchiveUnarchiveWorkflow(t *testing.T) {
 		Name:         "Workflow Test Agent",
 		Description:  stringPtr("A test agent for workflow testing"),
 		SystemPrompt: stringPtr("You are a helpful assistant."),
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		Version:      "1.0.0",
 	}

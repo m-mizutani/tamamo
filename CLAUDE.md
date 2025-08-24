@@ -27,6 +27,16 @@ In principle, do not trust developers who use this library from outside
 - Domain models should be pure Go structs without any persistence-specific annotations
 - This keeps the domain layer independent of the infrastructure layer
 
+### Data Validation and Normalization Policy
+
+- **NEVER relax validation to accept invalid data formats**
+- **Always normalize data at the boundary (input/output) layers**
+- When reading from external sources (DB, API), normalize data to the correct format immediately
+- When writing to external sources, ensure data is in the correct format
+- Validation should be strict - accepting invalid formats leads to bugs and technical debt
+- Example: LLM providers must always be lowercase ("openai", "claude", "gemini"), not mixed case
+- If legacy data exists in wrong format, normalize it when reading, don't relax validation
+
 ### Check
 
 When making changes, before finishing the task, always:

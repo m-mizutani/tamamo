@@ -45,7 +45,7 @@ func TestQueryResolver_Thread_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -67,7 +67,7 @@ func TestQueryResolver_Thread_InvalidID(t *testing.T) {
 	mockRepo := &mock.ThreadRepositoryMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with invalid ID
@@ -91,7 +91,7 @@ func TestQueryResolver_Thread_RepositoryError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -115,7 +115,7 @@ func TestThreadResolver_ID(t *testing.T) {
 	mockRepo := &mock.ThreadRepositoryMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil, nil)
 	threadResolver := resolver.Thread()
 
 	// Execute test
@@ -138,7 +138,7 @@ func TestQueryResolver_Thread_NotFound(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -161,7 +161,7 @@ func TestQueryResolver_Threads_WithNilParameters(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with nil parameters
@@ -203,7 +203,7 @@ func TestQueryResolver_Threads_WithValidParameters(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with valid parameters
@@ -235,7 +235,7 @@ func TestQueryResolver_Threads_RepositoryError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -259,7 +259,7 @@ func TestQueryResolver_Threads_LimitCapping(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(mockRepo, nil, nil)
+	resolver := graphql.NewResolver(mockRepo, nil, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with excessive limit
@@ -299,7 +299,7 @@ func TestMutationResolver_CreateAgent_Success(t *testing.T) {
 		AgentUUID:    testAgent.ID,
 		Version:      "1.0.0",
 		SystemPrompt: "You are a helpful assistant.",
-		LLMProvider:  agentmodel.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
@@ -322,7 +322,7 @@ func TestMutationResolver_CreateAgent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input
@@ -360,7 +360,7 @@ func TestMutationResolver_CreateAgent_UseCaseError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input
@@ -402,7 +402,7 @@ func TestMutationResolver_UpdateAgent_Success(t *testing.T) {
 			AgentUUID:    testAgent.ID,
 			Version:      "1.0.0",
 			SystemPrompt: "You are a helpful assistant.",
-			LLMProvider:  agentmodel.LLMProviderOpenAI,
+			LLMProvider:  types.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),
@@ -426,7 +426,7 @@ func TestMutationResolver_UpdateAgent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input
@@ -452,7 +452,7 @@ func TestMutationResolver_UpdateAgent_InvalidID(t *testing.T) {
 	mockAgentUseCase := &mock.AgentUseCasesMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input
@@ -485,7 +485,7 @@ func TestMutationResolver_DeleteAgent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -508,7 +508,7 @@ func TestMutationResolver_DeleteAgent_UseCaseError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -527,7 +527,7 @@ func TestMutationResolver_CreateAgentVersion_Success(t *testing.T) {
 		AgentUUID:    types.NewUUID(ctx),
 		Version:      "1.1.0",
 		SystemPrompt: "You are an improved helpful assistant.",
-		LLMProvider:  agentmodel.LLMProviderClaude,
+		LLMProvider:  types.LLMProviderClaude,
 		LLMModel:     "claude-3-opus",
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
@@ -541,7 +541,7 @@ func TestMutationResolver_CreateAgentVersion_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input
@@ -562,8 +562,10 @@ func TestMutationResolver_CreateAgentVersion_Success(t *testing.T) {
 	gt.Equal(t, result.AgentUUID, testVersion.AgentUUID.String())
 	gt.Equal(t, result.Version, testVersion.Version)
 	gt.Equal(t, result.SystemPrompt, testVersion.SystemPrompt)
-	gt.Equal(t, result.LlmProvider, graphqlmodel.LLMProviderClaude)
-	gt.Equal(t, result.LlmModel, testVersion.LLMModel)
+	gt.V(t, result.LlmProvider).NotNil()
+	gt.Equal(t, *result.LlmProvider, graphqlmodel.LLMProviderClaude)
+	gt.V(t, result.LlmModel).NotNil()
+	gt.Equal(t, *result.LlmModel, testVersion.LLMModel)
 }
 
 func TestQueryResolver_Agent_Success(t *testing.T) {
@@ -587,7 +589,7 @@ func TestQueryResolver_Agent_Success(t *testing.T) {
 			AgentUUID:    testAgent.ID,
 			Version:      "1.0.0",
 			SystemPrompt: "You are a helpful assistant.",
-			LLMProvider:  agentmodel.LLMProviderOpenAI,
+			LLMProvider:  types.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),
@@ -605,7 +607,7 @@ func TestQueryResolver_Agent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -628,7 +630,7 @@ func TestQueryResolver_Agent_InvalidID(t *testing.T) {
 	mockAgentUseCase := &mock.AgentUseCasesMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with invalid ID
@@ -660,7 +662,7 @@ func TestQueryResolver_Agents_Success(t *testing.T) {
 				AgentUUID:    types.NewUUID(ctx),
 				Version:      "1.0.0",
 				SystemPrompt: "You are a helpful assistant.",
-				LLMProvider:  agentmodel.LLMProviderOpenAI,
+				LLMProvider:  types.LLMProviderOpenAI,
 				LLMModel:     "gpt-4",
 				CreatedAt:    time.Now(),
 				UpdatedAt:    time.Now(),
@@ -681,7 +683,7 @@ func TestQueryResolver_Agents_Success(t *testing.T) {
 				AgentUUID:    types.NewUUID(ctx),
 				Version:      "1.1.0",
 				SystemPrompt: "You are an improved assistant.",
-				LLMProvider:  agentmodel.LLMProviderClaude,
+				LLMProvider:  types.LLMProviderClaude,
 				LLMModel:     "claude-3-opus",
 				CreatedAt:    time.Now(),
 				UpdatedAt:    time.Now(),
@@ -702,7 +704,7 @@ func TestQueryResolver_Agents_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -739,7 +741,7 @@ func TestQueryResolver_Agents_DefaultPagination(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with nil parameters
@@ -770,7 +772,7 @@ func TestQueryResolver_CheckAgentIDAvailability_Available(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -797,7 +799,7 @@ func TestQueryResolver_CheckAgentIDAvailability_Taken(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -831,7 +833,7 @@ func TestMutationResolver_UpdateAgent_SystemPromptOnly(t *testing.T) {
 			AgentUUID:    testAgent.ID,
 			Version:      "1.0.0",
 			SystemPrompt: "Updated system prompt",
-			LLMProvider:  agentmodel.LLMProviderOpenAI,
+			LLMProvider:  types.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),
@@ -855,7 +857,7 @@ func TestMutationResolver_UpdateAgent_SystemPromptOnly(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Prepare input with only system prompt update (100 characters)
@@ -901,7 +903,7 @@ func TestMutationResolver_ArchiveAgent_Success(t *testing.T) {
 			AgentUUID:    testAgent.ID,
 			Version:      "1.0.0",
 			SystemPrompt: "You are a helpful assistant.",
-			LLMProvider:  agentmodel.LLMProviderOpenAI,
+			LLMProvider:  types.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),
@@ -919,7 +921,7 @@ func TestMutationResolver_ArchiveAgent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -944,7 +946,7 @@ func TestMutationResolver_ArchiveAgent_InvalidID(t *testing.T) {
 	mockAgentUseCase := &mock.AgentUseCasesMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test with invalid ID
@@ -968,7 +970,7 @@ func TestMutationResolver_ArchiveAgent_UseCaseError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -1001,7 +1003,7 @@ func TestMutationResolver_UnarchiveAgent_Success(t *testing.T) {
 			AgentUUID:    testAgent.ID,
 			Version:      "1.0.0",
 			SystemPrompt: "You are a helpful assistant.",
-			LLMProvider:  agentmodel.LLMProviderOpenAI,
+			LLMProvider:  types.LLMProviderOpenAI,
 			LLMModel:     "gpt-4",
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),
@@ -1019,7 +1021,7 @@ func TestMutationResolver_UnarchiveAgent_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -1044,7 +1046,7 @@ func TestMutationResolver_UnarchiveAgent_InvalidID(t *testing.T) {
 	mockAgentUseCase := &mock.AgentUseCasesMock{}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test with invalid ID
@@ -1068,7 +1070,7 @@ func TestMutationResolver_UnarchiveAgent_UseCaseError(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	// Execute test
@@ -1100,7 +1102,7 @@ func TestQueryResolver_AgentsByStatus_Success(t *testing.T) {
 				AgentUUID:    types.NewUUID(ctx),
 				Version:      "1.0.0",
 				SystemPrompt: "You are a helpful assistant.",
-				LLMProvider:  agentmodel.LLMProviderOpenAI,
+				LLMProvider:  types.LLMProviderOpenAI,
 				LLMModel:     "gpt-4",
 				CreatedAt:    time.Now(),
 				UpdatedAt:    time.Now(),
@@ -1124,7 +1126,7 @@ func TestQueryResolver_AgentsByStatus_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test
@@ -1162,7 +1164,7 @@ func TestQueryResolver_AgentsByStatus_DefaultPagination(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test with nil parameters
@@ -1201,7 +1203,7 @@ func TestQueryResolver_AllAgents_Success(t *testing.T) {
 				AgentUUID:    types.NewUUID(ctx),
 				Version:      "1.0.0",
 				SystemPrompt: "You are a helpful assistant.",
-				LLMProvider:  agentmodel.LLMProviderOpenAI,
+				LLMProvider:  types.LLMProviderOpenAI,
 				LLMModel:     "gpt-4",
 				CreatedAt:    time.Now(),
 				UpdatedAt:    time.Now(),
@@ -1223,7 +1225,7 @@ func TestQueryResolver_AllAgents_Success(t *testing.T) {
 				AgentUUID:    types.NewUUID(ctx),
 				Version:      "1.1.0",
 				SystemPrompt: "You are an archived assistant.",
-				LLMProvider:  agentmodel.LLMProviderClaude,
+				LLMProvider:  types.LLMProviderClaude,
 				LLMModel:     "claude-3-opus",
 				CreatedAt:    time.Now(),
 				UpdatedAt:    time.Now(),
@@ -1244,7 +1246,7 @@ func TestQueryResolver_AllAgents_Success(t *testing.T) {
 	}
 
 	// Create resolver
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, nil, nil)
 	queryResolver := resolver.Query()
 
 	// Execute test

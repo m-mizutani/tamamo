@@ -3,11 +3,25 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Archive, Loader2, RefreshCw, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react'
-import { Agent, AgentListResponse, GET_AGENTS_BY_STATUS, UNARCHIVE_AGENT, graphqlRequest } from '@/lib/graphql'
+import { Agent, AgentListResponse, GET_AGENTS_BY_STATUS, UNARCHIVE_AGENT, graphqlRequest, LLMConfig, GET_LLM_CONFIG } from '@/lib/graphql'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 const AGENTS_PER_PAGE = 18
+
+// Helper functions to get display names
+function getProviderDisplayName(providerId: string | undefined, llmConfig: LLMConfig | null): string {
+  if (!providerId || !llmConfig) return providerId || ''
+  const provider = llmConfig.providers.find(p => p.id === providerId.toLowerCase())
+  return provider?.displayName || providerId
+}
+
+function getModelDisplayName(providerId: string | undefined, modelId: string | undefined, llmConfig: LLMConfig | null): string {
+  if (!providerId || !modelId || !llmConfig) return modelId || ''
+  const provider = llmConfig.providers.find(p => p.id === providerId.toLowerCase())
+  const model = provider?.models.find(m => m.id === modelId)
+  return model?.displayName || modelId
+}
 
 export function ArchivedAgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([])
@@ -16,6 +30,7 @@ export function ArchivedAgentsPage() {
   const [totalCount, setTotalCount] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [unarchivingAgents, setUnarchivingAgents] = useState<Set<string>>(new Set())
+  const [llmConfig, setLlmConfig] = useState<LLMConfig | null>(null)
   const navigate = useNavigate()
 
   const fetchArchivedAgents = async (page: number = currentPage, signal?: AbortSignal) => {
@@ -46,6 +61,11 @@ export function ArchivedAgentsPage() {
   useEffect(() => {
     const controller = new AbortController()
     fetchArchivedAgents(1, controller.signal)
+    
+    // Fetch LLM configuration
+    graphqlRequest<{ llmConfig: LLMConfig }>(GET_LLM_CONFIG)
+      .then(response => setLlmConfig(response.llmConfig))
+      .catch(err => console.error('Failed to fetch LLM config:', err))
 
     return () => {
       controller.abort()
@@ -185,7 +205,7 @@ export function ArchivedAgentsPage() {
                     </Badge>
                   </div>
                   <CardDescription className="text-sm">
-                    {agent.agentId} • v{agent.latest}
+                    {agent.agentId}{agent.latest && ` • v${agent.latest}`}
                   </CardDescription>
                 </div>
                 <Button
@@ -211,9 +231,11 @@ export function ArchivedAgentsPage() {
               <div className="mt-3 text-xs text-muted-foreground">
                 Created {new Date(agent.createdAt).toLocaleDateString()}
               </div>
-              {agent.latestVersion && (
+              {agent.latestVersion && agent.latestVersion.llmProvider && (
                 <div className="mt-2 text-xs text-muted-foreground">
-                  {agent.latestVersion.llmProvider} • {agent.latestVersion.llmModel}
+                  {getProviderDisplayName(agent.latestVersion.llmProvider, llmConfig)}
+                  {agent.latestVersion.llmModel && ' • '}
+                  {getModelDisplayName(agent.latestVersion.llmProvider, agent.latestVersion.llmModel, llmConfig)}
                 </div>
               )}
             </CardContent>

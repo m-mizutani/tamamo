@@ -28,27 +28,30 @@ import {
   CHECK_AGENT_ID_AVAILABILITY,
   ARCHIVE_AGENT,
   UNARCHIVE_AGENT,
+  GET_LLM_CONFIG,
   graphqlRequest,
   AgentIdAvailability,
-  UpdateAgentInput
+  UpdateAgentInput,
+  LLMConfig
 } from '@/lib/graphql'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { CreateVersionDialog } from '@/components/agents/CreateVersionDialog'
 import { UserDisplay } from '@/components/UserDisplay'
 
-const LLM_PROVIDERS = [
-  { value: 'OPENAI', label: 'OpenAI' },
-  { value: 'CLAUDE', label: 'Claude' },
-  { value: 'GEMINI', label: 'Gemini' },
-] as const
+// Helper functions to get display names
+function getProviderDisplayName(providerId: string | undefined, llmConfig: LLMConfig | null): string {
+  if (!providerId || !llmConfig) return providerId || 'Unknown'
+  const provider = llmConfig.providers.find(p => p.id === providerId.toLowerCase())
+  return provider?.displayName || providerId
+}
 
-const COMMON_MODELS = {
-  OPENAI: ['gpt-4o', 'gpt-4o-mini', 'gpt-4', 'gpt-3.5-turbo'],
-  CLAUDE: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'],
-  GEMINI: ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
-} as const
-
+function getModelDisplayName(providerId: string | undefined, modelId: string | undefined, llmConfig: LLMConfig | null): string {
+  if (!providerId || !modelId || !llmConfig) return modelId || 'Unknown'
+  const provider = llmConfig.providers.find(p => p.id === providerId.toLowerCase())
+  const model = provider?.models.find(m => m.id === modelId)
+  return model?.displayName || modelId
+}
 
 export function AgentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -63,6 +66,7 @@ export function AgentDetailPage() {
   const [showCreateVersionDialog, setShowCreateVersionDialog] = useState(false)
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false)
+  const [llmConfig, setLlmConfig] = useState<LLMConfig | null>(null)
   
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -109,6 +113,11 @@ export function AgentDetailPage() {
   useEffect(() => {
     const controller = new AbortController()
     fetchAgent(controller.signal)
+    
+    // Fetch LLM configuration
+    graphqlRequest<{ llmConfig: LLMConfig }>(GET_LLM_CONFIG)
+      .then(response => setLlmConfig(response.llmConfig))
+      .catch(err => console.error('Failed to fetch LLM config:', err))
     
     return () => {
       controller.abort()
@@ -213,10 +222,14 @@ export function AgentDetailPage() {
   }
 
   const handleProviderChange = (provider: 'OPENAI' | 'CLAUDE' | 'GEMINI') => {
+    // Find the provider config and set the first available model
+    const providerConfig = llmConfig?.providers.find(p => p.id === provider.toLowerCase())
+    const firstModel = providerConfig?.models[0]?.id || ''
+    
     setEditForm(prev => ({
       ...prev,
       llmProvider: provider,
-      llmModel: COMMON_MODELS[provider][0] // Set first model as default
+      llmModel: firstModel
     }))
   }
 
@@ -331,7 +344,7 @@ export function AgentDetailPage() {
               </Badge>
             </div>
             <p className="text-muted-foreground">
-              {agent.agentId} • v{agent.latest}
+              {agent.agentId}{agent.latest && ` • v${agent.latest}`}
             </p>
           </div>
         </div>
@@ -468,7 +481,7 @@ export function AgentDetailPage() {
               <CardHeader>
                 <CardTitle>Current Configuration</CardTitle>
                 <CardDescription>
-                  Latest version settings (v{agent.latest})
+                  Latest version settings{agent.latest && ` (v${agent.latest})`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -484,15 +497,17 @@ export function AgentDetailPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {LLM_PROVIDERS.map(provider => (
-                            <SelectItem key={provider.value} value={provider.value}>
-                              {provider.label}
+                          {llmConfig?.providers.map(provider => (
+                            <SelectItem key={provider.id} value={provider.id.toUpperCase()}>
+                              {provider.displayName}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     ) : (
-                      <p className="px-3 py-2 bg-muted rounded-md">{agent.latestVersion.llmProvider}</p>
+                      <p className="px-3 py-2 bg-muted rounded-md">
+                        {getProviderDisplayName(agent.latestVersion.llmProvider, llmConfig)}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -506,15 +521,24 @@ export function AgentDetailPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {COMMON_MODELS[editForm.llmProvider].map(model => (
-                            <SelectItem key={model} value={model}>
-                              {model}
-                            </SelectItem>
-                          ))}
+                          {llmConfig?.providers
+                            .find(p => p.id === editForm.llmProvider.toLowerCase())
+                            ?.models.map(model => (
+                              <SelectItem key={model.id} value={model.id}>
+                                {model.displayName}
+                                {model.description && (
+                                  <span className="text-xs text-muted-foreground ml-2">
+                                    {model.description}
+                                  </span>
+                                )}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     ) : (
-                      <p className="px-3 py-2 bg-muted rounded-md">{agent.latestVersion.llmModel}</p>
+                      <p className="px-3 py-2 bg-muted rounded-md">
+                        {getModelDisplayName(agent.latestVersion.llmProvider, agent.latestVersion.llmModel, llmConfig)}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -568,7 +592,7 @@ export function AgentDetailPage() {
               
               <div className="space-y-2">
                 <Label>Latest Version</Label>
-                <p className="text-sm text-muted-foreground">v{agent.latest}</p>
+                {agent.latest && <p className="text-sm text-muted-foreground">v{agent.latest}</p>}
               </div>
 
               <Separator />

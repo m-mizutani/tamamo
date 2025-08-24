@@ -4,6 +4,7 @@ import (
 	"github.com/m-mizutani/gollem"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/repository/storage"
+	"github.com/m-mizutani/tamamo/pkg/service/llm"
 )
 
 // Slack holds all use cases
@@ -12,8 +13,9 @@ type Slack struct {
 	repository      interfaces.ThreadRepository
 	agentRepository interfaces.AgentRepository
 	storageRepo     *storage.Client
-	llmClient       gollem.LLMClient
-	llmModel        string
+	llmClient       gollem.LLMClient // Deprecated: use llmFactory instead
+	llmModel        string           // Deprecated: use llmFactory instead
+	llmFactory      *llm.Factory
 }
 
 // SlackOption is a functional option for Slack
@@ -47,17 +49,28 @@ func WithStorageRepository(repo *storage.Client) SlackOption {
 	}
 }
 
-// WithLLMClient sets the LLM client
+// WithLLMClient sets the LLM client (deprecated: use WithLLMFactory)
 func WithLLMClient(client gollem.LLMClient) SlackOption {
 	return func(uc *Slack) {
 		uc.llmClient = client
 	}
 }
 
-// WithLLMModel sets the LLM model
+// WithLLMModel sets the LLM model (deprecated: use WithLLMFactory)
 func WithLLMModel(model string) SlackOption {
 	return func(uc *Slack) {
 		uc.llmModel = model
+	}
+}
+
+// WithLLMFactory sets the LLM factory for multi-provider support
+func WithLLMFactory(factory *llm.Factory) SlackOption {
+	return func(uc *Slack) {
+		uc.llmFactory = factory
+		// Also set default client for backward compatibility
+		if factory != nil && factory.GetDefaultClient() != nil {
+			uc.llmClient = factory.GetDefaultClient()
+		}
 	}
 }
 

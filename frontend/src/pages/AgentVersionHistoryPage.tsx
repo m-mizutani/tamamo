@@ -91,7 +91,7 @@ export function AgentVersionHistoryPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Version History</h1>
             <p className="text-muted-foreground">
-              {agent.agentId} • Current: v{agent.latest}
+              {agent.agentId}{agent.latest && ` • Current: v${agent.latest}`}
             </p>
           </div>
         </div>
@@ -99,7 +99,7 @@ export function AgentVersionHistoryPage() {
 
       <VersionHistory 
         agentUuid={agent.id} 
-        currentVersion={agent.latest}
+        currentVersion={agent.latest || ''}
       />
     </div>
   )
