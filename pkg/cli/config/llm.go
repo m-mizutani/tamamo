@@ -219,12 +219,12 @@ func GetDefaultProvidersConfig() string {
 func GenerateConfigFile(outputPath string) error {
 	// Ensure directory exists
 	dir := filepath.Dir(outputPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil { // #nosec G301 - 0750 is appropriate for config directories
 		return goerr.Wrap(err, "failed to create directory", goerr.V("dir", dir))
 	}
 
 	// Write default config
-	if err := os.WriteFile(outputPath, []byte(defaultProvidersConfig), 0644); err != nil {
+	if err := os.WriteFile(outputPath, []byte(defaultProvidersConfig), 0600); err != nil { // #nosec G306 - 0600 is appropriate for config files
 		return goerr.Wrap(err, "failed to write config file", goerr.V("path", outputPath))
 	}
 
