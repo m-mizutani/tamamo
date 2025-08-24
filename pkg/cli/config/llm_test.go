@@ -137,6 +137,9 @@ func TestLLMConfig_BuildFactory(t *testing.T) {
 			GeminiProject:  "test-project",
 			GeminiLocation: "us-central1",
 			OpenAIAPIKey:   "test-openai-key",
+			// Override default to OpenAI to avoid Gemini client creation
+			DefaultProvider: "openai",
+			DefaultModel:    "gpt-5-2025-08-07",
 		}
 		providersConfig, err := llmConfig.LoadAndValidate()
 		gt.NoError(t, err)

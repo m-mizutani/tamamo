@@ -64,8 +64,8 @@ func TestQueryResolver_LLMConfig(t *testing.T) {
 				},
 			},
 			Defaults: domainLLM.DefaultConfig{
-				Provider: "gemini",
-				Model:    "gemini-2.0-flash",
+				Provider: "openai",
+				Model:    "gpt-5-2025-08-07",
 			},
 			Fallback: domainLLM.FallbackConfig{
 				Enabled:  true,
@@ -135,8 +135,8 @@ func TestQueryResolver_LLMConfig(t *testing.T) {
 		gt.Equal(t, len(geminiProvider.Models), 2)
 
 		// Verify defaults
-		gt.Equal(t, result.DefaultProvider, "gemini")
-		gt.Equal(t, result.DefaultModel, "gemini-2.0-flash")
+		gt.Equal(t, result.DefaultProvider, "openai")
+		gt.Equal(t, result.DefaultModel, "gpt-5-2025-08-07")
 
 		// Verify fallback
 		gt.Equal(t, result.FallbackEnabled, true)
