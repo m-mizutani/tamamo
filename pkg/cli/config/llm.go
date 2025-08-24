@@ -120,13 +120,7 @@ func (c *LLMConfig) BuildFactory(ctx context.Context, providersConfig *llm.Provi
 	if c.GeminiProject != "" {
 		credentials[types.LLMProviderGemini] = llmService.Credential{
 			ProjectID: c.GeminiProject,
-			Location:  c.GeminiLocation,
-		}
-		if c.GeminiLocation == "" {
-			credentials[types.LLMProviderGemini] = llmService.Credential{
-				ProjectID: c.GeminiProject,
-				Location:  "us-central1", // Default location
-			}
+			Location:  c.GeminiLocation, // CLI flag already has default value "us-central1"
 		}
 	}
 

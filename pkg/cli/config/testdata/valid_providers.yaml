@@ -21,8 +21,8 @@ providers:
         display_name: Gemini 2.0 Flash
 
 defaults:
-  provider: gemini
-  model: gemini-2.0-flash
+  provider: openai
+  model: gpt-5-2025-08-07
 
 fallback:
   enabled: true

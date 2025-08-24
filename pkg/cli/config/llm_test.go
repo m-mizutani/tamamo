@@ -42,8 +42,8 @@ func TestLLMConfig_LoadAndValidate(t *testing.T) {
 		gt.Equal(t, len(openai.Models), 2)
 
 		// Verify defaults
-		gt.Equal(t, providersConfig.Defaults.Provider, "gemini")
-		gt.Equal(t, providersConfig.Defaults.Model, "gemini-2.0-flash")
+		gt.Equal(t, providersConfig.Defaults.Provider, "openai")
+		gt.Equal(t, providersConfig.Defaults.Model, "gpt-5-2025-08-07")
 
 		// Verify fallback
 		gt.Equal(t, providersConfig.Fallback.Enabled, true)
