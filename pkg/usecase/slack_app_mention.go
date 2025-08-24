@@ -29,6 +29,8 @@ type agentContext struct {
 	uuid         types.UUID // Agent UUID (special UUID for general mode)
 	version      string     // Agent version
 	systemPrompt string     // System prompt
+	llmProvider  string     // LLM provider (e.g., "gemini", "claude", "openai")
+	llmModel     string     // LLM model (e.g., "gemini-2.0-flash")
 }
 
 // HandleSlackAppMention handles a slack app mention event with LLM integration
@@ -43,7 +45,7 @@ func (uc *Slack) HandleSlackAppMention(ctx context.Context, slackMsg slack.Messa
 	}
 
 	// Check if LLM is configured
-	if uc.llmClient == nil {
+	if uc.llmClient == nil && uc.llmFactory == nil {
 		logger.Warn("LLM not configured, falling back to simple response")
 		return uc.handleSimpleResponse(ctx, slackMsg)
 	}
@@ -263,6 +265,8 @@ func (uc *Slack) resolveAgent(ctx context.Context, agentMention *slack.AgentMent
 					uuid:         generalModeUUID,
 					version:      thread.AgentVersion,
 					systemPrompt: uc.getGeneralModeSystemPrompt(),
+					llmProvider:  "", // Use default from factory
+					llmModel:     "", // Use default from factory
 				}, nil
 			}
 
@@ -286,6 +290,8 @@ func (uc *Slack) resolveAgent(ctx context.Context, agentMention *slack.AgentMent
 					uuid:         *thread.AgentUUID,
 					version:      thread.AgentVersion,
 					systemPrompt: agentVersion.SystemPrompt,
+					llmProvider:  string(agentVersion.LLMProvider),
+					llmModel:     agentVersion.LLMModel,
 				}, nil
 			}
 		}
@@ -296,6 +302,8 @@ func (uc *Slack) resolveAgent(ctx context.Context, agentMention *slack.AgentMent
 			uuid:         generalModeUUID,
 			version:      "legacy",
 			systemPrompt: "You are a helpful Slack bot assistant. Respond concisely and helpfully to user questions.",
+			llmProvider:  "", // Use default from factory
+			llmModel:     "", // Use default from factory
 		}, nil
 	}
 
@@ -307,6 +315,8 @@ func (uc *Slack) resolveAgent(ctx context.Context, agentMention *slack.AgentMent
 			uuid:         generalModeUUID,
 			version:      "general-v1",
 			systemPrompt: uc.getGeneralModeSystemPrompt(),
+			llmProvider:  "", // Use default from factory
+			llmModel:     "", // Use default from factory
 		}, nil
 	}
 
@@ -342,6 +352,8 @@ func (uc *Slack) resolveAgent(ctx context.Context, agentMention *slack.AgentMent
 		uuid:         agentInfo.ID,
 		version:      latestVersion.Version,
 		systemPrompt: latestVersion.SystemPrompt,
+		llmProvider:  string(latestVersion.LLMProvider),
+		llmModel:     latestVersion.LLMModel,
 	}, nil
 }
 
@@ -565,6 +577,12 @@ func (uc *Slack) chatWithAgent(ctx context.Context, slackMsg slack.Message, thre
 		)
 	}
 
+	// Get the appropriate LLM client
+	llmClient, err := uc.getLLMClient(ctx, agent, slackMsg)
+	if err != nil {
+		return goerr.Wrap(err, "failed to get LLM client")
+	}
+
 	// Create session with agent-specific system prompt and history if available
 	sessionOptions := []gollem.SessionOption{
 		gollem.WithSessionSystemPrompt(agent.systemPrompt),
@@ -575,7 +593,7 @@ func (uc *Slack) chatWithAgent(ctx context.Context, slackMsg slack.Message, thre
 	}
 
 	// Create a new session for this conversation
-	session, err := uc.llmClient.NewSession(ctx, sessionOptions...)
+	session, err := llmClient.NewSession(ctx, sessionOptions...)
 	if err != nil {
 		return goerr.Wrap(err, "failed to create LLM session",
 			goerr.V("thread_id", threadID),
@@ -657,4 +675,43 @@ func (uc *Slack) chatWithAgent(ctx context.Context, slackMsg slack.Message, thre
 	}
 
 	return nil
+}
+
+// getLLMClient retrieves the appropriate LLM client based on agent configuration
+func (uc *Slack) getLLMClient(ctx context.Context, agent *agentContext, slackMsg slack.Message) (gollem.LLMClient, error) {
+	logger := ctxlog.From(ctx)
+
+	if uc.llmFactory != nil && agent.llmProvider != "" && agent.llmModel != "" {
+		// Use factory to get provider-specific client
+		llmClient, err := uc.llmFactory.CreateClient(ctx, agent.llmProvider, agent.llmModel)
+		if err != nil {
+			logger.Warn("failed to create LLM client from factory, attempting fallback",
+				"provider", agent.llmProvider,
+				"model", agent.llmModel,
+				"error", err,
+			)
+
+			// Try fallback if enabled
+			fallbackClient, fallbackErr := uc.llmFactory.GetFallbackClient(ctx)
+			if fallbackErr != nil {
+				return nil, goerr.Wrap(err, "failed to create LLM client and fallback also failed",
+					goerr.V("provider", agent.llmProvider),
+					goerr.V("model", agent.llmModel),
+					goerr.V("fallback_error", fallbackErr),
+				)
+			}
+
+			// Send warning to Slack about fallback
+			warningMsg := fmt.Sprintf("⚠️ Failed to use %s/%s, falling back to default provider", agent.llmProvider, agent.llmModel)
+			_ = uc.slackClient.PostMessage(ctx, slackMsg.Channel, slackMsg.GetThreadTS(), warningMsg)
+
+			return fallbackClient, nil
+		}
+		return llmClient, nil
+	} else if uc.llmClient != nil {
+		// Use legacy client if factory not available
+		return uc.llmClient, nil
+	}
+
+	return nil, goerr.New("no LLM client available")
 }

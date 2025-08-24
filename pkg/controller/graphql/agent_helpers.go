@@ -28,9 +28,34 @@ func convertAgentToGraphQL(ctx context.Context, a *agentmodel.Agent, latestVersi
 				slog.String("agent_id", a.ID.String()),
 				slog.String("author_id", a.Author.String()),
 				slog.String("error", err.Error()))
+			// Create a fallback user with minimal data
+			authorUser = &user.User{
+				ID:          a.Author,
+				SlackName:   "unknown",
+				DisplayName: "Unknown User",
+				Email:       "",
+				CreatedAt:   a.CreatedAt,
+				UpdatedAt:   a.UpdatedAt,
+			}
 		} else {
 			authorUser = u
 		}
+	} else {
+		// If userUseCase is nil, create a fallback user
+		authorUser = &user.User{
+			ID:          a.Author,
+			SlackName:   "unknown",
+			DisplayName: "Unknown User",
+			Email:       "",
+			CreatedAt:   a.CreatedAt,
+			UpdatedAt:   a.UpdatedAt,
+		}
+	}
+
+	// Handle Latest field - convert to pointer
+	var latest *string
+	if a.Latest != "" {
+		latest = &a.Latest
 	}
 
 	result := &graphql1.Agent{
@@ -40,7 +65,7 @@ func convertAgentToGraphQL(ctx context.Context, a *agentmodel.Agent, latestVersi
 		Description: a.Description,
 		Author:      authorUser,
 		Status:      convertAgentStatusToGraphQL(a.Status),
-		Latest:      a.Latest,
+		Latest:      latest,
 		CreatedAt:   a.CreatedAt,
 		UpdatedAt:   a.UpdatedAt,
 	}
@@ -58,12 +83,24 @@ func convertAgentVersionToGraphQL(v *agentmodel.AgentVersion) *graphql1.AgentVer
 		return nil
 	}
 
+	var llmProvider *graphql1.LLMProvider
+	var llmModel *string
+
+	// Only set LLM fields if they have values
+	if v.LLMProvider != "" {
+		provider := convertLLMProviderToGraphQL(v.LLMProvider)
+		llmProvider = &provider
+	}
+	if v.LLMModel != "" {
+		llmModel = &v.LLMModel
+	}
+
 	return &graphql1.AgentVersion{
 		AgentUUID:    v.AgentUUID.String(),
 		Version:      v.Version,
 		SystemPrompt: v.SystemPrompt,
-		LlmProvider:  convertLLMProviderToGraphQL(v.LLMProvider),
-		LlmModel:     v.LLMModel,
+		LlmProvider:  llmProvider,
+		LlmModel:     llmModel,
 		CreatedAt:    v.CreatedAt,
 		UpdatedAt:    v.UpdatedAt,
 	}
@@ -85,36 +122,50 @@ func convertAgentStatusToGraphQL(s agentmodel.Status) graphql1.AgentStatus {
 }
 
 // convertLLMProviderToGraphQL converts domain LLMProvider to GraphQL LLMProvider
-func convertLLMProviderToGraphQL(p agentmodel.LLMProvider) graphql1.LLMProvider {
+func convertLLMProviderToGraphQL(p types.LLMProvider) graphql1.LLMProvider {
 	switch p {
-	case agentmodel.LLMProviderOpenAI:
+	case types.LLMProviderOpenAI:
 		return graphql1.LLMProviderOpenai
-	case agentmodel.LLMProviderClaude:
+	case types.LLMProviderClaude:
 		return graphql1.LLMProviderClaude
-	case agentmodel.LLMProviderGemini:
+	case types.LLMProviderGemini:
 		return graphql1.LLMProviderGemini
 	default:
-		logging.Default().Warn("Unknown LLM provider type, falling back to OpenAI",
-			slog.String("provider", string(p)),
-			slog.String("fallback", "OpenAI"))
-		return graphql1.LLMProviderOpenai // Default fallback
+		// Should not happen if data is properly normalized
+		logging.Default().Error("Invalid LLM provider type",
+			slog.String("provider", string(p)))
+		return graphql1.LLMProviderOpenai // Emergency fallback
 	}
 }
 
 // convertGraphQLLLMProviderToDomain converts GraphQL LLMProvider to domain LLMProvider
-func convertGraphQLLLMProviderToDomain(p graphql1.LLMProvider) agentmodel.LLMProvider {
+func convertGraphQLLLMProviderToDomain(p graphql1.LLMProvider) types.LLMProvider {
 	switch p {
 	case graphql1.LLMProviderOpenai:
-		return agentmodel.LLMProviderOpenAI
+		return types.LLMProviderOpenAI
 	case graphql1.LLMProviderClaude:
-		return agentmodel.LLMProviderClaude
+		return types.LLMProviderClaude
 	case graphql1.LLMProviderGemini:
-		return agentmodel.LLMProviderGemini
+		return types.LLMProviderGemini
 	default:
-		logging.Default().Warn("Unknown GraphQL LLM provider type, falling back to OpenAI",
+		logging.Default().Warn("Unknown GraphQL LLM provider type, falling back to openai",
 			slog.String("provider", string(p)),
-			slog.String("fallback", "OpenAI"))
-		return agentmodel.LLMProviderOpenAI // Default fallback
+			slog.String("fallback", "openai"))
+		return types.LLMProviderOpenAI // Default fallback
+	}
+}
+
+// convertLLMProviderToString converts GraphQL LLMProvider to string for validation
+func convertLLMProviderToString(p graphql1.LLMProvider) string {
+	switch p {
+	case graphql1.LLMProviderOpenai:
+		return "openai"
+	case graphql1.LLMProviderClaude:
+		return "claude"
+	case graphql1.LLMProviderGemini:
+		return "gemini"
+	default:
+		return ""
 	}
 }
 

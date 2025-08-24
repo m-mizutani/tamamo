@@ -21,7 +21,7 @@ type CreateAgentRequest struct {
 	Name         string            `json:"name"`
 	Description  *string           `json:"description,omitempty"`
 	SystemPrompt *string           `json:"system_prompt,omitempty"`
-	LLMProvider  agent.LLMProvider `json:"llm_provider"`
+	LLMProvider  types.LLMProvider `json:"llm_provider"`
 	LLMModel     string            `json:"llm_model"`
 	Version      string            `json:"version"` // Initial version, defaults to "1.0.0"
 }
@@ -31,7 +31,7 @@ type UpdateAgentRequest struct {
 	Name         *string            `json:"name,omitempty"`
 	Description  *string            `json:"description,omitempty"`
 	SystemPrompt *string            `json:"system_prompt,omitempty"`
-	LLMProvider  *agent.LLMProvider `json:"llm_provider,omitempty"`
+	LLMProvider  *types.LLMProvider `json:"llm_provider,omitempty"`
 	LLMModel     *string            `json:"llm_model,omitempty"`
 }
 
@@ -39,7 +39,7 @@ type CreateVersionRequest struct {
 	AgentUUID    types.UUID        `json:"agent_uuid"`
 	Version      string            `json:"version"`
 	SystemPrompt *string           `json:"system_prompt,omitempty"`
-	LLMProvider  agent.LLMProvider `json:"llm_provider"`
+	LLMProvider  types.LLMProvider `json:"llm_provider"`
 	LLMModel     string            `json:"llm_model"`
 }
 

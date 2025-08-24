@@ -85,16 +85,14 @@ func ValidateAgentVersion(version *AgentVersion) error {
 		return goerr.Wrap(err, "invalid version")
 	}
 
-	if !version.LLMProvider.IsValid() {
+	// LLM provider must be valid if specified
+	if version.LLMProvider != "" && !version.LLMProvider.IsValid() {
 		return goerr.New("invalid LLM provider",
 			goerr.V("provider", version.LLMProvider.String()))
 	}
 
-	if version.LLMModel == "" {
-		return goerr.New("LLM model cannot be empty")
-	}
-
-	if len(version.LLMModel) > 100 {
+	// LLM model validation
+	if version.LLMModel != "" && len(version.LLMModel) > 100 {
 		return goerr.New("LLM model cannot be longer than 100 characters")
 	}
 

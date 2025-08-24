@@ -19,6 +19,16 @@ import (
 
 // CreateAgent is the resolver for the createAgent field.
 func (r *mutationResolver) CreateAgent(ctx context.Context, input graphql1.CreateAgentInput) (*graphql1.Agent, error) {
+	// Validate LLM provider and model if factory is available
+	if r.llmFactory != nil && r.llmFactory.GetConfig() != nil {
+		provider := convertLLMProviderToString(input.LlmProvider)
+		if !r.llmFactory.GetConfig().ValidateProviderModel(provider, input.LlmModel) {
+			return nil, goerr.New("invalid LLM provider/model combination",
+				goerr.V("provider", provider),
+				goerr.V("model", input.LlmModel))
+		}
+	}
+
 	req := convertCreateAgentInputToRequest(input)
 
 	agent, err := r.agentUseCase.CreateAgent(ctx, req)
@@ -42,6 +52,17 @@ func (r *mutationResolver) UpdateAgent(ctx context.Context, id string, input gra
 	agentID := types.UUID(id)
 	if !agentID.IsValid() {
 		return nil, goerr.New("invalid agent ID")
+	}
+
+	// Validate LLM provider and model if provided and factory is available
+	if r.llmFactory != nil && r.llmFactory.GetConfig() != nil &&
+		input.LlmProvider != nil && input.LlmModel != nil {
+		provider := convertLLMProviderToString(*input.LlmProvider)
+		if !r.llmFactory.GetConfig().ValidateProviderModel(provider, *input.LlmModel) {
+			return nil, goerr.New("invalid LLM provider/model combination",
+				goerr.V("provider", provider),
+				goerr.V("model", *input.LlmModel))
+		}
 	}
 
 	req := convertUpdateAgentInputToRequest(input)
@@ -109,6 +130,16 @@ func (r *mutationResolver) UnarchiveAgent(ctx context.Context, id string) (*grap
 
 // CreateAgentVersion is the resolver for the createAgentVersion field.
 func (r *mutationResolver) CreateAgentVersion(ctx context.Context, input graphql1.CreateAgentVersionInput) (*graphql1.AgentVersion, error) {
+	// Validate LLM provider and model if factory is available
+	if r.llmFactory != nil && r.llmFactory.GetConfig() != nil {
+		provider := convertLLMProviderToString(input.LlmProvider)
+		if !r.llmFactory.GetConfig().ValidateProviderModel(provider, input.LlmModel) {
+			return nil, goerr.New("invalid LLM provider/model combination",
+				goerr.V("provider", provider),
+				goerr.V("model", input.LlmModel))
+		}
+	}
+
 	req := convertCreateAgentVersionInputToRequest(input)
 
 	version, err := r.agentUseCase.CreateAgentVersion(ctx, req)
@@ -117,6 +148,20 @@ func (r *mutationResolver) CreateAgentVersion(ctx context.Context, input graphql
 	}
 
 	return convertAgentVersionToGraphQL(version), nil
+}
+
+// UpdateDefaultLlm is the resolver for the updateDefaultLLM field.
+func (r *mutationResolver) UpdateDefaultLlm(ctx context.Context, provider string, model string) (*graphql1.LLMConfig, error) {
+	// This would typically update a configuration file or database
+	// For now, we return an error as this requires persistent storage implementation
+	return nil, goerr.New("updateDefaultLLM not yet implemented - requires persistent configuration storage")
+}
+
+// UpdateFallbackLlm is the resolver for the updateFallbackLLM field.
+func (r *mutationResolver) UpdateFallbackLlm(ctx context.Context, enabled bool, provider *string, model *string) (*graphql1.LLMConfig, error) {
+	// This would typically update a configuration file or database
+	// For now, we return an error as this requires persistent storage implementation
+	return nil, goerr.New("updateFallbackLLM not yet implemented - requires persistent configuration storage")
 }
 
 // Thread is the resolver for the thread field.
@@ -353,6 +398,43 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*user.User, error) {
 	}
 
 	return u, nil
+}
+
+// LlmConfig is the resolver for the llmConfig field.
+func (r *queryResolver) LlmConfig(ctx context.Context) (*graphql1.LLMConfig, error) {
+	if r.llmFactory == nil || r.llmFactory.GetConfig() == nil {
+		return nil, goerr.New("LLM configuration not available")
+	}
+
+	config := r.llmFactory.GetConfig()
+
+	// Convert domain config to GraphQL config
+	var providers []*graphql1.LLMProviderInfo
+	for id, provider := range config.Providers {
+		var models []*graphql1.LLMModel
+		for _, model := range provider.Models {
+			models = append(models, &graphql1.LLMModel{
+				ID:          model.ID,
+				DisplayName: model.DisplayName,
+				Description: model.Description,
+			})
+		}
+
+		providers = append(providers, &graphql1.LLMProviderInfo{
+			ID:          id,
+			DisplayName: provider.DisplayName,
+			Models:      models,
+		})
+	}
+
+	return &graphql1.LLMConfig{
+		Providers:        providers,
+		DefaultProvider:  config.Defaults.Provider,
+		DefaultModel:     config.Defaults.Model,
+		FallbackEnabled:  config.Fallback.Enabled,
+		FallbackProvider: config.Fallback.Provider,
+		FallbackModel:    config.Fallback.Model,
+	}, nil
 }
 
 // ID is the resolver for the id field.

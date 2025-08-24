@@ -197,7 +197,7 @@ export function CreateVersionDialog({
               <p className="text-sm text-destructive">{validationErrors.version}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              Current version: v{agent.latest}
+              Current version: {agent.latest ? `v${agent.latest}` : 'None'}
             </p>
           </div>
 

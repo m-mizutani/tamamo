@@ -1,0 +1,50 @@
+# LLM Provider Configuration
+# This file defines available LLM providers and models for Tamamo
+
+providers:
+  claude:
+    display_name: "Claude"
+    models:
+      - id: "claude-sonnet-4-20250514"
+        display_name: "Claude Sonnet 4"
+        description: "Latest Sonnet model with advanced capabilities"
+      - id: "claude-3-7-sonnet-20250219"
+        display_name: "Claude 3.7 Sonnet"
+        description: "Powerful model for complex reasoning tasks"
+    
+  gemini:
+    display_name: "Google Gemini"
+    models:
+      - id: "gemini-2.5-flash"
+        display_name: "Gemini 2.5 Flash"
+        description: "Latest flash model with improved performance"
+      - id: "gemini-2.5-flash-lite"
+        display_name: "Gemini 2.5 Flash Lite"
+        description: "Lightweight version optimized for speed"
+      - id: "gemini-2.0-flash"
+        display_name: "Gemini 2.0 Flash"
+        description: "Fast model with multimodal capabilities"
+        
+  openai:
+    display_name: "OpenAI"
+    models:
+      - id: "gpt-5-2025-08-07"
+        display_name: "GPT-5"
+        description: "Most advanced OpenAI model"
+      - id: "gpt-5-nano-2025-08-07"
+        display_name: "GPT-5 Nano"
+        description: "Compact and efficient model"
+      - id: "gpt-5-mini-2025-08-07"
+        display_name: "GPT-5 Mini"
+        description: "Lightweight model for simple tasks"
+
+# Default provider and model settings
+defaults:
+  provider: "gemini"
+  model: "gemini-2.0-flash"
+  
+# Fallback settings when primary provider fails
+fallback:
+  enabled: true
+  provider: "gemini"
+  model: "gemini-2.0-flash"

@@ -64,7 +64,7 @@ func createTestAgentVersion(t *testing.T, repo interfaces.AgentRepository, agent
 		AgentUUID:    agentUUID,
 		Version:      version,
 		SystemPrompt: "Test system prompt for " + version,
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		CreatedAt:    time.Now(),
 	}
@@ -331,7 +331,7 @@ func TestMemoryAgentRepository_CreateAgentVersion(t *testing.T) {
 		AgentUUID:    testAgent.ID,
 		Version:      "1.0.0",
 		SystemPrompt: "Test system prompt",
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		CreatedAt:    time.Now(),
 	}
@@ -361,7 +361,7 @@ func TestMemoryAgentRepository_CreateAgentVersion_DuplicateVersion(t *testing.T)
 		AgentUUID:    testAgent.ID,
 		Version:      "1.0.0", // Same version
 		SystemPrompt: "Duplicate version",
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		CreatedAt:    time.Now(),
 	}
@@ -379,7 +379,7 @@ func TestMemoryAgentRepository_CreateAgentVersion_NonExistentAgent(t *testing.T)
 		AgentUUID:    nonExistentAgentID,
 		Version:      "1.0.0",
 		SystemPrompt: "Test system prompt",
-		LLMProvider:  agent.LLMProviderOpenAI,
+		LLMProvider:  types.LLMProviderOpenAI,
 		LLMModel:     "gpt-4",
 		CreatedAt:    time.Now(),
 	}

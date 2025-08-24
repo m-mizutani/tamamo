@@ -20,7 +20,7 @@ type Agent struct {
 	Description   string        `json:"description"`
 	Author        *user.User    `json:"author"`
 	Status        AgentStatus   `json:"status"`
-	Latest        string        `json:"latest"`
+	Latest        *string       `json:"latest,omitempty"`
 	CreatedAt     time.Time     `json:"createdAt"`
 	UpdatedAt     time.Time     `json:"updatedAt"`
 	LatestVersion *AgentVersion `json:"latestVersion,omitempty"`
@@ -37,13 +37,13 @@ type AgentListResponse struct {
 }
 
 type AgentVersion struct {
-	AgentUUID    string      `json:"agentUuid"`
-	Version      string      `json:"version"`
-	SystemPrompt string      `json:"systemPrompt"`
-	LlmProvider  LLMProvider `json:"llmProvider"`
-	LlmModel     string      `json:"llmModel"`
-	CreatedAt    time.Time   `json:"createdAt"`
-	UpdatedAt    time.Time   `json:"updatedAt"`
+	AgentUUID    string       `json:"agentUuid"`
+	Version      string       `json:"version"`
+	SystemPrompt string       `json:"systemPrompt"`
+	LlmProvider  *LLMProvider `json:"llmProvider,omitempty"`
+	LlmModel     *string      `json:"llmModel,omitempty"`
+	CreatedAt    time.Time    `json:"createdAt"`
+	UpdatedAt    time.Time    `json:"updatedAt"`
 }
 
 type CreateAgentInput struct {
@@ -62,6 +62,27 @@ type CreateAgentVersionInput struct {
 	SystemPrompt *string     `json:"systemPrompt,omitempty"`
 	LlmProvider  LLMProvider `json:"llmProvider"`
 	LlmModel     string      `json:"llmModel"`
+}
+
+type LLMConfig struct {
+	Providers        []*LLMProviderInfo `json:"providers"`
+	DefaultProvider  string             `json:"defaultProvider"`
+	DefaultModel     string             `json:"defaultModel"`
+	FallbackEnabled  bool               `json:"fallbackEnabled"`
+	FallbackProvider string             `json:"fallbackProvider"`
+	FallbackModel    string             `json:"fallbackModel"`
+}
+
+type LLMModel struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"displayName"`
+	Description string `json:"description"`
+}
+
+type LLMProviderInfo struct {
+	ID          string      `json:"id"`
+	DisplayName string      `json:"displayName"`
+	Models      []*LLMModel `json:"models"`
 }
 
 type Mutation struct {

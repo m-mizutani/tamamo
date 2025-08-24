@@ -62,7 +62,8 @@ export function VersionHistory({ agentUuid, currentVersion }: VersionHistoryProp
     })
   }
 
-  const getLLMProviderColor = (provider: string) => {
+  const getLLMProviderColor = (provider: string | undefined) => {
+    if (!provider) return 'bg-gray-100 text-gray-800 border-gray-200'
     switch (provider) {
       case 'OPENAI': return 'bg-green-100 text-green-800 border-green-200'
       case 'CLAUDE': return 'bg-orange-100 text-orange-800 border-orange-200'
@@ -175,19 +176,23 @@ export function VersionHistory({ agentUuid, currentVersion }: VersionHistoryProp
                   {isExpanded && (
                     <div className="ml-11 space-y-4 p-4 bg-muted/50 rounded-lg">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">LLM Provider</p>
-                          <Badge 
-                            variant="outline" 
-                            className={getLLMProviderColor(version.llmProvider)}
-                          >
-                            {version.llmProvider}
-                          </Badge>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">Model</p>
-                          <p className="text-sm text-muted-foreground">{version.llmModel}</p>
-                        </div>
+                        {version.llmProvider && (
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">LLM Provider</p>
+                            <Badge 
+                              variant="outline" 
+                              className={getLLMProviderColor(version.llmProvider)}
+                            >
+                              {version.llmProvider}
+                            </Badge>
+                          </div>
+                        )}
+                        {version.llmModel && (
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">Model</p>
+                            <p className="text-sm text-muted-foreground">{version.llmModel}</p>
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-2">

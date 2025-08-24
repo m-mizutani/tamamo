@@ -1,0 +1,30 @@
+providers:
+  openai:
+    display_name: OpenAI
+    models:
+      - id: gpt-5-2025-08-07
+        display_name: GPT-5
+        description: Latest model
+      - id: gpt-5-nano-2025-08-07
+        display_name: GPT-5 Nano
+  claude:
+    display_name: Claude
+    models:
+      - id: claude-sonnet-4-20250514
+        display_name: Claude Sonnet 4
+  gemini:
+    display_name: Google Gemini
+    models:
+      - id: gemini-2.5-flash
+        display_name: Gemini 2.5 Flash
+      - id: gemini-2.0-flash
+        display_name: Gemini 2.0 Flash
+
+defaults:
+  provider: gemini
+  model: gemini-2.0-flash
+
+fallback:
+  enabled: true
+  provider: openai
+  model: gpt-5-nano-2025-08-07

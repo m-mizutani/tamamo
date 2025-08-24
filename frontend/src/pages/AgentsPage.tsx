@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Users, Loader2, RefreshCw, ChevronLeft, ChevronRight, Archive, CheckSquare, Square } from 'lucide-react'
-import { Agent, AgentListResponse, GET_AGENTS, ARCHIVE_AGENT, graphqlRequest } from '@/lib/graphql'
+import { Agent, AgentListResponse, GET_AGENTS, ARCHIVE_AGENT, graphqlRequest, LLMConfig, GET_LLM_CONFIG } from '@/lib/graphql'
 import { useNavigate } from 'react-router-dom'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { UserDisplayCompact } from '@/components/UserDisplay'
@@ -11,6 +11,20 @@ import { toast } from 'sonner'
 
 const AGENTS_PER_PAGE = 18
 
+
+// Helper functions to get display names
+function getProviderDisplayName(providerId: string | undefined, llmConfig: LLMConfig | null): string {
+  if (!providerId || !llmConfig) return providerId || ''
+  const provider = llmConfig.providers.find(p => p.id === providerId.toLowerCase())
+  return provider?.displayName || providerId
+}
+
+function getModelDisplayName(providerId: string | undefined, modelId: string | undefined, llmConfig: LLMConfig | null): string {
+  if (!providerId || !modelId || !llmConfig) return modelId || ''
+  const provider = llmConfig.providers.find(p => p.id === providerId.toLowerCase())
+  const model = provider?.models.find(m => m.id === modelId)
+  return model?.displayName || modelId
+}
 
 export function AgentsPage() {
   const [agents, setAgents] = useState<Agent[] | null>(null)
@@ -21,6 +35,7 @@ export function AgentsPage() {
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set())
   const [bulkOperationLoading, setBulkOperationLoading] = useState(false)
   const [showBulkArchiveDialog, setShowBulkArchiveDialog] = useState(false)
+  const [llmConfig, setLlmConfig] = useState<LLMConfig | null>(null)
   const navigate = useNavigate()
 
   const fetchAgents = async (page: number = currentPage, signal?: AbortSignal) => {
@@ -52,6 +67,11 @@ export function AgentsPage() {
   useEffect(() => {
     const controller = new AbortController()
     fetchAgents(1, controller.signal)
+    
+    // Fetch LLM configuration
+    graphqlRequest<{ llmConfig: LLMConfig }>(GET_LLM_CONFIG)
+      .then(response => setLlmConfig(response.llmConfig))
+      .catch(err => console.error('Failed to fetch LLM config:', err))
 
     return () => {
       controller.abort()
@@ -281,7 +301,7 @@ export function AgentsPage() {
                     </Badge>
                   </div>
                   <CardDescription className="text-sm">
-                    {agent.agentId} • v{agent.latest}
+                    {agent.agentId}{agent.latest && ` • v${agent.latest}`}
                   </CardDescription>
                 </div>
               </div>
@@ -299,9 +319,11 @@ export function AgentsPage() {
                 </div>
                 <UserDisplayCompact user={agent.author} size={16} />
               </div>
-              {agent.latestVersion && (
+              {agent.latestVersion && agent.latestVersion.llmProvider && (
                 <div className="mt-2 text-xs text-muted-foreground">
-                  {agent.latestVersion.llmProvider} • {agent.latestVersion.llmModel}
+                  {getProviderDisplayName(agent.latestVersion.llmProvider, llmConfig)}
+                  {agent.latestVersion.llmModel && ' • '}
+                  {getModelDisplayName(agent.latestVersion.llmProvider, agent.latestVersion.llmModel, llmConfig)}
                 </div>
               )}
             </CardContent>

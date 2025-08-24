@@ -329,11 +329,14 @@ func (c *Client) CreateAgentVersion(ctx context.Context, version *agent.AgentVer
 	}
 	version.UpdatedAt = now
 
+	// Ensure provider is normalized before saving
+	normalizedProvider := types.LLMProviderFromString(string(version.LLMProvider))
+
 	doc := &agentVersionDoc{
 		AgentUUID:    version.AgentUUID.String(),
 		Version:      version.Version,
 		SystemPrompt: version.SystemPrompt,
-		LLMProvider:  version.LLMProvider.String(),
+		LLMProvider:  normalizedProvider.String(),
 		LLMModel:     version.LLMModel,
 		CreatedAt:    version.CreatedAt,
 		UpdatedAt:    version.UpdatedAt,
@@ -378,11 +381,14 @@ func (c *Client) GetAgentVersion(ctx context.Context, agentUUID types.UUID, vers
 			goerr.V("version", version))
 	}
 
+	// Normalize provider to ensure lowercase format
+	provider := types.LLMProviderFromString(versionDoc.LLMProvider)
+
 	return &agent.AgentVersion{
 		AgentUUID:    types.UUID(versionDoc.AgentUUID),
 		Version:      versionDoc.Version,
 		SystemPrompt: versionDoc.SystemPrompt,
-		LLMProvider:  agent.LLMProvider(versionDoc.LLMProvider),
+		LLMProvider:  provider,
 		LLMModel:     versionDoc.LLMModel,
 		CreatedAt:    versionDoc.CreatedAt,
 		UpdatedAt:    versionDoc.UpdatedAt,
@@ -430,7 +436,7 @@ func (c *Client) ListAgentVersions(ctx context.Context, agentUUID types.UUID) ([
 			AgentUUID:    types.UUID(versionDoc.AgentUUID),
 			Version:      versionDoc.Version,
 			SystemPrompt: versionDoc.SystemPrompt,
-			LLMProvider:  agent.LLMProvider(versionDoc.LLMProvider),
+			LLMProvider:  types.LLMProviderFromString(versionDoc.LLMProvider),
 			LLMModel:     versionDoc.LLMModel,
 			CreatedAt:    versionDoc.CreatedAt,
 			UpdatedAt:    versionDoc.UpdatedAt,
@@ -456,11 +462,14 @@ func (c *Client) UpdateAgentVersion(ctx context.Context, version *agent.AgentVer
 
 	version.UpdatedAt = time.Now()
 
+	// Ensure provider is normalized before saving
+	normalizedProvider := types.LLMProviderFromString(string(version.LLMProvider))
+
 	doc := &agentVersionDoc{
 		AgentUUID:    version.AgentUUID.String(),
 		Version:      version.Version,
 		SystemPrompt: version.SystemPrompt,
-		LLMProvider:  version.LLMProvider.String(),
+		LLMProvider:  normalizedProvider.String(),
 		LLMModel:     version.LLMModel,
 		CreatedAt:    version.CreatedAt,
 		UpdatedAt:    version.UpdatedAt,
@@ -580,7 +589,7 @@ func (c *Client) ListAgentsWithLatestVersions(ctx context.Context, offset, limit
 			AgentUUID:    types.UUID(versionDocData.AgentUUID),
 			Version:      versionDocData.Version,
 			SystemPrompt: versionDocData.SystemPrompt,
-			LLMProvider:  agent.LLMProvider(versionDocData.LLMProvider),
+			LLMProvider:  types.LLMProviderFromString(versionDocData.LLMProvider),
 			LLMModel:     versionDocData.LLMModel,
 			CreatedAt:    versionDocData.CreatedAt,
 			UpdatedAt:    versionDocData.UpdatedAt,
@@ -687,7 +696,7 @@ func (c *Client) ListActiveAgentsWithLatestVersions(ctx context.Context, offset,
 			AgentUUID:    types.UUID(versionDocData.AgentUUID),
 			Version:      versionDocData.Version,
 			SystemPrompt: versionDocData.SystemPrompt,
-			LLMProvider:  agent.LLMProvider(versionDocData.LLMProvider),
+			LLMProvider:  types.LLMProviderFromString(versionDocData.LLMProvider),
 			LLMModel:     versionDocData.LLMModel,
 			CreatedAt:    versionDocData.CreatedAt,
 			UpdatedAt:    versionDocData.UpdatedAt,
@@ -796,7 +805,7 @@ func (c *Client) ListAgentsByStatusWithLatestVersions(ctx context.Context, agent
 			AgentUUID:    types.UUID(versionDocData.AgentUUID),
 			Version:      versionDocData.Version,
 			SystemPrompt: versionDocData.SystemPrompt,
-			LLMProvider:  agent.LLMProvider(versionDocData.LLMProvider),
+			LLMProvider:  types.LLMProviderFromString(versionDocData.LLMProvider),
 			LLMModel:     versionDocData.LLMModel,
 			CreatedAt:    versionDocData.CreatedAt,
 			UpdatedAt:    versionDocData.UpdatedAt,
