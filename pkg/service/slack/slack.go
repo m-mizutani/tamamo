@@ -14,6 +14,7 @@ type Service struct {
 	client       *api.Client
 	botUserID    string
 	authTestInfo *api.AuthTestResponse
+	botInfo      *api.User // Store bot user information
 }
 
 // New creates a new Slack service
@@ -26,11 +27,22 @@ func New(token string) (*Service, error) {
 		return nil, goerr.Wrap(err, "failed to get bot user ID")
 	}
 
-	return &Service{
+	service := &Service{
 		client:       client,
 		botUserID:    resp.UserID,
 		authTestInfo: resp,
-	}, nil
+	}
+
+	// Get bot user information for proper display (optional)
+	botUser, err := client.GetUserInfo(resp.UserID)
+	if err != nil {
+		// Failed to get bot info - will fallback to basic message posting without custom icon/username
+		service.botInfo = nil
+	} else {
+		service.botInfo = botUser
+	}
+
+	return service, nil
 }
 
 // GetAuthTestInfo returns the auth test information including team ID
@@ -48,6 +60,15 @@ var _ interfaces.SlackClient = (*Service)(nil)
 func (s *Service) PostMessage(ctx context.Context, channelID, threadTS, text string) error {
 	options := []api.MsgOption{
 		api.MsgOptionText(text, false),
+		api.MsgOptionAsUser(false), // Explicitly send as bot, not as user
+	}
+
+	// Set bot username and icon for consistent display in threads
+	if s.botInfo != nil {
+		options = append(options, api.MsgOptionUsername(s.botInfo.Name))
+		if s.botInfo.Profile.Image72 != "" {
+			options = append(options, api.MsgOptionIconURL(s.botInfo.Profile.Image72))
+		}
 	}
 
 	// Always reply in thread if threadTS is provided
@@ -64,11 +85,84 @@ func (s *Service) PostMessage(ctx context.Context, channelID, threadTS, text str
 		return goerr.Wrap(err, "failed to post message to slack", goerr.V("channel", channelID), goerr.V("thread", threadTS))
 	}
 
-	ctxlog.From(ctx).Debug("posted message to slack",
+	logger := ctxlog.From(ctx)
+	logFields := []any{
 		"channel", channelID,
 		"timestamp", timestamp,
 		"thread", threadTS,
+	}
+
+	if s.botInfo != nil {
+		logFields = append(logFields, "bot_name", s.botInfo.Name)
+		logFields = append(logFields, "bot_icon", s.botInfo.Profile.Image72)
+	} else {
+		logFields = append(logFields, "bot_info", "nil")
+	}
+
+	logger.Debug("posted message to slack", logFields...)
+
+	return nil
+}
+
+// PostMessageWithOptions posts a message to a Slack channel/thread with custom display options
+func (s *Service) PostMessageWithOptions(ctx context.Context, channelID, threadTS, text string, options *interfaces.SlackMessageOptions) error {
+	msgOptions := []api.MsgOption{
+		api.MsgOptionText(text, false),
+		api.MsgOptionAsUser(false), // Explicitly send as bot, not as user
+	}
+
+	// Use custom username and icon if provided
+	if options != nil {
+		if options.Username != "" {
+			msgOptions = append(msgOptions, api.MsgOptionUsername(options.Username))
+		}
+		if options.IconEmoji != "" {
+			msgOptions = append(msgOptions, api.MsgOptionIconEmoji(options.IconEmoji))
+		} else if options.IconURL != "" {
+			msgOptions = append(msgOptions, api.MsgOptionIconURL(options.IconURL))
+		}
+	} else {
+		// Fallback to bot info if no custom options provided
+		if s.botInfo != nil {
+			msgOptions = append(msgOptions, api.MsgOptionUsername(s.botInfo.Name))
+			if s.botInfo.Profile.Image72 != "" {
+				msgOptions = append(msgOptions, api.MsgOptionIconURL(s.botInfo.Profile.Image72))
+			}
+		}
+	}
+
+	// Always reply in thread if threadTS is provided
+	if threadTS != "" {
+		msgOptions = append(msgOptions, api.MsgOptionTS(threadTS))
+	}
+
+	channelID, timestamp, err := s.client.PostMessageContext(
+		ctx,
+		channelID,
+		msgOptions...,
 	)
+	if err != nil {
+		return goerr.Wrap(err, "failed to post message to slack", goerr.V("channel", channelID), goerr.V("thread", threadTS))
+	}
+
+	logger := ctxlog.From(ctx)
+	logFields := []any{
+		"channel", channelID,
+		"timestamp", timestamp,
+		"thread", threadTS,
+	}
+
+	if options != nil {
+		logFields = append(logFields, "custom_username", options.Username)
+		logFields = append(logFields, "custom_icon", options.IconURL)
+	} else if s.botInfo != nil {
+		logFields = append(logFields, "bot_name", s.botInfo.Name)
+		logFields = append(logFields, "bot_icon", s.botInfo.Profile.Image72)
+	} else {
+		logFields = append(logFields, "bot_info", "nil")
+	}
+
+	logger.Debug("posted message to slack with options", logFields...)
 
 	return nil
 }
@@ -107,6 +201,34 @@ func (s *Service) GetUserProfile(ctx context.Context, userID string) (*interface
 			Image512:  user.Profile.Image512,
 			ImageOrig: user.Profile.ImageOriginal,
 		},
+	}, nil
+}
+
+// GetUserInfo retrieves user information from Slack
+func (s *Service) GetUserInfo(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+	user, err := s.client.GetUserInfo(userID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get user info from Slack", goerr.V("user_id", userID))
+	}
+
+	return &interfaces.SlackUserInfo{
+		ID:          user.ID,
+		Name:        user.Name,
+		DisplayName: user.Profile.DisplayName,
+		RealName:    user.Profile.RealName,
+	}, nil
+}
+
+// GetBotInfo retrieves bot information from Slack
+func (s *Service) GetBotInfo(ctx context.Context, botID string) (*interfaces.SlackBotInfo, error) {
+	bot, err := s.client.GetBotInfo(api.GetBotInfoParameters{Bot: botID})
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get bot info from Slack", goerr.V("bot_id", botID))
+	}
+
+	return &interfaces.SlackBotInfo{
+		ID:   bot.ID,
+		Name: bot.Name,
 	}, nil
 }
 

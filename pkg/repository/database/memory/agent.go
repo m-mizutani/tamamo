@@ -27,6 +27,20 @@ func NewAgentMemoryClient() *AgentMemoryClient {
 	}
 }
 
+// deepCopyAgent creates a deep copy of an agent, including pointer fields
+func deepCopyAgent(src *agent.Agent) *agent.Agent {
+	if src == nil {
+		return nil
+	}
+	agentCopy := *src
+	// Deep copy ImageID pointer if it exists
+	if src.ImageID != nil {
+		imageIDCopy := *src.ImageID
+		agentCopy.ImageID = &imageIDCopy
+	}
+	return &agentCopy
+}
+
 // CreateAgent creates a new agent
 func (c *AgentMemoryClient) CreateAgent(ctx context.Context, agentObj *agent.Agent) error {
 	if agentObj == nil {
@@ -58,9 +72,8 @@ func (c *AgentMemoryClient) CreateAgent(ctx context.Context, agentObj *agent.Age
 		agentObj.Status = agent.StatusActive
 	}
 
-	// Create a copy to avoid external modifications
-	agentCopy := *agentObj
-	c.agents[agentObj.ID] = &agentCopy
+	// Create a deep copy to avoid external modifications
+	c.agents[agentObj.ID] = deepCopyAgent(agentObj)
 
 	return nil
 }
@@ -79,9 +92,8 @@ func (c *AgentMemoryClient) GetAgent(ctx context.Context, id types.UUID) (*agent
 		return nil, goerr.New("agent not found", goerr.V("id", id.String()))
 	}
 
-	// Return a copy to avoid external modifications
-	agentCopy := *agent
-	return &agentCopy, nil
+	// Return a deep copy to avoid external modifications
+	return deepCopyAgent(agent), nil
 }
 
 // GetAgentByAgentID retrieves an agent by AgentID
@@ -95,9 +107,8 @@ func (c *AgentMemoryClient) GetAgentByAgentID(ctx context.Context, agentID strin
 
 	for _, agent := range c.agents {
 		if agent.AgentID == agentID {
-			// Return a copy to avoid external modifications
-			agentCopy := *agent
-			return &agentCopy, nil
+			// Return a deep copy to avoid external modifications
+			return deepCopyAgent(agent), nil
 		}
 	}
 
@@ -137,9 +148,8 @@ func (c *AgentMemoryClient) UpdateAgent(ctx context.Context, agentObj *agent.Age
 		agentObj.Status = agent.StatusActive
 	}
 
-	// Create a copy to avoid external modifications
-	agentCopy := *agentObj
-	c.agents[agentObj.ID] = &agentCopy
+	// Create a deep copy to avoid external modifications
+	c.agents[agentObj.ID] = deepCopyAgent(agentObj)
 
 	return nil
 }
@@ -179,8 +189,7 @@ func (c *AgentMemoryClient) ListAgents(ctx context.Context, offset, limit int) (
 	agents := make([]*agent.Agent, 0, len(c.agents))
 	for _, agent := range c.agents {
 		// Create a copy to avoid external modifications
-		agentCopy := *agent
-		agents = append(agents, &agentCopy)
+		agents = append(agents, deepCopyAgent(agent))
 	}
 
 	sort.Slice(agents, func(i, j int) bool {
@@ -372,8 +381,7 @@ func (c *AgentMemoryClient) ListAgentsWithLatestVersions(ctx context.Context, of
 	agents := make([]*agent.Agent, 0, len(c.agents))
 	for _, agent := range c.agents {
 		// Create a copy to avoid external modifications
-		agentCopy := *agent
-		agents = append(agents, &agentCopy)
+		agents = append(agents, deepCopyAgent(agent))
 	}
 
 	sort.Slice(agents, func(i, j int) bool {
@@ -445,12 +453,12 @@ func (c *AgentMemoryClient) ListActiveAgentsWithLatestVersions(ctx context.Conte
 
 		if status == agent.StatusActive {
 			// Create a copy to avoid external modifications
-			agentCopy := *agentObj
+			agentCopy := deepCopyAgent(agentObj)
 			// Ensure status is set for response
 			if agentCopy.Status == "" {
 				agentCopy.Status = agent.StatusActive
 			}
-			activeAgents = append(activeAgents, &agentCopy)
+			activeAgents = append(activeAgents, agentCopy)
 		}
 	}
 
@@ -524,12 +532,12 @@ func (c *AgentMemoryClient) ListAgentsByStatusWithLatestVersions(ctx context.Con
 
 		if agentStatus == status {
 			// Create a copy to avoid external modifications
-			agentCopy := *agentObj
+			agentCopy := deepCopyAgent(agentObj)
 			// Ensure status is set for response
 			if agentCopy.Status == "" {
 				agentCopy.Status = agent.StatusActive
 			}
-			filteredAgents = append(filteredAgents, &agentCopy)
+			filteredAgents = append(filteredAgents, agentCopy)
 		}
 	}
 
@@ -616,11 +624,11 @@ func (c *AgentMemoryClient) UpdateAgentStatus(ctx context.Context, id types.UUID
 	}
 
 	// Create a copy and update status
-	agentCopy := *existing
+	agentCopy := deepCopyAgent(existing)
 	agentCopy.Status = status
 	agentCopy.UpdatedAt = time.Now()
 
-	c.agents[id] = &agentCopy
+	c.agents[id] = agentCopy
 
 	return nil
 }
@@ -645,12 +653,12 @@ func (c *AgentMemoryClient) ListActiveAgents(ctx context.Context, offset, limit 
 
 		if status == agent.StatusActive {
 			// Create a copy to avoid external modifications
-			agentCopy := *agentObj
+			agentCopy := deepCopyAgent(agentObj)
 			// Ensure status is set for response
 			if agentCopy.Status == "" {
 				agentCopy.Status = agent.StatusActive
 			}
-			activeAgents = append(activeAgents, &agentCopy)
+			activeAgents = append(activeAgents, agentCopy)
 		}
 	}
 
@@ -698,12 +706,12 @@ func (c *AgentMemoryClient) GetAgentByAgentIDActive(ctx context.Context, agentID
 
 			if status == agent.StatusActive {
 				// Return a copy to avoid external modifications
-				agentCopy := *agentObj
+				agentCopy := deepCopyAgent(agentObj)
 				// Ensure status is set for response
 				if agentCopy.Status == "" {
 					agentCopy.Status = agent.StatusActive
 				}
-				return &agentCopy, nil
+				return agentCopy, nil
 			} else {
 				return nil, goerr.New("agent is archived", goerr.V("agent_id", agentID))
 			}
@@ -733,12 +741,12 @@ func (c *AgentMemoryClient) ListAgentsByStatus(ctx context.Context, status agent
 
 		if agentStatus == status {
 			// Create a copy to avoid external modifications
-			agentCopy := *agentObj
+			agentCopy := deepCopyAgent(agentObj)
 			// Ensure status is set for response
 			if agentCopy.Status == "" {
 				agentCopy.Status = agent.StatusActive
 			}
-			filteredAgents = append(filteredAgents, &agentCopy)
+			filteredAgents = append(filteredAgents, agentCopy)
 		}
 	}
 
@@ -765,4 +773,17 @@ func (c *AgentMemoryClient) ListAgentsByStatus(ctx context.Context, status agent
 	}
 
 	return filteredAgents[start:end], totalCount, nil
+}
+
+// DumpAgentsForDebug dumps all agents for debugging (testing only)
+func (c *AgentMemoryClient) DumpAgentsForDebug() map[types.UUID]*agent.Agent {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	result := make(map[types.UUID]*agent.Agent)
+	for id, agentObj := range c.agents {
+		// Return copies to avoid external modifications
+		result[id] = deepCopyAgent(agentObj)
+	}
+	return result
 }

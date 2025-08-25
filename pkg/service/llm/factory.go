@@ -40,7 +40,8 @@ func NewFactory(config *llm.ProvidersConfig, credentials map[types.LLMProvider]C
 		clients:     make(map[string]gollem.LLMClient),
 	}
 
-	// Log which providers have credentials configured
+	// Check which providers have credentials configured
+	readyProviders := make([]string, 0, len(credentials))
 	for providerType, cred := range credentials {
 		hasCredentials := false
 		switch providerType {
@@ -53,41 +54,54 @@ func NewFactory(config *llm.ProvidersConfig, credentials map[types.LLMProvider]C
 		}
 
 		if hasCredentials {
-			logger.Info("LLM provider credentials configured",
-				slog.String("provider", string(providerType)),
-				slog.Bool("ready", true),
-			)
-		} else {
-			logger.Warn("LLM provider credentials missing or incomplete",
-				slog.String("provider", string(providerType)),
-			)
+			readyProviders = append(readyProviders, string(providerType))
 		}
 	}
 
-	// Create default client
+	// Create default client (validate credentials at startup)
 	if config.Defaults.Provider != "" && config.Defaults.Model != "" {
-		logger.Info("Creating default LLM client",
-			slog.String("provider", config.Defaults.Provider),
-			slog.String("model", config.Defaults.Model),
-		)
+		// Validate provider credentials exist
+		providerType := types.LLMProviderFromString(config.Defaults.Provider)
+		cred, exists := credentials[providerType]
+		if !exists {
+			return nil, goerr.New("no credentials configured for default provider", goerr.V("provider", config.Defaults.Provider))
+		}
 
+		// Validate credentials are properly configured
+		switch providerType {
+		case types.LLMProviderOpenAI:
+			if cred.APIKey == "" {
+				return nil, goerr.New("OpenAI API key not configured for default provider", goerr.V("provider", config.Defaults.Provider))
+			}
+		case types.LLMProviderClaude:
+			if cred.APIKey == "" {
+				return nil, goerr.New("Claude API key not configured for default provider", goerr.V("provider", config.Defaults.Provider))
+			}
+		case types.LLMProviderGemini:
+			if cred.ProjectID == "" {
+				return nil, goerr.New("Gemini project ID not configured for default provider", goerr.V("provider", config.Defaults.Provider))
+			}
+		}
+
+		// Try to create default client (fail fast if credentials are invalid)
 		ctx := context.Background()
 		defaultClient, err := f.CreateClient(ctx, config.Defaults.Provider, config.Defaults.Model)
 		if err != nil {
-			logger.Error("Failed to create default LLM client",
+			logger.Error("Failed to create default LLM client - invalid credentials or configuration",
 				slog.String("provider", config.Defaults.Provider),
 				slog.String("model", config.Defaults.Model),
 				slog.String("error", err.Error()),
 			)
-			return nil, goerr.Wrap(err, "failed to create default LLM client")
+			return nil, goerr.Wrap(err, "failed to create default LLM client - check your API keys and configuration")
 		}
 		f.defaultClient = defaultClient
-
-		logger.Info("Default LLM client created successfully",
-			slog.String("provider", config.Defaults.Provider),
-			slog.String("model", config.Defaults.Model),
-		)
 	}
+
+	// Log consolidated factory initialization
+	logger.Info("LLM factory initialized",
+		slog.Any("ready_providers", readyProviders),
+		slog.String("default_client", fmt.Sprintf("%s:%s", config.Defaults.Provider, config.Defaults.Model)),
+	)
 
 	return f, nil
 }
@@ -153,13 +167,6 @@ func (f *Factory) CreateClient(ctx context.Context, provider, model string) (gol
 
 	// Cache the client
 	f.clients[cacheKey] = client
-
-	// Log successful client creation
-	logging.Default().Info("LLM client created",
-		slog.String("provider", provider),
-		slog.String("model", model),
-		slog.String("cache_key", cacheKey),
-	)
 
 	return client, nil
 }

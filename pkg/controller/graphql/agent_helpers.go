@@ -7,6 +7,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	agentmodel "github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	graphql1 "github.com/m-mizutani/tamamo/pkg/domain/model/graphql"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/image"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/utils/logging"
@@ -68,6 +69,20 @@ func convertAgentToGraphQL(ctx context.Context, a *agentmodel.Agent, latestVersi
 		Latest:      latest,
 		CreatedAt:   a.CreatedAt,
 		UpdatedAt:   a.UpdatedAt,
+	}
+
+	// Set image URL if agent has an image
+	if a.ImageID != nil {
+		imageURL := "/api/agents/" + a.ID.String() + "/image"
+		result.ImageURL = &imageURL
+
+		slog.Debug("Agent has image, setting imageURL",
+			slog.String("agent_id", a.ID.String()),
+			slog.String("image_id", a.ImageID.String()),
+			slog.String("image_url", imageURL))
+	} else {
+		slog.Debug("Agent has no image",
+			slog.String("agent_id", a.ID.String()))
 	}
 
 	if latestVersion != nil {
@@ -214,5 +229,34 @@ func convertCreateAgentVersionInputToRequest(input graphql1.CreateAgentVersionIn
 		SystemPrompt: input.SystemPrompt,
 		LLMProvider:  convertGraphQLLLMProviderToDomain(input.LlmProvider),
 		LLMModel:     input.LlmModel,
+	}
+}
+
+// convertAgentImageToGraphQL converts domain AgentImage to GraphQL AgentImage
+func convertAgentImageToGraphQL(img *image.AgentImage) *graphql1.AgentImage {
+	if img == nil {
+		return nil
+	}
+
+	// Convert thumbnail keys map to ThumbnailInfo array
+	thumbnails := make([]*graphql1.ThumbnailInfo, 0, len(img.ThumbnailKeys))
+	for size, key := range img.ThumbnailKeys {
+		thumbnails = append(thumbnails, &graphql1.ThumbnailInfo{
+			Size: size,
+			URL:  key,
+		})
+	}
+
+	return &graphql1.AgentImage{
+		ID:          img.ID.String(),
+		AgentID:     img.AgentID.String(),
+		StorageKey:  img.StorageKey,
+		ContentType: img.ContentType,
+		FileSize:    int(img.FileSize),
+		Width:       img.Width,
+		Height:      img.Height,
+		Thumbnails:  thumbnails,
+		CreatedAt:   img.CreatedAt,
+		UpdatedAt:   img.UpdatedAt,
 	}
 }

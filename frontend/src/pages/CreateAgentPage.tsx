@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ImageUpload } from '@/components/ImageUpload'
 import { ArrowLeft, Save, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 import { 
   CreateAgentInput, 
@@ -16,6 +17,7 @@ import {
   AgentIdAvailability,
   LLMConfig 
 } from '@/lib/graphql'
+import { useImageUpload } from '@/hooks/useImageUpload'
 
 export function CreateAgentPage() {
   const navigate = useNavigate()
@@ -26,6 +28,11 @@ export function CreateAgentPage() {
     checking: boolean
     availability: AgentIdAvailability | null
   }>({ checking: false, availability: null })
+
+  // Image upload hook
+  const imageUpload = useImageUpload({
+    onError: (error) => setError(`Image upload failed: ${error}`)
+  })
 
   const [formData, setFormData] = useState<CreateAgentInput>({
     agentId: '',
@@ -137,6 +144,16 @@ export function CreateAgentPage() {
       const response = await graphqlRequest<{ createAgent: any }>(CREATE_AGENT, {
         input
       })
+      
+      // Upload image if one was selected
+      if (imageUpload.selectedFile) {
+        try {
+          await imageUpload.uploadImage(response.createAgent.id)
+        } catch (imageError) {
+          // Log image upload error but don't prevent navigation
+          console.warn('Image upload failed:', imageError)
+        }
+      }
       
       // Navigate to the created agent's detail page
       navigate(`/agents/${response.createAgent.id}`)
@@ -262,6 +279,22 @@ export function CreateAgentPage() {
                 rows={3}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Agent Image</CardTitle>
+            <CardDescription>
+              Upload an image to represent this agent (optional)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ImageUpload
+              onImageSelect={imageUpload.handleFileSelect}
+              isUploading={imageUpload.isUploading}
+              error={imageUpload.error}
+            />
           </CardContent>
         </Card>
 

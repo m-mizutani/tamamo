@@ -12,10 +12,12 @@ type Slack struct {
 	slackClient     interfaces.SlackClient
 	repository      interfaces.ThreadRepository
 	agentRepository interfaces.AgentRepository
+	agentImageRepo  interfaces.AgentImageRepository
 	storageRepo     *storage.Client
 	llmClient       gollem.LLMClient // Deprecated: use llmFactory instead
 	llmModel        string           // Deprecated: use llmFactory instead
 	llmFactory      *llm.Factory
+	serverBaseURL   string // Base URL for constructing image URLs
 }
 
 // SlackOption is a functional option for Slack
@@ -39,6 +41,13 @@ func WithRepository(repo interfaces.ThreadRepository) SlackOption {
 func WithAgentRepository(repo interfaces.AgentRepository) SlackOption {
 	return func(uc *Slack) {
 		uc.agentRepository = repo
+	}
+}
+
+// WithAgentImageRepository sets the agent image repository
+func WithAgentImageRepository(repo interfaces.AgentImageRepository) SlackOption {
+	return func(uc *Slack) {
+		uc.agentImageRepo = repo
 	}
 }
 
@@ -82,6 +91,13 @@ func WithGeminiClient(client gollem.LLMClient) SlackOption {
 // WithGeminiModel is deprecated. Use WithLLMModel instead.
 func WithGeminiModel(model string) SlackOption {
 	return WithLLMModel(model)
+}
+
+// WithServerBaseURL sets the server base URL for constructing image URLs
+func WithServerBaseURL(baseURL string) SlackOption {
+	return func(uc *Slack) {
+		uc.serverBaseURL = baseURL
+	}
 }
 
 // New creates a new Slack instance

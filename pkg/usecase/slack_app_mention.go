@@ -9,6 +9,7 @@ import (
 	"github.com/m-mizutani/ctxlog"
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/gollem"
+	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	pkgErrors "github.com/m-mizutani/tamamo/pkg/utils/errors"
@@ -624,8 +625,8 @@ func (uc *Slack) chatWithAgent(ctx context.Context, slackMsg slack.Message, thre
 		responseText = "(no response)"
 	}
 
-	// Send response to Slack
-	if err := uc.slackClient.PostMessage(ctx, slackMsg.Channel, slackMsg.GetThreadTS(), responseText); err != nil {
+	// Send response to Slack with agent-specific display
+	if err := uc.postMessageWithAgentDisplay(ctx, slackMsg.Channel, slackMsg.GetThreadTS(), responseText, agent); err != nil {
 		return goerr.Wrap(err, "failed to post message to slack")
 	}
 
@@ -714,4 +715,58 @@ func (uc *Slack) getLLMClient(ctx context.Context, agent *agentContext, slackMsg
 	}
 
 	return nil, goerr.New("no LLM client available")
+}
+
+// postMessageWithAgentDisplay posts a message to Slack with agent-specific display settings
+func (uc *Slack) postMessageWithAgentDisplay(ctx context.Context, channelID, threadTS, text string, agent *agentContext) error {
+	// Use basic PostMessage if no agent context or for general mode
+	if agent == nil || agent.uuid == generalModeUUID {
+		return uc.slackClient.PostMessage(ctx, channelID, threadTS, text)
+	}
+
+	// Get agent information for custom display
+	agentInfo, err := uc.getAgentDisplayInfo(ctx, agent)
+	if err != nil {
+		// Log warning but fallback to basic message
+		ctxlog.From(ctx).Warn("failed to get agent display info, using basic message",
+			"agent_uuid", agent.uuid,
+			"error", err,
+		)
+		return uc.slackClient.PostMessage(ctx, channelID, threadTS, text)
+	}
+
+	// Post message with agent-specific options
+	return uc.slackClient.PostMessageWithOptions(ctx, channelID, threadTS, text, agentInfo)
+}
+
+// getAgentDisplayInfo retrieves agent display information for Slack messages
+func (uc *Slack) getAgentDisplayInfo(ctx context.Context, agent *agentContext) (*interfaces.SlackMessageOptions, error) {
+	if uc.agentRepository == nil {
+		return nil, goerr.New("agent repository not available")
+	}
+
+	// Get agent information
+	agentInfo, err := uc.agentRepository.GetAgent(ctx, agent.uuid)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get agent info")
+	}
+
+	options := &interfaces.SlackMessageOptions{
+		Username: agentInfo.Name, // Use agent name as display name
+	}
+
+	// Get agent image URL if agent has an image
+	if agentInfo.ImageID != nil && uc.agentImageRepo != nil && uc.serverBaseURL != "" {
+		// Use FRONTEND_URL as base for public access to agent images
+		imageURL := uc.serverBaseURL + "/api/agents/" + agentInfo.ID.String() + "/image?size=72"
+		options.IconURL = imageURL
+
+		ctxlog.From(ctx).Debug("using agent custom image",
+			"agent_id", agentInfo.ID,
+			"image_id", agentInfo.ImageID,
+			"image_url", imageURL,
+		)
+	}
+
+	return options, nil
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/image"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
@@ -93,4 +94,16 @@ type UserRepository interface {
 	GetBySlackIDAndTeamID(ctx context.Context, slackID, teamID string) (*user.User, error)
 	Create(ctx context.Context, user *user.User) error
 	Update(ctx context.Context, user *user.User) error
+}
+
+// AgentImageRepository manages agent image persistence
+type AgentImageRepository interface {
+	// Create creates a new agent image
+	Create(ctx context.Context, agentImage *image.AgentImage) error
+
+	// GetByID retrieves an agent image by its ID
+	GetByID(ctx context.Context, id types.UUID) (*image.AgentImage, error)
+
+	// Update updates an existing agent image
+	Update(ctx context.Context, agentImage *image.AgentImage) error
 }

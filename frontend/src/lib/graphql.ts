@@ -18,6 +18,7 @@ export const GET_AGENTS = `
         }
         status
         latest
+        imageUrl
         createdAt
         updatedAt
         latestVersion {
@@ -49,6 +50,7 @@ export const GET_AGENTS_BY_STATUS = `
         }
         status
         latest
+        imageUrl
         createdAt
         updatedAt
         latestVersion {
@@ -80,6 +82,7 @@ export const GET_ALL_AGENTS = `
         }
         status
         latest
+        imageUrl
         createdAt
         updatedAt
         latestVersion {
@@ -109,6 +112,21 @@ export const GET_AGENT = `
       }
       status
       latest
+      image {
+        id
+        storageKey
+        contentType
+        fileSize
+        width
+        height
+        thumbnails {
+          size
+          url
+        }
+        createdAt
+        updatedAt
+      }
+      imageUrl
       createdAt
       updatedAt
       latestVersion {
@@ -319,6 +337,60 @@ export const GET_LLM_CONFIG = `
   }
 `;
 
+// Image-related queries and mutations
+export const UPLOAD_AGENT_IMAGE = `
+  mutation UploadAgentImage($agentId: ID!, $file: Upload!) {
+    uploadAgentImage(agentId: $agentId, file: $file) {
+      id
+      agentId
+      name
+      description
+      status
+      image {
+        id
+        storageKey
+        contentType
+        fileSize
+        width
+        height
+        thumbnails {
+          size
+          url
+        }
+        createdAt
+        updatedAt
+      }
+      imageUrl
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_AGENT_IMAGE_INFO = `
+  query GetAgentImageInfo($agentId: ID!) {
+    agent(id: $agentId) {
+      id
+      agentId
+      image {
+        id
+        storageKey
+        contentType
+        fileSize
+        width
+        height
+        thumbnails {
+          size
+          url
+        }
+        createdAt
+        updatedAt
+      }
+      imageUrl
+    }
+  }
+`;
+
 // Type definitions
 export type AgentStatus = 'ACTIVE' | 'ARCHIVED';
 export type LLMProvider = 'OPENAI' | 'CLAUDE' | 'GEMINI';
@@ -332,6 +404,23 @@ export interface User {
   updatedAt: string;
 }
 
+export interface ThumbnailInfo {
+  size: string;
+  url: string;
+}
+
+export interface AgentImage {
+  id: string;
+  storageKey: string;
+  contentType: string;
+  fileSize: number;
+  width: number;
+  height: number;
+  thumbnails: ThumbnailInfo[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Agent {
   id: string;
   agentId: string;
@@ -340,6 +429,8 @@ export interface Agent {
   author: User;
   status: AgentStatus;
   latest?: string;  // Optional for backward compatibility
+  image?: AgentImage;  // Image information
+  imageUrl?: string;   // Direct image URL
   createdAt: string;
   updatedAt: string;
   latestVersion?: AgentVersion;

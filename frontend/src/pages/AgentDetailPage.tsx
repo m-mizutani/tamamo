@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ImageUpload } from '@/components/ImageUpload'
 import { 
   ArrowLeft, 
   Save, 
@@ -19,7 +20,8 @@ import {
   History,
   Clock,
   User,
-  Settings
+  Settings,
+  Image as ImageIcon
 } from 'lucide-react'
 import { 
   Agent,
@@ -34,6 +36,7 @@ import {
   UpdateAgentInput,
   LLMConfig
 } from '@/lib/graphql'
+import { useImageUpload } from '@/hooks/useImageUpload'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { CreateVersionDialog } from '@/components/agents/CreateVersionDialog'
@@ -68,6 +71,17 @@ export function AgentDetailPage() {
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false)
   const [llmConfig, setLlmConfig] = useState<LLMConfig | null>(null)
   
+  // Image upload hook
+  const imageUpload = useImageUpload({
+    onSuccess: (imageUrl) => {
+      console.log('Image upload success, imageUrl:', imageUrl)
+      console.log('Calling fetchAgent() to refresh data...')
+      // Refresh agent data after successful image upload
+      fetchAgent()
+    },
+    onError: (error) => setError(`Image upload failed: ${error}`)
+  })
+  
   // Edit form state
   const [editForm, setEditForm] = useState({
     agentId: '',
@@ -90,6 +104,9 @@ export function AgentDetailPage() {
       setLoading(true)
       setError(null)
       const response = await graphqlRequest<{ agent: Agent }>(GET_AGENT, { id }, signal)
+      console.log('Fetched agent data:', response.agent)
+      console.log('Agent imageUrl:', response.agent.imageUrl)
+      console.log('Agent image:', response.agent.image)
       setAgent(response.agent)
       setEditForm({
         agentId: response.agent.agentId,
@@ -164,6 +181,7 @@ export function AgentDetailPage() {
       })
     }
     setAgentIdStatus({ checking: false, availability: null })
+    imageUpload.reset()
   }
 
   const handleSave = async () => {
@@ -199,6 +217,16 @@ export function AgentDetailPage() {
         
         // Refresh agent data to get updated version info
         await fetchAgent()
+      }
+      
+      // Upload image if one was selected
+      if (imageUpload.selectedFile && agent) {
+        try {
+          await imageUpload.uploadImage(agent.id)
+        } catch (imageError) {
+          console.warn('Image upload failed:', imageError)
+          // Don't prevent saving the agent if image upload fails
+        }
       }
       
       setIsEditing(false)
@@ -571,6 +599,48 @@ export function AgentDetailPage() {
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <ImageIcon className="h-5 w-5" />
+                <span>Agent Image</span>
+              </CardTitle>
+              <CardDescription>
+                Image representing this agent
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isEditing ? (
+                <ImageUpload
+                  onImageSelect={imageUpload.handleFileSelect}
+                  currentImageUrl={agent?.imageUrl}
+                  isUploading={imageUpload.isUploading}
+                  error={imageUpload.error}
+                />
+              ) : (
+                <div className="space-y-4">
+                  {agent?.imageUrl ? (
+                    <div className="flex flex-col items-center space-y-2">
+                      <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                        <img
+                          src={agent.imageUrl}
+                          alt={`${agent.name} image`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <p className="text-sm text-muted-foreground">Current agent image</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center space-y-2 py-8">
+                      <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">No image uploaded</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">

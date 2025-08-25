@@ -24,11 +24,26 @@ type Agent struct {
 	CreatedAt     time.Time     `json:"createdAt"`
 	UpdatedAt     time.Time     `json:"updatedAt"`
 	LatestVersion *AgentVersion `json:"latestVersion,omitempty"`
+	Image         *AgentImage   `json:"image,omitempty"`
+	ImageURL      *string       `json:"imageUrl,omitempty"`
 }
 
 type AgentIDAvailability struct {
 	Available bool   `json:"available"`
 	Message   string `json:"message"`
+}
+
+type AgentImage struct {
+	ID          string           `json:"id"`
+	AgentID     string           `json:"agentId"`
+	StorageKey  string           `json:"storageKey"`
+	ContentType string           `json:"contentType"`
+	FileSize    int              `json:"fileSize"`
+	Width       int              `json:"width"`
+	Height      int              `json:"height"`
+	Thumbnails  []*ThumbnailInfo `json:"thumbnails"`
+	CreatedAt   time.Time        `json:"createdAt"`
+	UpdatedAt   time.Time        `json:"updatedAt"`
 }
 
 type AgentListResponse struct {
@@ -94,6 +109,11 @@ type Query struct {
 type ThreadsResponse struct {
 	Threads    []*slack.Thread `json:"threads"`
 	TotalCount int             `json:"totalCount"`
+}
+
+type ThumbnailInfo struct {
+	Size string `json:"size"`
+	URL  string `json:"url"`
 }
 
 type UpdateAgentInput struct {

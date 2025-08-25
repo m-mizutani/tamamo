@@ -17,6 +17,7 @@ import (
 	"github.com/m-mizutani/gt"
 	server "github.com/m-mizutani/tamamo/pkg/controller/http"
 	slack_ctrl "github.com/m-mizutani/tamamo/pkg/controller/slack"
+	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/mock"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
@@ -30,7 +31,23 @@ func TestSlackEventHandler(t *testing.T) {
 	t.Run("handles URL verification challenge", func(t *testing.T) {
 		// Create server without mock (URL verification doesn't need it)
 		uc := usecase.New()
-		slackCtrl := slack_ctrl.New(uc)
+		mockSlackClient := &mock.SlackClientMock{
+			GetUserInfoFunc: func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+				return &interfaces.SlackUserInfo{
+					ID:          userID,
+					Name:        "test-user",
+					DisplayName: "Test User",
+					RealName:    "Test User Real",
+				}, nil
+			},
+			GetBotInfoFunc: func(ctx context.Context, botID string) (*interfaces.SlackBotInfo, error) {
+				return &interfaces.SlackBotInfo{
+					ID:   botID,
+					Name: "test-bot",
+				}, nil
+			},
+		}
+		slackCtrl := slack_ctrl.New(uc, mockSlackClient)
 		srv := server.New(
 			server.WithSlackController(slackCtrl),
 		)
@@ -72,11 +89,25 @@ func TestSlackEventHandler(t *testing.T) {
 			IsBotUserFunc: func(uid string) bool {
 				return uid == botUserID
 			},
+			GetUserInfoFunc: func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+				return &interfaces.SlackUserInfo{
+					ID:          userID,
+					Name:        "test-user",
+					DisplayName: "Test User",
+					RealName:    "Test User Real",
+				}, nil
+			},
+			GetBotInfoFunc: func(ctx context.Context, botID string) (*interfaces.SlackBotInfo, error) {
+				return &interfaces.SlackBotInfo{
+					ID:   botID,
+					Name: "test-bot",
+				}, nil
+			},
 		}
 
 		// Create server with mock
 		uc := usecase.New(usecase.WithSlackClient(mockClient))
-		slackCtrl := slack_ctrl.New(uc)
+		slackCtrl := slack_ctrl.New(uc, mockClient)
 		srv := server.New(
 			server.WithSlackController(slackCtrl),
 		)
@@ -134,7 +165,23 @@ func TestSlackEventHandler(t *testing.T) {
 
 		// Create server with signature verification
 		uc := usecase.New(usecase.WithSlackClient(mockClient))
-		slackCtrl := slack_ctrl.New(uc)
+		mockSlackClient := &mock.SlackClientMock{
+			GetUserInfoFunc: func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+				return &interfaces.SlackUserInfo{
+					ID:          userID,
+					Name:        "test-user",
+					DisplayName: "Test User",
+					RealName:    "Test User Real",
+				}, nil
+			},
+			GetBotInfoFunc: func(ctx context.Context, botID string) (*interfaces.SlackBotInfo, error) {
+				return &interfaces.SlackBotInfo{
+					ID:   botID,
+					Name: "test-bot",
+				}, nil
+			},
+		}
+		slackCtrl := slack_ctrl.New(uc, mockSlackClient)
 		verifier := slack.NewVerifier(signingSecret)
 		srv := server.New(
 			server.WithSlackController(slackCtrl),
@@ -210,7 +257,23 @@ func TestSlackEventHandler(t *testing.T) {
 
 		// Create server with mock
 		uc := usecase.New(usecase.WithSlackClient(mockClient))
-		slackCtrl := slack_ctrl.New(uc)
+		mockSlackClient := &mock.SlackClientMock{
+			GetUserInfoFunc: func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+				return &interfaces.SlackUserInfo{
+					ID:          userID,
+					Name:        "test-user",
+					DisplayName: "Test User",
+					RealName:    "Test User Real",
+				}, nil
+			},
+			GetBotInfoFunc: func(ctx context.Context, botID string) (*interfaces.SlackBotInfo, error) {
+				return &interfaces.SlackBotInfo{
+					ID:   botID,
+					Name: "test-bot",
+				}, nil
+			},
+		}
+		slackCtrl := slack_ctrl.New(uc, mockSlackClient)
 		srv := server.New(
 			server.WithSlackController(slackCtrl),
 		)

@@ -7,6 +7,7 @@ import { Agent, AgentListResponse, GET_AGENTS, ARCHIVE_AGENT, graphqlRequest, LL
 import { useNavigate } from 'react-router-dom'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { UserDisplayCompact } from '@/components/UserDisplay'
+import { AgentAvatar } from '@/components/AgentAvatar'
 import { toast } from 'sonner'
 
 const AGENTS_PER_PAGE = 18
@@ -284,12 +285,12 @@ export function AgentsPage() {
                     <Square className="h-4 w-4" />
                   )}
                 </Button>
-                <div 
-                  className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center cursor-pointer"
+                <AgentAvatar
+                  imageUrl={agent.imageUrl}
+                  name={agent.name}
+                  size={32}
                   onClick={() => handleAgentClick(agent.id)}
-                >
-                  <Users className="h-4 w-4 text-blue-600" />
-                </div>
+                />
                 <div 
                   className="flex-1 cursor-pointer"
                   onClick={() => handleAgentClick(agent.id)}

@@ -21,6 +21,12 @@ var _ interfaces.SlackClient = &SlackClientMock{}
 //
 //		// make and configure a mocked interfaces.SlackClient
 //		mockedSlackClient := &SlackClientMock{
+//			GetBotInfoFunc: func(ctx context.Context, botID string) (*interfaces.SlackBotInfo, error) {
+//				panic("mock out the GetBotInfo method")
+//			},
+//			GetUserInfoFunc: func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+//				panic("mock out the GetUserInfo method")
+//			},
 //			GetUserProfileFunc: func(ctx context.Context, userID string) (*interfaces.SlackUserProfile, error) {
 //				panic("mock out the GetUserProfile method")
 //			},
@@ -30,6 +36,9 @@ var _ interfaces.SlackClient = &SlackClientMock{}
 //			PostMessageFunc: func(ctx context.Context, channelID string, threadTS string, text string) error {
 //				panic("mock out the PostMessage method")
 //			},
+//			PostMessageWithOptionsFunc: func(ctx context.Context, channelID string, threadTS string, text string, options *interfaces.SlackMessageOptions) error {
+//				panic("mock out the PostMessageWithOptions method")
+//			},
 //		}
 //
 //		// use mockedSlackClient in code that requires interfaces.SlackClient
@@ -37,6 +46,12 @@ var _ interfaces.SlackClient = &SlackClientMock{}
 //
 //	}
 type SlackClientMock struct {
+	// GetBotInfoFunc mocks the GetBotInfo method.
+	GetBotInfoFunc func(ctx context.Context, botID string) (*interfaces.SlackBotInfo, error)
+
+	// GetUserInfoFunc mocks the GetUserInfo method.
+	GetUserInfoFunc func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error)
+
 	// GetUserProfileFunc mocks the GetUserProfile method.
 	GetUserProfileFunc func(ctx context.Context, userID string) (*interfaces.SlackUserProfile, error)
 
@@ -46,8 +61,25 @@ type SlackClientMock struct {
 	// PostMessageFunc mocks the PostMessage method.
 	PostMessageFunc func(ctx context.Context, channelID string, threadTS string, text string) error
 
+	// PostMessageWithOptionsFunc mocks the PostMessageWithOptions method.
+	PostMessageWithOptionsFunc func(ctx context.Context, channelID string, threadTS string, text string, options *interfaces.SlackMessageOptions) error
+
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetBotInfo holds details about calls to the GetBotInfo method.
+		GetBotInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// BotID is the botID argument value.
+			BotID string
+		}
+		// GetUserInfo holds details about calls to the GetUserInfo method.
+		GetUserInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// UserID is the userID argument value.
+			UserID string
+		}
 		// GetUserProfile holds details about calls to the GetUserProfile method.
 		GetUserProfile []struct {
 			// Ctx is the ctx argument value.
@@ -71,10 +103,98 @@ type SlackClientMock struct {
 			// Text is the text argument value.
 			Text string
 		}
+		// PostMessageWithOptions holds details about calls to the PostMessageWithOptions method.
+		PostMessageWithOptions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ChannelID is the channelID argument value.
+			ChannelID string
+			// ThreadTS is the threadTS argument value.
+			ThreadTS string
+			// Text is the text argument value.
+			Text string
+			// Options is the options argument value.
+			Options *interfaces.SlackMessageOptions
+		}
 	}
-	lockGetUserProfile sync.RWMutex
-	lockIsBotUser      sync.RWMutex
-	lockPostMessage    sync.RWMutex
+	lockGetBotInfo             sync.RWMutex
+	lockGetUserInfo            sync.RWMutex
+	lockGetUserProfile         sync.RWMutex
+	lockIsBotUser              sync.RWMutex
+	lockPostMessage            sync.RWMutex
+	lockPostMessageWithOptions sync.RWMutex
+}
+
+// GetBotInfo calls GetBotInfoFunc.
+func (mock *SlackClientMock) GetBotInfo(ctx context.Context, botID string) (*interfaces.SlackBotInfo, error) {
+	if mock.GetBotInfoFunc == nil {
+		panic("SlackClientMock.GetBotInfoFunc: method is nil but SlackClient.GetBotInfo was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		BotID string
+	}{
+		Ctx:   ctx,
+		BotID: botID,
+	}
+	mock.lockGetBotInfo.Lock()
+	mock.calls.GetBotInfo = append(mock.calls.GetBotInfo, callInfo)
+	mock.lockGetBotInfo.Unlock()
+	return mock.GetBotInfoFunc(ctx, botID)
+}
+
+// GetBotInfoCalls gets all the calls that were made to GetBotInfo.
+// Check the length with:
+//
+//	len(mockedSlackClient.GetBotInfoCalls())
+func (mock *SlackClientMock) GetBotInfoCalls() []struct {
+	Ctx   context.Context
+	BotID string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		BotID string
+	}
+	mock.lockGetBotInfo.RLock()
+	calls = mock.calls.GetBotInfo
+	mock.lockGetBotInfo.RUnlock()
+	return calls
+}
+
+// GetUserInfo calls GetUserInfoFunc.
+func (mock *SlackClientMock) GetUserInfo(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+	if mock.GetUserInfoFunc == nil {
+		panic("SlackClientMock.GetUserInfoFunc: method is nil but SlackClient.GetUserInfo was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		UserID string
+	}{
+		Ctx:    ctx,
+		UserID: userID,
+	}
+	mock.lockGetUserInfo.Lock()
+	mock.calls.GetUserInfo = append(mock.calls.GetUserInfo, callInfo)
+	mock.lockGetUserInfo.Unlock()
+	return mock.GetUserInfoFunc(ctx, userID)
+}
+
+// GetUserInfoCalls gets all the calls that were made to GetUserInfo.
+// Check the length with:
+//
+//	len(mockedSlackClient.GetUserInfoCalls())
+func (mock *SlackClientMock) GetUserInfoCalls() []struct {
+	Ctx    context.Context
+	UserID string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		UserID string
+	}
+	mock.lockGetUserInfo.RLock()
+	calls = mock.calls.GetUserInfo
+	mock.lockGetUserInfo.RUnlock()
+	return calls
 }
 
 // GetUserProfile calls GetUserProfileFunc.
@@ -186,6 +306,54 @@ func (mock *SlackClientMock) PostMessageCalls() []struct {
 	mock.lockPostMessage.RLock()
 	calls = mock.calls.PostMessage
 	mock.lockPostMessage.RUnlock()
+	return calls
+}
+
+// PostMessageWithOptions calls PostMessageWithOptionsFunc.
+func (mock *SlackClientMock) PostMessageWithOptions(ctx context.Context, channelID string, threadTS string, text string, options *interfaces.SlackMessageOptions) error {
+	if mock.PostMessageWithOptionsFunc == nil {
+		panic("SlackClientMock.PostMessageWithOptionsFunc: method is nil but SlackClient.PostMessageWithOptions was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		ChannelID string
+		ThreadTS  string
+		Text      string
+		Options   *interfaces.SlackMessageOptions
+	}{
+		Ctx:       ctx,
+		ChannelID: channelID,
+		ThreadTS:  threadTS,
+		Text:      text,
+		Options:   options,
+	}
+	mock.lockPostMessageWithOptions.Lock()
+	mock.calls.PostMessageWithOptions = append(mock.calls.PostMessageWithOptions, callInfo)
+	mock.lockPostMessageWithOptions.Unlock()
+	return mock.PostMessageWithOptionsFunc(ctx, channelID, threadTS, text, options)
+}
+
+// PostMessageWithOptionsCalls gets all the calls that were made to PostMessageWithOptions.
+// Check the length with:
+//
+//	len(mockedSlackClient.PostMessageWithOptionsCalls())
+func (mock *SlackClientMock) PostMessageWithOptionsCalls() []struct {
+	Ctx       context.Context
+	ChannelID string
+	ThreadTS  string
+	Text      string
+	Options   *interfaces.SlackMessageOptions
+} {
+	var calls []struct {
+		Ctx       context.Context
+		ChannelID string
+		ThreadTS  string
+		Text      string
+		Options   *interfaces.SlackMessageOptions
+	}
+	mock.lockPostMessageWithOptions.RLock()
+	calls = mock.calls.PostMessageWithOptions
+	mock.lockPostMessageWithOptions.RUnlock()
 	return calls
 }
 
