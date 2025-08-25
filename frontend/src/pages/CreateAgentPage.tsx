@@ -58,7 +58,9 @@ export function CreateAgentPage() {
           }))
         }
       })
-      .catch(err => console.error('Failed to fetch LLM config:', err))
+      .catch(() => {
+        // Silently handle LLM config fetch errors
+      })
   }, [])
 
   const checkAgentIdAvailability = async (agentId: string) => {
@@ -78,7 +80,6 @@ export function CreateAgentPage() {
         availability: response.checkAgentIdAvailability 
       })
     } catch (err) {
-      console.error('Failed to check agent ID availability:', err)
       setAgentIdStatus({ checking: false, availability: null })
     }
   }
@@ -150,15 +151,13 @@ export function CreateAgentPage() {
         try {
           await imageUpload.uploadImage(response.createAgent.id)
         } catch (imageError) {
-          // Log image upload error but don't prevent navigation
-          console.warn('Image upload failed:', imageError)
+          // Image upload error but don't prevent navigation
         }
       }
       
       // Navigate to the created agent's detail page
       navigate(`/agents/${response.createAgent.id}`)
     } catch (err) {
-      console.error('Failed to create agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to create agent')
     } finally {
       setLoading(false)

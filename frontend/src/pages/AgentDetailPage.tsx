@@ -74,9 +74,7 @@ export function AgentDetailPage() {
   // Image upload hook
   const imageUpload = useImageUpload({
     initialImageUrl: agent?.imageUrl,
-    onSuccess: (imageUrl) => {
-      console.log('Image upload success, imageUrl:', imageUrl)
-      console.log('Calling fetchAgent() to refresh data...')
+    onSuccess: () => {
       // Refresh agent data after successful image upload
       fetchAgent()
     },
@@ -105,9 +103,6 @@ export function AgentDetailPage() {
       setLoading(true)
       setError(null)
       const response = await graphqlRequest<{ agent: Agent }>(GET_AGENT, { id }, signal)
-      console.log('Fetched agent data:', response.agent)
-      console.log('Agent imageUrl:', response.agent.imageUrl)
-      console.log('Agent image:', response.agent.image)
       setAgent(response.agent)
       setEditForm({
         agentId: response.agent.agentId,
@@ -121,7 +116,6 @@ export function AgentDetailPage() {
       if (err instanceof Error && err.name === 'AbortError') {
         return
       }
-      console.error('Failed to fetch agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to load agent')
     } finally {
       setLoading(false)
@@ -135,7 +129,9 @@ export function AgentDetailPage() {
     // Fetch LLM configuration
     graphqlRequest<{ llmConfig: LLMConfig }>(GET_LLM_CONFIG)
       .then(response => setLlmConfig(response.llmConfig))
-      .catch(err => console.error('Failed to fetch LLM config:', err))
+      .catch(() => {
+        // Silently handle LLM config fetch errors
+      })
     
     return () => {
       controller.abort()
@@ -159,7 +155,6 @@ export function AgentDetailPage() {
         availability: response.checkAgentIdAvailability 
       })
     } catch (err) {
-      console.error('Failed to check agent ID availability:', err)
       setAgentIdStatus({ checking: false, availability: null })
     }
   }
@@ -225,14 +220,12 @@ export function AgentDetailPage() {
         try {
           await imageUpload.uploadImage(agent.id)
         } catch (imageError) {
-          console.warn('Image upload failed:', imageError)
           // Don't prevent saving the agent if image upload fails
         }
       }
       
       setIsEditing(false)
     } catch (err) {
-      console.error('Failed to update agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to update agent')
     } finally {
       setSaving(false)
@@ -275,7 +268,6 @@ export function AgentDetailPage() {
       
       setAgent(response.archiveAgent)
     } catch (err) {
-      console.error('Failed to archive agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to archive agent')
     } finally {
       setIsUpdatingStatus(false)
@@ -295,7 +287,6 @@ export function AgentDetailPage() {
       
       setAgent(response.unarchiveAgent)
     } catch (err) {
-      console.error('Failed to unarchive agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to unarchive agent')
     } finally {
       setIsUpdatingStatus(false)
