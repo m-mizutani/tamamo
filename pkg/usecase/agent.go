@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -135,6 +136,12 @@ func (u *agentUseCaseImpl) GetAgent(ctx context.Context, id types.UUID) (*interf
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to get agent")
 	}
+
+	// DEBUG: Log retrieved agent details
+	slog.Debug("UseCase GetAgent - retrieved from repository",
+		slog.String("agent_id", agentObj.ID.String()),
+		slog.String("agent_name", agentObj.Name),
+		slog.Any("image_id", agentObj.ImageID))
 
 	// Get latest version
 	latestVersion, err := u.agentRepo.GetLatestAgentVersion(ctx, id)

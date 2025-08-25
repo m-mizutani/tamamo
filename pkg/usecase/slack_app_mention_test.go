@@ -10,7 +10,7 @@ import (
 	"github.com/m-mizutani/gollem"
 	llm_mock "github.com/m-mizutani/gollem/mock"
 	"github.com/m-mizutani/gt"
-	mem_storage "github.com/m-mizutani/tamamo/pkg/adapters/memory"
+	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/mock"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
@@ -21,6 +21,30 @@ import (
 	"github.com/sashabaranov/go-openai"
 	"github.com/slack-go/slack/slackevents"
 )
+
+// mockStorageAdapter for testing
+type mockStorageAdapter struct {
+	storage map[string][]byte
+}
+
+func newMockStorageAdapter() *mockStorageAdapter {
+	return &mockStorageAdapter{
+		storage: make(map[string][]byte),
+	}
+}
+
+func (m *mockStorageAdapter) Put(ctx context.Context, key string, data []byte) error {
+	m.storage[key] = data
+	return nil
+}
+
+func (m *mockStorageAdapter) Get(ctx context.Context, key string) ([]byte, error) {
+	data, exists := m.storage[key]
+	if !exists {
+		return nil, interfaces.ErrStorageKeyNotFound
+	}
+	return data, nil
+}
 
 func TestHandleSlackAppMention(t *testing.T) {
 	botUserID := "U12345BOT"
@@ -644,7 +668,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 		// Create repositories
 		repo := memory.New()
 		agentRepo := memory.NewAgentMemoryClient()
-		storageAdapter := mem_storage.New()
+		storageAdapter := newMockStorageAdapter()
 		storageRepo := storage.New(storageAdapter)
 
 		// Create usecase with LLM and agent repository
@@ -726,7 +750,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 		// Create repositories
 		repo := memory.New()
 		agentRepo := memory.NewAgentMemoryClient()
-		storageAdapter := mem_storage.New()
+		storageAdapter := newMockStorageAdapter()
 		storageRepo := storage.New(storageAdapter)
 
 		// Create usecase with LLM and agent repository
@@ -812,7 +836,7 @@ func TestHandleSlackAppMentionWithLLM(t *testing.T) {
 		// Create repositories
 		repo := memory.New()
 		agentRepo := memory.NewAgentMemoryClient()
-		storageAdapter := mem_storage.New()
+		storageAdapter := newMockStorageAdapter()
 		storageRepo := storage.New(storageAdapter)
 
 		// Create usecase with failing LLM and repositories
@@ -1071,7 +1095,7 @@ func TestResolveAgent(t *testing.T) {
 		}
 
 		// Create repositories
-		storageAdapter := mem_storage.New()
+		storageAdapter := newMockStorageAdapter()
 		storageRepo := storage.New(storageAdapter)
 
 		// Create agent repository for modern implementation (now required)
@@ -1188,7 +1212,7 @@ func TestResolveAgent(t *testing.T) {
 		}
 
 		// Create repositories
-		storageAdapter := mem_storage.New()
+		storageAdapter := newMockStorageAdapter()
 		storageRepo := storage.New(storageAdapter)
 
 		// Create usecase with agent repository and LLM

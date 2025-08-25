@@ -17,10 +17,11 @@ func TestLLMConfig_LoadAndValidate(t *testing.T) {
 		// Load configuration
 		llmConfig := &config.LLMConfig{
 			ProvidersFile: configPath,
-			// Set credentials for providers used in defaults/fallback
+			// Set credentials for ALL providers configured in the file
 			GeminiProject:  "test-project",
 			GeminiLocation: "us-central1",
 			OpenAIAPIKey:   "test-openai-key",
+			ClaudeAPIKey:   "test-claude-key", // Add Claude credentials
 		}
 		providersConfig, err := llmConfig.LoadAndValidate()
 		gt.NoError(t, err)
@@ -133,10 +134,11 @@ func TestLLMConfig_BuildFactory(t *testing.T) {
 		// Load configuration
 		llmConfig := &config.LLMConfig{
 			ProvidersFile: configPath,
-			// Set credentials for providers used in defaults/fallback
+			// Set credentials for ALL providers configured in the file
 			GeminiProject:  "test-project",
 			GeminiLocation: "us-central1",
 			OpenAIAPIKey:   "test-openai-key",
+			ClaudeAPIKey:   "test-claude-key", // Add Claude credentials
 			// Override default to OpenAI to avoid Gemini client creation
 			DefaultProvider: "openai",
 			DefaultModel:    "gpt-5-2025-08-07",
@@ -182,11 +184,11 @@ func TestLLMConfig_ValidateProviderModel(t *testing.T) {
 
 	llmConfig := &config.LLMConfig{
 		ProvidersFile: configPath,
-		// Provide credentials for default provider (Gemini)
+		// Provide credentials for ALL providers configured in the file
 		GeminiProject:  "test-project",
 		GeminiLocation: "us-central1",
-		// Also provide OpenAI credentials for fallback
-		OpenAIAPIKey: "test-key",
+		OpenAIAPIKey:   "test-key",
+		ClaudeAPIKey:   "test-claude-key", // Add Claude credentials
 	}
 	providersConfig, err := llmConfig.LoadAndValidate()
 	gt.NoError(t, err)
@@ -219,9 +221,11 @@ func TestLLMConfig_DefaultConfiguration(t *testing.T) {
 	t.Run("Use embedded default when no file specified", func(t *testing.T) {
 		llmConfig := &config.LLMConfig{
 			// No ProvidersFile specified, should use embedded default
-			// Set credentials for default provider (Gemini)
+			// Set credentials for ALL providers in default config
 			GeminiProject:  "test-project",
 			GeminiLocation: "us-central1",
+			OpenAIAPIKey:   "test-openai-key",
+			ClaudeAPIKey:   "test-claude-key",
 		}
 
 		// When no path is provided, it should use the embedded default

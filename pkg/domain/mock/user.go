@@ -306,3 +306,359 @@ func (mock *UserUseCasesMock) UpdateUserCalls() []struct {
 	mock.lockUpdateUser.RUnlock()
 	return calls
 }
+
+// Ensure, that UserRepositoryMock does implement interfaces.UserRepository.
+// If this is not the case, regenerate this file with moq.
+var _ interfaces.UserRepository = &UserRepositoryMock{}
+
+// UserRepositoryMock is a mock implementation of interfaces.UserRepository.
+//
+//	func TestSomethingThatUsesUserRepository(t *testing.T) {
+//
+//		// make and configure a mocked interfaces.UserRepository
+//		mockedUserRepository := &UserRepositoryMock{
+//			CreateFunc: func(ctx context.Context, userMoqParam *user.User) error {
+//				panic("mock out the Create method")
+//			},
+//			GetByIDFunc: func(ctx context.Context, id types.UserID) (*user.User, error) {
+//				panic("mock out the GetByID method")
+//			},
+//			GetBySlackIDAndTeamIDFunc: func(ctx context.Context, slackID string, teamID string) (*user.User, error) {
+//				panic("mock out the GetBySlackIDAndTeamID method")
+//			},
+//			UpdateFunc: func(ctx context.Context, userMoqParam *user.User) error {
+//				panic("mock out the Update method")
+//			},
+//		}
+//
+//		// use mockedUserRepository in code that requires interfaces.UserRepository
+//		// and then make assertions.
+//
+//	}
+type UserRepositoryMock struct {
+	// CreateFunc mocks the Create method.
+	CreateFunc func(ctx context.Context, userMoqParam *user.User) error
+
+	// GetByIDFunc mocks the GetByID method.
+	GetByIDFunc func(ctx context.Context, id types.UserID) (*user.User, error)
+
+	// GetBySlackIDAndTeamIDFunc mocks the GetBySlackIDAndTeamID method.
+	GetBySlackIDAndTeamIDFunc func(ctx context.Context, slackID string, teamID string) (*user.User, error)
+
+	// UpdateFunc mocks the Update method.
+	UpdateFunc func(ctx context.Context, userMoqParam *user.User) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// Create holds details about calls to the Create method.
+		Create []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// UserMoqParam is the userMoqParam argument value.
+			UserMoqParam *user.User
+		}
+		// GetByID holds details about calls to the GetByID method.
+		GetByID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID types.UserID
+		}
+		// GetBySlackIDAndTeamID holds details about calls to the GetBySlackIDAndTeamID method.
+		GetBySlackIDAndTeamID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// SlackID is the slackID argument value.
+			SlackID string
+			// TeamID is the teamID argument value.
+			TeamID string
+		}
+		// Update holds details about calls to the Update method.
+		Update []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// UserMoqParam is the userMoqParam argument value.
+			UserMoqParam *user.User
+		}
+	}
+	lockCreate                sync.RWMutex
+	lockGetByID               sync.RWMutex
+	lockGetBySlackIDAndTeamID sync.RWMutex
+	lockUpdate                sync.RWMutex
+}
+
+// Create calls CreateFunc.
+func (mock *UserRepositoryMock) Create(ctx context.Context, userMoqParam *user.User) error {
+	if mock.CreateFunc == nil {
+		panic("UserRepositoryMock.CreateFunc: method is nil but UserRepository.Create was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		UserMoqParam *user.User
+	}{
+		Ctx:          ctx,
+		UserMoqParam: userMoqParam,
+	}
+	mock.lockCreate.Lock()
+	mock.calls.Create = append(mock.calls.Create, callInfo)
+	mock.lockCreate.Unlock()
+	return mock.CreateFunc(ctx, userMoqParam)
+}
+
+// CreateCalls gets all the calls that were made to Create.
+// Check the length with:
+//
+//	len(mockedUserRepository.CreateCalls())
+func (mock *UserRepositoryMock) CreateCalls() []struct {
+	Ctx          context.Context
+	UserMoqParam *user.User
+} {
+	var calls []struct {
+		Ctx          context.Context
+		UserMoqParam *user.User
+	}
+	mock.lockCreate.RLock()
+	calls = mock.calls.Create
+	mock.lockCreate.RUnlock()
+	return calls
+}
+
+// GetByID calls GetByIDFunc.
+func (mock *UserRepositoryMock) GetByID(ctx context.Context, id types.UserID) (*user.User, error) {
+	if mock.GetByIDFunc == nil {
+		panic("UserRepositoryMock.GetByIDFunc: method is nil but UserRepository.GetByID was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  types.UserID
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetByID.Lock()
+	mock.calls.GetByID = append(mock.calls.GetByID, callInfo)
+	mock.lockGetByID.Unlock()
+	return mock.GetByIDFunc(ctx, id)
+}
+
+// GetByIDCalls gets all the calls that were made to GetByID.
+// Check the length with:
+//
+//	len(mockedUserRepository.GetByIDCalls())
+func (mock *UserRepositoryMock) GetByIDCalls() []struct {
+	Ctx context.Context
+	ID  types.UserID
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  types.UserID
+	}
+	mock.lockGetByID.RLock()
+	calls = mock.calls.GetByID
+	mock.lockGetByID.RUnlock()
+	return calls
+}
+
+// GetBySlackIDAndTeamID calls GetBySlackIDAndTeamIDFunc.
+func (mock *UserRepositoryMock) GetBySlackIDAndTeamID(ctx context.Context, slackID string, teamID string) (*user.User, error) {
+	if mock.GetBySlackIDAndTeamIDFunc == nil {
+		panic("UserRepositoryMock.GetBySlackIDAndTeamIDFunc: method is nil but UserRepository.GetBySlackIDAndTeamID was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		SlackID string
+		TeamID  string
+	}{
+		Ctx:     ctx,
+		SlackID: slackID,
+		TeamID:  teamID,
+	}
+	mock.lockGetBySlackIDAndTeamID.Lock()
+	mock.calls.GetBySlackIDAndTeamID = append(mock.calls.GetBySlackIDAndTeamID, callInfo)
+	mock.lockGetBySlackIDAndTeamID.Unlock()
+	return mock.GetBySlackIDAndTeamIDFunc(ctx, slackID, teamID)
+}
+
+// GetBySlackIDAndTeamIDCalls gets all the calls that were made to GetBySlackIDAndTeamID.
+// Check the length with:
+//
+//	len(mockedUserRepository.GetBySlackIDAndTeamIDCalls())
+func (mock *UserRepositoryMock) GetBySlackIDAndTeamIDCalls() []struct {
+	Ctx     context.Context
+	SlackID string
+	TeamID  string
+} {
+	var calls []struct {
+		Ctx     context.Context
+		SlackID string
+		TeamID  string
+	}
+	mock.lockGetBySlackIDAndTeamID.RLock()
+	calls = mock.calls.GetBySlackIDAndTeamID
+	mock.lockGetBySlackIDAndTeamID.RUnlock()
+	return calls
+}
+
+// Update calls UpdateFunc.
+func (mock *UserRepositoryMock) Update(ctx context.Context, userMoqParam *user.User) error {
+	if mock.UpdateFunc == nil {
+		panic("UserRepositoryMock.UpdateFunc: method is nil but UserRepository.Update was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		UserMoqParam *user.User
+	}{
+		Ctx:          ctx,
+		UserMoqParam: userMoqParam,
+	}
+	mock.lockUpdate.Lock()
+	mock.calls.Update = append(mock.calls.Update, callInfo)
+	mock.lockUpdate.Unlock()
+	return mock.UpdateFunc(ctx, userMoqParam)
+}
+
+// UpdateCalls gets all the calls that were made to Update.
+// Check the length with:
+//
+//	len(mockedUserRepository.UpdateCalls())
+func (mock *UserRepositoryMock) UpdateCalls() []struct {
+	Ctx          context.Context
+	UserMoqParam *user.User
+} {
+	var calls []struct {
+		Ctx          context.Context
+		UserMoqParam *user.User
+	}
+	mock.lockUpdate.RLock()
+	calls = mock.calls.Update
+	mock.lockUpdate.RUnlock()
+	return calls
+}
+
+// Ensure, that UserAvatarServiceMock does implement interfaces.UserAvatarService.
+// If this is not the case, regenerate this file with moq.
+var _ interfaces.UserAvatarService = &UserAvatarServiceMock{}
+
+// UserAvatarServiceMock is a mock implementation of interfaces.UserAvatarService.
+//
+//	func TestSomethingThatUsesUserAvatarService(t *testing.T) {
+//
+//		// make and configure a mocked interfaces.UserAvatarService
+//		mockedUserAvatarService := &UserAvatarServiceMock{
+//			GetAvatarDataFunc: func(ctx context.Context, slackID string, size int) ([]byte, error) {
+//				panic("mock out the GetAvatarData method")
+//			},
+//			InvalidateCacheFunc: func(ctx context.Context, slackID string) error {
+//				panic("mock out the InvalidateCache method")
+//			},
+//		}
+//
+//		// use mockedUserAvatarService in code that requires interfaces.UserAvatarService
+//		// and then make assertions.
+//
+//	}
+type UserAvatarServiceMock struct {
+	// GetAvatarDataFunc mocks the GetAvatarData method.
+	GetAvatarDataFunc func(ctx context.Context, slackID string, size int) ([]byte, error)
+
+	// InvalidateCacheFunc mocks the InvalidateCache method.
+	InvalidateCacheFunc func(ctx context.Context, slackID string) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetAvatarData holds details about calls to the GetAvatarData method.
+		GetAvatarData []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// SlackID is the slackID argument value.
+			SlackID string
+			// Size is the size argument value.
+			Size int
+		}
+		// InvalidateCache holds details about calls to the InvalidateCache method.
+		InvalidateCache []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// SlackID is the slackID argument value.
+			SlackID string
+		}
+	}
+	lockGetAvatarData   sync.RWMutex
+	lockInvalidateCache sync.RWMutex
+}
+
+// GetAvatarData calls GetAvatarDataFunc.
+func (mock *UserAvatarServiceMock) GetAvatarData(ctx context.Context, slackID string, size int) ([]byte, error) {
+	if mock.GetAvatarDataFunc == nil {
+		panic("UserAvatarServiceMock.GetAvatarDataFunc: method is nil but UserAvatarService.GetAvatarData was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		SlackID string
+		Size    int
+	}{
+		Ctx:     ctx,
+		SlackID: slackID,
+		Size:    size,
+	}
+	mock.lockGetAvatarData.Lock()
+	mock.calls.GetAvatarData = append(mock.calls.GetAvatarData, callInfo)
+	mock.lockGetAvatarData.Unlock()
+	return mock.GetAvatarDataFunc(ctx, slackID, size)
+}
+
+// GetAvatarDataCalls gets all the calls that were made to GetAvatarData.
+// Check the length with:
+//
+//	len(mockedUserAvatarService.GetAvatarDataCalls())
+func (mock *UserAvatarServiceMock) GetAvatarDataCalls() []struct {
+	Ctx     context.Context
+	SlackID string
+	Size    int
+} {
+	var calls []struct {
+		Ctx     context.Context
+		SlackID string
+		Size    int
+	}
+	mock.lockGetAvatarData.RLock()
+	calls = mock.calls.GetAvatarData
+	mock.lockGetAvatarData.RUnlock()
+	return calls
+}
+
+// InvalidateCache calls InvalidateCacheFunc.
+func (mock *UserAvatarServiceMock) InvalidateCache(ctx context.Context, slackID string) error {
+	if mock.InvalidateCacheFunc == nil {
+		panic("UserAvatarServiceMock.InvalidateCacheFunc: method is nil but UserAvatarService.InvalidateCache was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		SlackID string
+	}{
+		Ctx:     ctx,
+		SlackID: slackID,
+	}
+	mock.lockInvalidateCache.Lock()
+	mock.calls.InvalidateCache = append(mock.calls.InvalidateCache, callInfo)
+	mock.lockInvalidateCache.Unlock()
+	return mock.InvalidateCacheFunc(ctx, slackID)
+}
+
+// InvalidateCacheCalls gets all the calls that were made to InvalidateCache.
+// Check the length with:
+//
+//	len(mockedUserAvatarService.InvalidateCacheCalls())
+func (mock *UserAvatarServiceMock) InvalidateCacheCalls() []struct {
+	Ctx     context.Context
+	SlackID string
+} {
+	var calls []struct {
+		Ctx     context.Context
+		SlackID string
+	}
+	mock.lockInvalidateCache.RLock()
+	calls = mock.calls.InvalidateCache
+	mock.lockInvalidateCache.RUnlock()
+	return calls
+}

@@ -2,9 +2,11 @@ package interfaces
 
 import (
 	"context"
+	"io"
 
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/image"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
@@ -103,4 +105,30 @@ type UserUseCases interface {
 	UpdateUser(ctx context.Context, user *user.User) error
 	GetUserAvatar(ctx context.Context, userID types.UserID, size int) ([]byte, error)
 	InvalidateUserAvatarCache(ctx context.Context, userID types.UserID) error
+}
+
+// UploadImageRequest represents an image upload request
+type UploadImageRequest struct {
+	AgentID     types.UUID    `json:"agent_id"`
+	FileReader  io.ReadSeeker `json:"-"`
+	ContentType string        `json:"content_type"`
+	FileSize    int64         `json:"file_size"`
+}
+
+// ImageData represents image data with metadata
+type ImageData struct {
+	Data        []byte `json:"-"`
+	ContentType string `json:"content_type"`
+}
+
+// ImageUseCases handles image management operations
+type ImageUseCases interface {
+	// Upload and process agent image
+	UploadAgentImage(ctx context.Context, req *UploadImageRequest) (*image.AgentImage, error)
+
+	// Get agent image data (original or thumbnail)
+	GetAgentImageData(ctx context.Context, agentID types.UUID, thumbnailSize string) (*ImageData, error)
+
+	// Get agent image metadata
+	GetAgentImageInfo(ctx context.Context, agentID types.UUID) (*image.AgentImage, error)
 }

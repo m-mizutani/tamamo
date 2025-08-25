@@ -28,6 +28,7 @@ type Message struct {
 	Text      string          `json:"text"`
 	UserID    string          `json:"user_id"`
 	UserName  string          `json:"user_name"`
+	BotID     string          `json:"bot_id,omitempty"` // Bot ID for bot messages
 	Timestamp string          `json:"timestamp"`
 	CreatedAt time.Time       `json:"created_at"`
 
@@ -68,7 +69,8 @@ func (m *Message) Validate() error {
 	if m.ThreadID != "" && !m.ThreadID.IsValid() {
 		return ErrInvalidThreadID
 	}
-	if m.UserID == "" {
+	// Either UserID or BotID must be present
+	if m.UserID == "" && m.BotID == "" {
 		return ErrEmptyUserID
 	}
 	if m.Text == "" {
@@ -93,7 +95,7 @@ func NewMessage(ctx context.Context, ev *slackevents.EventsAPIEvent) *Message {
 			Channel:   inEv.Channel,
 			TeamID:    ev.TeamID,
 			UserID:    inEv.User,
-			UserName:  inEv.User, // TODO: get user name from Slack API
+			UserName:  getUserDisplayName(inEv.User, ""), // App mentions are always from users
 			Text:      inEv.Text,
 			Timestamp: inEv.TimeStamp,
 			Mentions:  ParseMention(inEv.Text),
@@ -106,8 +108,9 @@ func NewMessage(ctx context.Context, ev *slackevents.EventsAPIEvent) *Message {
 			ThreadTS:  inEv.ThreadTimeStamp,
 			Channel:   inEv.Channel,
 			TeamID:    ev.TeamID,
-			UserID:    inEv.User,
-			UserName:  inEv.User, // TODO: get user name from Slack API
+			UserID:    inEv.User,                                 // User ID (empty for bot messages)
+			BotID:     inEv.BotID,                                // Bot ID (only for bot messages)
+			UserName:  getUserDisplayName(inEv.User, inEv.BotID), // Will implement this
 			Text:      inEv.Text,
 			Timestamp: inEv.TimeStamp,
 			Mentions:  ParseMention(inEv.Text),
@@ -118,4 +121,18 @@ func NewMessage(ctx context.Context, ev *slackevents.EventsAPIEvent) *Message {
 		ctxlog.From(ctx).Warn("unknown event type", "event", inEv)
 		return nil
 	}
+}
+
+// getUserDisplayName returns a display name for the user or bot
+// For now, returns the ID as placeholder - TODO: implement proper Slack API integration
+func getUserDisplayName(userID, botID string) string {
+	if userID != "" {
+		// TODO: Fetch user display name from Slack API
+		return userID // Placeholder: return user ID for now
+	}
+	if botID != "" {
+		// TODO: Fetch bot display name from Slack API
+		return botID // Placeholder: return bot ID for now
+	}
+	return "unknown"
 }

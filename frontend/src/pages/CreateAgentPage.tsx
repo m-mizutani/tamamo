@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ImageUpload } from '@/components/ImageUpload'
 import { ArrowLeft, Save, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 import { 
   CreateAgentInput, 
@@ -16,6 +17,7 @@ import {
   AgentIdAvailability,
   LLMConfig 
 } from '@/lib/graphql'
+import { useImageUpload } from '@/hooks/useImageUpload'
 
 export function CreateAgentPage() {
   const navigate = useNavigate()
@@ -26,6 +28,11 @@ export function CreateAgentPage() {
     checking: boolean
     availability: AgentIdAvailability | null
   }>({ checking: false, availability: null })
+
+  // Image upload hook
+  const imageUpload = useImageUpload({
+    onError: (error) => setError(`Image upload failed: ${error}`)
+  })
 
   const [formData, setFormData] = useState<CreateAgentInput>({
     agentId: '',
@@ -51,7 +58,9 @@ export function CreateAgentPage() {
           }))
         }
       })
-      .catch(err => console.error('Failed to fetch LLM config:', err))
+      .catch(() => {
+        // Silently handle LLM config fetch errors
+      })
   }, [])
 
   const checkAgentIdAvailability = async (agentId: string) => {
@@ -71,7 +80,6 @@ export function CreateAgentPage() {
         availability: response.checkAgentIdAvailability 
       })
     } catch (err) {
-      console.error('Failed to check agent ID availability:', err)
       setAgentIdStatus({ checking: false, availability: null })
     }
   }
@@ -138,10 +146,18 @@ export function CreateAgentPage() {
         input
       })
       
+      // Upload image if one was selected
+      if (imageUpload.selectedFile) {
+        try {
+          await imageUpload.uploadImage(response.createAgent.id)
+        } catch (imageError) {
+          // Image upload error but don't prevent navigation
+        }
+      }
+      
       // Navigate to the created agent's detail page
       navigate(`/agents/${response.createAgent.id}`)
     } catch (err) {
-      console.error('Failed to create agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to create agent')
     } finally {
       setLoading(false)
@@ -262,6 +278,23 @@ export function CreateAgentPage() {
                 rows={3}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Agent Image</CardTitle>
+            <CardDescription>
+              Upload an image to represent this agent (optional)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ImageUpload
+              onImageSelect={imageUpload.handleFileSelect}
+              previewUrl={imageUpload.preview}
+              isUploading={imageUpload.isUploading}
+              error={imageUpload.error}
+            />
           </CardContent>
         </Card>
 

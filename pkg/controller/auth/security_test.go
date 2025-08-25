@@ -67,7 +67,7 @@ func TestAuthSecurity_SessionCookieTampering(t *testing.T) {
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000")
 
 	// Create a test user first
 	testUser, err := userUseCase.GetOrCreateUser(ctx, "U123456789", "Test User", "test@example.com", "T123456")
@@ -243,7 +243,7 @@ func TestAuthSecurity_SessionFixation(t *testing.T) {
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000")
 
 	t.Run("PredictableSessionID", func(t *testing.T) {
 		// Create a test user first
@@ -304,7 +304,7 @@ func TestAuthSecurity_UserIDValidation(t *testing.T) {
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000")
 
 	t.Run("InvalidUserIDFormat", func(t *testing.T) {
 		// Create session with invalid UserID format

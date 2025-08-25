@@ -57,6 +57,8 @@ type ComplexityRoot struct {
 		CreatedAt     func(childComplexity int) int
 		Description   func(childComplexity int) int
 		ID            func(childComplexity int) int
+		Image         func(childComplexity int) int
+		ImageURL      func(childComplexity int) int
 		Latest        func(childComplexity int) int
 		LatestVersion func(childComplexity int) int
 		Name          func(childComplexity int) int
@@ -67,6 +69,19 @@ type ComplexityRoot struct {
 	AgentIdAvailability struct {
 		Available func(childComplexity int) int
 		Message   func(childComplexity int) int
+	}
+
+	AgentImage struct {
+		AgentID     func(childComplexity int) int
+		ContentType func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		FileSize    func(childComplexity int) int
+		Height      func(childComplexity int) int
+		ID          func(childComplexity int) int
+		StorageKey  func(childComplexity int) int
+		Thumbnails  func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+		Width       func(childComplexity int) int
 	}
 
 	AgentListResponse struct {
@@ -114,11 +129,14 @@ type ComplexityRoot struct {
 		UpdateAgent        func(childComplexity int, id string, input graphql1.UpdateAgentInput) int
 		UpdateDefaultLlm   func(childComplexity int, provider string, model string) int
 		UpdateFallbackLlm  func(childComplexity int, enabled bool, provider *string, model *string) int
+		UploadAgentImage   func(childComplexity int, agentID string, file graphql.Upload) int
 	}
 
 	Query struct {
 		Agent                    func(childComplexity int, id string) int
 		AgentByAgentID           func(childComplexity int, agentID string) int
+		AgentImage               func(childComplexity int, id string) int
+		AgentImageByAgentID      func(childComplexity int, agentID string) int
 		AgentVersions            func(childComplexity int, agentUUID string) int
 		Agents                   func(childComplexity int, offset *int, limit *int) int
 		AgentsByStatus           func(childComplexity int, status graphql1.AgentStatus, offset *int, limit *int) int
@@ -145,6 +163,11 @@ type ComplexityRoot struct {
 		TotalCount func(childComplexity int) int
 	}
 
+	ThumbnailInfo struct {
+		Size func(childComplexity int) int
+		URL  func(childComplexity int) int
+	}
+
 	User struct {
 		CreatedAt   func(childComplexity int) int
 		DisplayName func(childComplexity int) int
@@ -162,6 +185,7 @@ type MutationResolver interface {
 	ArchiveAgent(ctx context.Context, id string) (*graphql1.Agent, error)
 	UnarchiveAgent(ctx context.Context, id string) (*graphql1.Agent, error)
 	CreateAgentVersion(ctx context.Context, input graphql1.CreateAgentVersionInput) (*graphql1.AgentVersion, error)
+	UploadAgentImage(ctx context.Context, agentID string, file graphql.Upload) (*graphql1.Agent, error)
 	UpdateDefaultLlm(ctx context.Context, provider string, model string) (*graphql1.LLMConfig, error)
 	UpdateFallbackLlm(ctx context.Context, enabled bool, provider *string, model *string) (*graphql1.LLMConfig, error)
 }
@@ -175,6 +199,8 @@ type QueryResolver interface {
 	AgentsByStatus(ctx context.Context, status graphql1.AgentStatus, offset *int, limit *int) (*graphql1.AgentListResponse, error)
 	AgentVersions(ctx context.Context, agentUUID string) ([]*graphql1.AgentVersion, error)
 	CheckAgentIDAvailability(ctx context.Context, agentID string) (*graphql1.AgentIDAvailability, error)
+	AgentImage(ctx context.Context, id string) (*graphql1.AgentImage, error)
+	AgentImageByAgentID(ctx context.Context, agentID string) (*graphql1.AgentImage, error)
 	User(ctx context.Context, id string) (*user.User, error)
 	CurrentUser(ctx context.Context) (*user.User, error)
 	LlmConfig(ctx context.Context) (*graphql1.LLMConfig, error)
@@ -240,6 +266,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Agent.ID(childComplexity), true
 
+	case "Agent.image":
+		if e.complexity.Agent.Image == nil {
+			break
+		}
+
+		return e.complexity.Agent.Image(childComplexity), true
+
+	case "Agent.imageUrl":
+		if e.complexity.Agent.ImageURL == nil {
+			break
+		}
+
+		return e.complexity.Agent.ImageURL(childComplexity), true
+
 	case "Agent.latest":
 		if e.complexity.Agent.Latest == nil {
 			break
@@ -288,6 +328,76 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AgentIdAvailability.Message(childComplexity), true
+
+	case "AgentImage.agentId":
+		if e.complexity.AgentImage.AgentID == nil {
+			break
+		}
+
+		return e.complexity.AgentImage.AgentID(childComplexity), true
+
+	case "AgentImage.contentType":
+		if e.complexity.AgentImage.ContentType == nil {
+			break
+		}
+
+		return e.complexity.AgentImage.ContentType(childComplexity), true
+
+	case "AgentImage.createdAt":
+		if e.complexity.AgentImage.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.AgentImage.CreatedAt(childComplexity), true
+
+	case "AgentImage.fileSize":
+		if e.complexity.AgentImage.FileSize == nil {
+			break
+		}
+
+		return e.complexity.AgentImage.FileSize(childComplexity), true
+
+	case "AgentImage.height":
+		if e.complexity.AgentImage.Height == nil {
+			break
+		}
+
+		return e.complexity.AgentImage.Height(childComplexity), true
+
+	case "AgentImage.id":
+		if e.complexity.AgentImage.ID == nil {
+			break
+		}
+
+		return e.complexity.AgentImage.ID(childComplexity), true
+
+	case "AgentImage.storageKey":
+		if e.complexity.AgentImage.StorageKey == nil {
+			break
+		}
+
+		return e.complexity.AgentImage.StorageKey(childComplexity), true
+
+	case "AgentImage.thumbnails":
+		if e.complexity.AgentImage.Thumbnails == nil {
+			break
+		}
+
+		return e.complexity.AgentImage.Thumbnails(childComplexity), true
+
+	case "AgentImage.updatedAt":
+		if e.complexity.AgentImage.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.AgentImage.UpdatedAt(childComplexity), true
+
+	case "AgentImage.width":
+		if e.complexity.AgentImage.Width == nil {
+			break
+		}
+
+		return e.complexity.AgentImage.Width(childComplexity), true
 
 	case "AgentListResponse.agents":
 		if e.complexity.AgentListResponse.Agents == nil {
@@ -532,6 +642,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.UpdateFallbackLlm(childComplexity, args["enabled"].(bool), args["provider"].(*string), args["model"].(*string)), true
 
+	case "Mutation.uploadAgentImage":
+		if e.complexity.Mutation.UploadAgentImage == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_uploadAgentImage_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UploadAgentImage(childComplexity, args["agentId"].(string), args["file"].(graphql.Upload)), true
+
 	case "Query.agent":
 		if e.complexity.Query.Agent == nil {
 			break
@@ -555,6 +677,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.AgentByAgentID(childComplexity, args["agentId"].(string)), true
+
+	case "Query.agentImage":
+		if e.complexity.Query.AgentImage == nil {
+			break
+		}
+
+		args, err := ec.field_Query_agentImage_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AgentImage(childComplexity, args["id"].(string)), true
+
+	case "Query.agentImageByAgentId":
+		if e.complexity.Query.AgentImageByAgentID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_agentImageByAgentId_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AgentImageByAgentID(childComplexity, args["agentId"].(string)), true
 
 	case "Query.agentVersions":
 		if e.complexity.Query.AgentVersions == nil {
@@ -722,6 +868,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.ThreadsResponse.TotalCount(childComplexity), true
 
+	case "ThumbnailInfo.size":
+		if e.complexity.ThumbnailInfo.Size == nil {
+			break
+		}
+
+		return e.complexity.ThumbnailInfo.Size(childComplexity), true
+
+	case "ThumbnailInfo.url":
+		if e.complexity.ThumbnailInfo.URL == nil {
+			break
+		}
+
+		return e.complexity.ThumbnailInfo.URL(childComplexity), true
+
 	case "User.createdAt":
 		if e.complexity.User.CreatedAt == nil {
 			break
@@ -873,6 +1033,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "../../../graphql/schema.graphql", Input: `scalar Time
+scalar Upload
 
 enum LLMProvider {
   OPENAI
@@ -919,6 +1080,8 @@ type Agent {
   createdAt: Time!
   updatedAt: Time!
   latestVersion: AgentVersion
+  image: AgentImage
+  imageUrl: String
 }
 
 type AgentVersion {
@@ -929,6 +1092,24 @@ type AgentVersion {
   llmModel: String
   createdAt: Time!
   updatedAt: Time!
+}
+
+type AgentImage {
+  id: ID!
+  agentId: ID!
+  storageKey: String!
+  contentType: String!
+  fileSize: Int!
+  width: Int!
+  height: Int!
+  thumbnails: [ThumbnailInfo!]!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type ThumbnailInfo {
+  size: String!
+  url: String!
 }
 
 type AgentListResponse {
@@ -1001,6 +1182,9 @@ type Query {
   agentVersions(agentUuid: ID!): [AgentVersion!]!
   checkAgentIdAvailability(agentId: String!): AgentIdAvailability!
   
+  agentImage(id: ID!): AgentImage
+  agentImageByAgentId(agentId: ID!): AgentImage
+  
   user(id: ID!): User
   currentUser: User
   
@@ -1014,6 +1198,8 @@ type Mutation {
   archiveAgent(id: ID!): Agent!
   unarchiveAgent(id: ID!): Agent!
   createAgentVersion(input: CreateAgentVersionInput!): AgentVersion!
+  
+  uploadAgentImage(agentId: ID!, file: Upload!): Agent!
   
   updateDefaultLLM(provider: String!, model: String!): LLMConfig!
   updateFallbackLLM(enabled: Boolean!, provider: String, model: String): LLMConfig!
@@ -1138,6 +1324,22 @@ func (ec *executionContext) field_Mutation_updateFallbackLLM_args(ctx context.Co
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_uploadAgentImage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "agentId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["agentId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "file", ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload)
+	if err != nil {
+		return nil, err
+	}
+	args["file"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1157,6 +1359,28 @@ func (ec *executionContext) field_Query_agentByAgentId_args(ctx context.Context,
 		return nil, err
 	}
 	args["agentId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_agentImageByAgentId_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "agentId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["agentId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_agentImage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -1800,6 +2024,110 @@ func (ec *executionContext) fieldContext_Agent_latestVersion(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Agent_image(ctx context.Context, field graphql.CollectedField, obj *graphql1.Agent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Agent_image(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Image, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentImage)
+	fc.Result = res
+	return ec.marshalOAgentImage2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentImage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Agent_image(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Agent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentImage_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentImage_agentId(ctx, field)
+			case "storageKey":
+				return ec.fieldContext_AgentImage_storageKey(ctx, field)
+			case "contentType":
+				return ec.fieldContext_AgentImage_contentType(ctx, field)
+			case "fileSize":
+				return ec.fieldContext_AgentImage_fileSize(ctx, field)
+			case "width":
+				return ec.fieldContext_AgentImage_width(ctx, field)
+			case "height":
+				return ec.fieldContext_AgentImage_height(ctx, field)
+			case "thumbnails":
+				return ec.fieldContext_AgentImage_thumbnails(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentImage_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentImage_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentImage", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Agent_imageUrl(ctx context.Context, field graphql.CollectedField, obj *graphql1.Agent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Agent_imageUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ImageURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Agent_imageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Agent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AgentIdAvailability_available(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentIDAvailability) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AgentIdAvailability_available(ctx, field)
 	if err != nil {
@@ -1888,6 +2216,452 @@ func (ec *executionContext) fieldContext_AgentIdAvailability_message(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _AgentImage_id(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentImage_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentImage_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentImage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentImage_agentId(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentImage_agentId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentImage_agentId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentImage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentImage_storageKey(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentImage_storageKey(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StorageKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentImage_storageKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentImage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentImage_contentType(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentImage_contentType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContentType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentImage_contentType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentImage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentImage_fileSize(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentImage_fileSize(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentImage_fileSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentImage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentImage_width(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentImage_width(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Width, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentImage_width(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentImage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentImage_height(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentImage_height(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Height, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentImage_height(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentImage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentImage_thumbnails(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentImage_thumbnails(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Thumbnails, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*graphql1.ThumbnailInfo)
+	fc.Result = res
+	return ec.marshalNThumbnailInfo2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐThumbnailInfoᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentImage_thumbnails(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentImage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "size":
+				return ec.fieldContext_ThumbnailInfo_size(ctx, field)
+			case "url":
+				return ec.fieldContext_ThumbnailInfo_url(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ThumbnailInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentImage_createdAt(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentImage_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentImage_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentImage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentImage_updatedAt(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentImage_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentImage_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentImage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AgentListResponse_agents(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentListResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AgentListResponse_agents(ctx, field)
 	if err != nil {
@@ -1947,6 +2721,10 @@ func (ec *executionContext) fieldContext_AgentListResponse_agents(_ context.Cont
 				return ec.fieldContext_Agent_updatedAt(ctx, field)
 			case "latestVersion":
 				return ec.fieldContext_Agent_latestVersion(ctx, field)
+			case "image":
+				return ec.fieldContext_Agent_image(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Agent_imageUrl(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -2903,6 +3681,10 @@ func (ec *executionContext) fieldContext_Mutation_createAgent(ctx context.Contex
 				return ec.fieldContext_Agent_updatedAt(ctx, field)
 			case "latestVersion":
 				return ec.fieldContext_Agent_latestVersion(ctx, field)
+			case "image":
+				return ec.fieldContext_Agent_image(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Agent_imageUrl(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -2980,6 +3762,10 @@ func (ec *executionContext) fieldContext_Mutation_updateAgent(ctx context.Contex
 				return ec.fieldContext_Agent_updatedAt(ctx, field)
 			case "latestVersion":
 				return ec.fieldContext_Agent_latestVersion(ctx, field)
+			case "image":
+				return ec.fieldContext_Agent_image(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Agent_imageUrl(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -3112,6 +3898,10 @@ func (ec *executionContext) fieldContext_Mutation_archiveAgent(ctx context.Conte
 				return ec.fieldContext_Agent_updatedAt(ctx, field)
 			case "latestVersion":
 				return ec.fieldContext_Agent_latestVersion(ctx, field)
+			case "image":
+				return ec.fieldContext_Agent_image(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Agent_imageUrl(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -3189,6 +3979,10 @@ func (ec *executionContext) fieldContext_Mutation_unarchiveAgent(ctx context.Con
 				return ec.fieldContext_Agent_updatedAt(ctx, field)
 			case "latestVersion":
 				return ec.fieldContext_Agent_latestVersion(ctx, field)
+			case "image":
+				return ec.fieldContext_Agent_image(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Agent_imageUrl(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -3272,6 +4066,87 @@ func (ec *executionContext) fieldContext_Mutation_createAgentVersion(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createAgentVersion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_uploadAgentImage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_uploadAgentImage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UploadAgentImage(rctx, fc.Args["agentId"].(string), fc.Args["file"].(graphql.Upload))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.Agent)
+	fc.Result = res
+	return ec.marshalNAgent2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_uploadAgentImage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Agent_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_Agent_agentId(ctx, field)
+			case "name":
+				return ec.fieldContext_Agent_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Agent_description(ctx, field)
+			case "author":
+				return ec.fieldContext_Agent_author(ctx, field)
+			case "status":
+				return ec.fieldContext_Agent_status(ctx, field)
+			case "latest":
+				return ec.fieldContext_Agent_latest(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Agent_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Agent_updatedAt(ctx, field)
+			case "latestVersion":
+				return ec.fieldContext_Agent_latestVersion(ctx, field)
+			case "image":
+				return ec.fieldContext_Agent_image(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Agent_imageUrl(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_uploadAgentImage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3599,6 +4474,10 @@ func (ec *executionContext) fieldContext_Query_agent(ctx context.Context, field 
 				return ec.fieldContext_Agent_updatedAt(ctx, field)
 			case "latestVersion":
 				return ec.fieldContext_Agent_latestVersion(ctx, field)
+			case "image":
+				return ec.fieldContext_Agent_image(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Agent_imageUrl(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -3673,6 +4552,10 @@ func (ec *executionContext) fieldContext_Query_agentByAgentId(ctx context.Contex
 				return ec.fieldContext_Agent_updatedAt(ctx, field)
 			case "latestVersion":
 				return ec.fieldContext_Agent_latestVersion(ctx, field)
+			case "image":
+				return ec.fieldContext_Agent_image(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Agent_imageUrl(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -4000,6 +4883,154 @@ func (ec *executionContext) fieldContext_Query_checkAgentIdAvailability(ctx cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_checkAgentIdAvailability_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_agentImage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_agentImage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AgentImage(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentImage)
+	fc.Result = res
+	return ec.marshalOAgentImage2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentImage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_agentImage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentImage_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentImage_agentId(ctx, field)
+			case "storageKey":
+				return ec.fieldContext_AgentImage_storageKey(ctx, field)
+			case "contentType":
+				return ec.fieldContext_AgentImage_contentType(ctx, field)
+			case "fileSize":
+				return ec.fieldContext_AgentImage_fileSize(ctx, field)
+			case "width":
+				return ec.fieldContext_AgentImage_width(ctx, field)
+			case "height":
+				return ec.fieldContext_AgentImage_height(ctx, field)
+			case "thumbnails":
+				return ec.fieldContext_AgentImage_thumbnails(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentImage_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentImage_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentImage", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_agentImage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_agentImageByAgentId(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_agentImageByAgentId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AgentImageByAgentID(rctx, fc.Args["agentId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentImage)
+	fc.Result = res
+	return ec.marshalOAgentImage2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentImage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_agentImageByAgentId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentImage_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentImage_agentId(ctx, field)
+			case "storageKey":
+				return ec.fieldContext_AgentImage_storageKey(ctx, field)
+			case "contentType":
+				return ec.fieldContext_AgentImage_contentType(ctx, field)
+			case "fileSize":
+				return ec.fieldContext_AgentImage_fileSize(ctx, field)
+			case "width":
+				return ec.fieldContext_AgentImage_width(ctx, field)
+			case "height":
+				return ec.fieldContext_AgentImage_height(ctx, field)
+			case "thumbnails":
+				return ec.fieldContext_AgentImage_thumbnails(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentImage_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentImage_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentImage", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_agentImageByAgentId_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4677,6 +5708,94 @@ func (ec *executionContext) fieldContext_ThreadsResponse_totalCount(_ context.Co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ThumbnailInfo_size(ctx context.Context, field graphql.CollectedField, obj *graphql1.ThumbnailInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ThumbnailInfo_size(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Size, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ThumbnailInfo_size(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ThumbnailInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ThumbnailInfo_url(ctx context.Context, field graphql.CollectedField, obj *graphql1.ThumbnailInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ThumbnailInfo_url(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ThumbnailInfo_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ThumbnailInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7143,6 +8262,10 @@ func (ec *executionContext) _Agent(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "latestVersion":
 			out.Values[i] = ec._Agent_latestVersion(ctx, field, obj)
+		case "image":
+			out.Values[i] = ec._Agent_image(ctx, field, obj)
+		case "imageUrl":
+			out.Values[i] = ec._Agent_imageUrl(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7184,6 +8307,90 @@ func (ec *executionContext) _AgentIdAvailability(ctx context.Context, sel ast.Se
 			}
 		case "message":
 			out.Values[i] = ec._AgentIdAvailability_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var agentImageImplementors = []string{"AgentImage"}
+
+func (ec *executionContext) _AgentImage(ctx context.Context, sel ast.SelectionSet, obj *graphql1.AgentImage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, agentImageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AgentImage")
+		case "id":
+			out.Values[i] = ec._AgentImage_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "agentId":
+			out.Values[i] = ec._AgentImage_agentId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "storageKey":
+			out.Values[i] = ec._AgentImage_storageKey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "contentType":
+			out.Values[i] = ec._AgentImage_contentType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fileSize":
+			out.Values[i] = ec._AgentImage_fileSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "width":
+			out.Values[i] = ec._AgentImage_width(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "height":
+			out.Values[i] = ec._AgentImage_height(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "thumbnails":
+			out.Values[i] = ec._AgentImage_thumbnails(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._AgentImage_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._AgentImage_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7540,6 +8747,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "uploadAgentImage":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_uploadAgentImage(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "updateDefaultLLM":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateDefaultLLM(ctx, field)
@@ -7785,6 +8999,44 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "agentImage":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_agentImage(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "agentImageByAgentId":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_agentImageByAgentId(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "user":
 			field := field
 
@@ -7989,6 +9241,50 @@ func (ec *executionContext) _ThreadsResponse(ctx context.Context, sel ast.Select
 			}
 		case "totalCount":
 			out.Values[i] = ec._ThreadsResponse_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var thumbnailInfoImplementors = []string{"ThumbnailInfo"}
+
+func (ec *executionContext) _ThumbnailInfo(ctx context.Context, sel ast.SelectionSet, obj *graphql1.ThumbnailInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, thumbnailInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ThumbnailInfo")
+		case "size":
+			out.Values[i] = ec._ThumbnailInfo_size(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "url":
+			out.Values[i] = ec._ThumbnailInfo_url(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8870,6 +10166,60 @@ func (ec *executionContext) marshalNThreadsResponse2ᚖgithubᚗcomᚋmᚑmizuta
 	return ec._ThreadsResponse(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNThumbnailInfo2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐThumbnailInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql1.ThumbnailInfo) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNThumbnailInfo2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐThumbnailInfo(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNThumbnailInfo2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐThumbnailInfo(ctx context.Context, sel ast.SelectionSet, v *graphql1.ThumbnailInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ThumbnailInfo(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {
 	res, err := graphql.UnmarshalTime(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -8889,6 +10239,22 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 func (ec *executionContext) unmarshalNUpdateAgentInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐUpdateAgentInput(ctx context.Context, v any) (graphql1.UpdateAgentInput, error) {
 	res, err := ec.unmarshalInputUpdateAgentInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v any) (graphql.Upload, error) {
+	res, err := graphql.UnmarshalUpload(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v graphql.Upload) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalUpload(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋuserᚐUser(ctx context.Context, sel ast.SelectionSet, v *user.User) graphql.Marshaler {
@@ -9159,6 +10525,13 @@ func (ec *executionContext) marshalOAgent2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamam
 		return graphql.Null
 	}
 	return ec._Agent(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOAgentImage2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentImage(ctx context.Context, sel ast.SelectionSet, v *graphql1.AgentImage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AgentImage(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOAgentVersion2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentVersion(ctx context.Context, sel ast.SelectionSet, v *graphql1.AgentVersion) graphql.Marshaler {

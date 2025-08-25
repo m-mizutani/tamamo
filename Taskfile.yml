@@ -13,12 +13,14 @@ tasks:
       - moq -out pkg/domain/mock/slack.go -pkg mock ./pkg/domain/interfaces SlackClient ThreadRepository HistoryRepository StorageAdapter
       - moq -out pkg/domain/mock/agent.go -pkg mock ./pkg/domain/interfaces AgentUseCases AgentRepository
       - moq -out pkg/domain/mock/user.go -pkg mock ./pkg/domain/interfaces UserUseCases UserRepository UserAvatarService
+      - moq -out pkg/domain/mock/image.go -pkg mock ./pkg/domain/interfaces ImageUseCases
     sources:
       - pkg/domain/interfaces/*.go
     generates:
       - pkg/domain/mock/slack.go
       - pkg/domain/mock/agent.go
       - pkg/domain/mock/user.go
+      - pkg/domain/mock/image.go
 
   graphql:
     aliases: [g]

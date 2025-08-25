@@ -21,19 +21,17 @@ const (
 
 // Controller handles authentication HTTP endpoints
 type Controller struct {
-	authUseCase  interfaces.AuthUseCases
-	userUseCase  interfaces.UserUseCases
-	frontendURL  string
-	isProduction bool
+	authUseCase interfaces.AuthUseCases
+	userUseCase interfaces.UserUseCases
+	frontendURL string
 }
 
 // NewController creates a new authentication controller
-func NewController(authUseCase interfaces.AuthUseCases, userUseCase interfaces.UserUseCases, frontendURL string, isProduction bool) *Controller {
+func NewController(authUseCase interfaces.AuthUseCases, userUseCase interfaces.UserUseCases, frontendURL string) *Controller {
 	return &Controller{
-		authUseCase:  authUseCase,
-		userUseCase:  userUseCase,
-		frontendURL:  frontendURL,
-		isProduction: isProduction,
+		authUseCase: authUseCase,
+		userUseCase: userUseCase,
+		frontendURL: frontendURL,
 	}
 }
 
@@ -64,7 +62,7 @@ func (c *Controller) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		Value:    state,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   c.isProduction,
+		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   600, // 10 minutes
 	}
@@ -257,7 +255,7 @@ func (c *Controller) setSessionCookie(w http.ResponseWriter, sessionID string, e
 		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   c.isProduction,
+		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
 		Expires:  expiresAt,
 		MaxAge:   int(time.Until(expiresAt).Seconds()),
@@ -272,7 +270,7 @@ func (c *Controller) clearSessionCookie(w http.ResponseWriter) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   c.isProduction,
+		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 		Expires:  time.Now().Add(-1 * time.Hour),
@@ -287,7 +285,7 @@ func (c *Controller) clearStateCookie(w http.ResponseWriter) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   c.isProduction,
+		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	}

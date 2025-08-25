@@ -14,6 +14,7 @@ type Agent struct {
 	Author      types.UserID `json:"author"`
 	Status      Status       `json:"status"`
 	Latest      string       `json:"latest"`
+	ImageID     *types.UUID  `json:"image_id,omitempty"`
 	CreatedAt   time.Time    `json:"created_at"`
 	UpdatedAt   time.Time    `json:"updated_at"`
 }

@@ -19,6 +19,7 @@ require (
 	github.com/slack-go/slack v0.17.3
 	github.com/urfave/cli/v3 v3.4.1
 	github.com/vektah/gqlparser/v2 v2.5.30
+	golang.org/x/image v0.30.0
 	google.golang.org/api v0.247.0
 	google.golang.org/grpc v1.74.2
 	gopkg.in/yaml.v3 v3.0.1

@@ -7,7 +7,9 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
+	"github.com/99designs/gqlgen/graphql"
 	goerr "github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/controller/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
@@ -150,6 +152,38 @@ func (r *mutationResolver) CreateAgentVersion(ctx context.Context, input graphql
 	return convertAgentVersionToGraphQL(version), nil
 }
 
+// UploadAgentImage is the resolver for the uploadAgentImage field.
+func (r *mutationResolver) UploadAgentImage(ctx context.Context, agentID string, file graphql.Upload) (*graphql1.Agent, error) {
+	// Validate agent ID
+	uuid := types.UUID(agentID)
+	if !uuid.IsValid() {
+		return nil, goerr.New("invalid agent ID")
+	}
+
+	// Verify agent exists
+	_, err := r.agentUseCase.GetAgent(ctx, uuid)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to verify agent exists")
+	}
+
+	// Get file size
+	fileSize := file.Size
+
+	// Process and store the image
+	_, err = r.imageProcessor.ProcessAndStore(ctx, uuid, file.File, file.ContentType, fileSize)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to process and store image")
+	}
+
+	// Get updated agent with image
+	agentWithVersion, err := r.agentUseCase.GetAgent(ctx, uuid)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get updated agent")
+	}
+
+	return convertAgentToGraphQL(ctx, agentWithVersion.Agent, agentWithVersion.LatestVersion, r.userUseCase), nil
+}
+
 // UpdateDefaultLlm is the resolver for the updateDefaultLLM field.
 func (r *mutationResolver) UpdateDefaultLlm(ctx context.Context, provider string, model string) (*graphql1.LLMConfig, error) {
 	// This would typically update a configuration file or database
@@ -220,6 +254,12 @@ func (r *queryResolver) Agent(ctx context.Context, id string) (*graphql1.Agent, 
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to get agent")
 	}
+
+	// DEBUG: Log the agent's ImageID
+	slog.Debug("GraphQL Agent query - retrieved agent",
+		slog.String("agent_id", agentWithVersion.Agent.ID.String()),
+		slog.String("agent_name", agentWithVersion.Agent.Name),
+		slog.Any("image_id", agentWithVersion.Agent.ImageID))
 
 	return convertAgentToGraphQL(ctx, agentWithVersion.Agent, agentWithVersion.LatestVersion, r.userUseCase), nil
 }
@@ -367,6 +407,48 @@ func (r *queryResolver) CheckAgentIDAvailability(ctx context.Context, agentID st
 		Available: availability.Available,
 		Message:   availability.Message,
 	}, nil
+}
+
+// AgentImage is the resolver for the agentImage field.
+func (r *queryResolver) AgentImage(ctx context.Context, id string) (*graphql1.AgentImage, error) {
+	imageID := types.UUID(id)
+	if !imageID.IsValid() {
+		return nil, goerr.New("invalid image ID")
+	}
+
+	agentImage, err := r.agentImageRepo.GetByID(ctx, imageID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get agent image")
+	}
+
+	return convertAgentImageToGraphQL(agentImage), nil
+}
+
+// AgentImageByAgentID is the resolver for the agentImageByAgentId field.
+func (r *queryResolver) AgentImageByAgentID(ctx context.Context, agentID string) (*graphql1.AgentImage, error) {
+	uuid := types.UUID(agentID)
+	if !uuid.IsValid() {
+		return nil, goerr.New("invalid agent ID")
+	}
+
+	// Get agent first to find the current image ID
+	agentWithVersion, err := r.agentUseCase.GetAgent(ctx, uuid)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get agent")
+	}
+
+	// Check if agent has an image
+	if agentWithVersion.Agent.ImageID == nil {
+		return nil, goerr.New("agent has no image")
+	}
+
+	// Get agent image using the image ID from agent
+	agentImage, err := r.agentImageRepo.GetByID(ctx, *agentWithVersion.Agent.ImageID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get agent image")
+	}
+
+	return convertAgentImageToGraphQL(agentImage), nil
 }
 
 // User is the resolver for the user field.

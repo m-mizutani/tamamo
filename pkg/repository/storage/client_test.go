@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	"github.com/m-mizutani/gt"
-	"github.com/m-mizutani/tamamo/pkg/adapters/memory"
+	memoryadapter "github.com/m-mizutani/tamamo/pkg/adapters/memory"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/repository/storage"
 )
 
 func TestStorageClient_SaveAndLoadHistory(t *testing.T) {
 	ctx := context.Background()
-	adapter := memory.New()
+	adapter := memoryadapter.New()
 	client := storage.New(adapter)
 
 	threadID := types.NewThreadID(ctx)
@@ -31,7 +31,7 @@ func TestStorageClient_SaveAndLoadHistory(t *testing.T) {
 
 func TestStorageClient_SaveAndLoadHistoryJSON(t *testing.T) {
 	ctx := context.Background()
-	adapter := memory.New()
+	adapter := memoryadapter.New()
 	client := storage.New(adapter)
 
 	threadID := types.NewThreadID(ctx)
@@ -65,7 +65,7 @@ func TestStorageClient_SaveAndLoadHistoryJSON(t *testing.T) {
 
 func TestStorageClient_LoadNonExistentHistory(t *testing.T) {
 	ctx := context.Background()
-	adapter := memory.New()
+	adapter := memoryadapter.New()
 	client := storage.New(adapter)
 
 	threadID := types.NewThreadID(ctx)
@@ -78,7 +78,7 @@ func TestStorageClient_LoadNonExistentHistory(t *testing.T) {
 
 func TestStorageClient_CompressionAndDecompression(t *testing.T) {
 	ctx := context.Background()
-	adapter := memory.New()
+	adapter := memoryadapter.New()
 	client := storage.New(adapter)
 
 	threadID := types.NewThreadID(ctx)
@@ -101,7 +101,7 @@ func TestStorageClient_CompressionAndDecompression(t *testing.T) {
 
 func TestStorageClient_HistoryKeyGeneration(t *testing.T) {
 	ctx := context.Background()
-	adapter := memory.New()
+	adapter := memoryadapter.New()
 	client := storage.New(adapter)
 
 	threadID1 := types.NewThreadID(ctx)

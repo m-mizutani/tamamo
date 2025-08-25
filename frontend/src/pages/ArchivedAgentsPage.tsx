@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Archive, Loader2, RefreshCw, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react'
 import { Agent, AgentListResponse, GET_AGENTS_BY_STATUS, UNARCHIVE_AGENT, graphqlRequest, LLMConfig, GET_LLM_CONFIG } from '@/lib/graphql'
 import { useNavigate } from 'react-router-dom'
+import { AgentAvatar } from '@/components/AgentAvatar'
 import { toast } from 'sonner'
 
 const AGENTS_PER_PAGE = 18
@@ -194,9 +195,13 @@ export function ArchivedAgentsPage() {
           >
             <CardHeader className="pb-3">
               <div className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                  <Archive className="h-4 w-4 text-muted-foreground" />
-                </div>
+                <AgentAvatar
+                  imageUrl={agent.imageUrl}
+                  name={agent.name}
+                  size={32}
+                  className="opacity-50"
+                  onClick={() => handleAgentClick(agent.id)}
+                />
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <CardTitle className="text-lg text-muted-foreground">{agent.name}</CardTitle>

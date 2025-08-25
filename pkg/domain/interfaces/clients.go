@@ -21,10 +21,34 @@ type SlackUserProfile struct {
 	} `json:"profile"`
 }
 
+// SlackUserInfo represents user information from Slack API
+type SlackUserInfo struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name"`
+	RealName    string `json:"real_name"`
+}
+
+// SlackBotInfo represents bot information from Slack API
+type SlackBotInfo struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// SlackMessageOptions holds optional display settings for Slack messages
+type SlackMessageOptions struct {
+	Username  string // Custom username to display
+	IconURL   string // Custom icon URL to display
+	IconEmoji string // Custom emoji to display (alternative to IconURL)
+}
+
 type SlackClient interface {
 	PostMessage(ctx context.Context, channelID, threadTS, text string) error
+	PostMessageWithOptions(ctx context.Context, channelID, threadTS, text string, options *SlackMessageOptions) error
 	IsBotUser(userID string) bool
 	GetUserProfile(ctx context.Context, userID string) (*SlackUserProfile, error)
+	GetUserInfo(ctx context.Context, userID string) (*SlackUserInfo, error)
+	GetBotInfo(ctx context.Context, botID string) (*SlackBotInfo, error)
 }
 
 // UserAvatarService manages user avatar data retrieval

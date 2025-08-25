@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ImageUpload } from '@/components/ImageUpload'
 import { 
   ArrowLeft, 
   Save, 
@@ -19,7 +20,8 @@ import {
   History,
   Clock,
   User,
-  Settings
+  Settings,
+  Image as ImageIcon
 } from 'lucide-react'
 import { 
   Agent,
@@ -34,6 +36,7 @@ import {
   UpdateAgentInput,
   LLMConfig
 } from '@/lib/graphql'
+import { useImageUpload } from '@/hooks/useImageUpload'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { CreateVersionDialog } from '@/components/agents/CreateVersionDialog'
@@ -67,6 +70,16 @@ export function AgentDetailPage() {
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false)
   const [llmConfig, setLlmConfig] = useState<LLMConfig | null>(null)
+  
+  // Image upload hook
+  const imageUpload = useImageUpload({
+    initialImageUrl: agent?.imageUrl,
+    onSuccess: () => {
+      // Refresh agent data after successful image upload
+      fetchAgent()
+    },
+    onError: (error) => setError(`Image upload failed: ${error}`)
+  })
   
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -103,7 +116,6 @@ export function AgentDetailPage() {
       if (err instanceof Error && err.name === 'AbortError') {
         return
       }
-      console.error('Failed to fetch agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to load agent')
     } finally {
       setLoading(false)
@@ -117,7 +129,9 @@ export function AgentDetailPage() {
     // Fetch LLM configuration
     graphqlRequest<{ llmConfig: LLMConfig }>(GET_LLM_CONFIG)
       .then(response => setLlmConfig(response.llmConfig))
-      .catch(err => console.error('Failed to fetch LLM config:', err))
+      .catch(() => {
+        // Silently handle LLM config fetch errors
+      })
     
     return () => {
       controller.abort()
@@ -141,7 +155,6 @@ export function AgentDetailPage() {
         availability: response.checkAgentIdAvailability 
       })
     } catch (err) {
-      console.error('Failed to check agent ID availability:', err)
       setAgentIdStatus({ checking: false, availability: null })
     }
   }
@@ -164,6 +177,7 @@ export function AgentDetailPage() {
       })
     }
     setAgentIdStatus({ checking: false, availability: null })
+    imageUpload.reset()
   }
 
   const handleSave = async () => {
@@ -201,9 +215,17 @@ export function AgentDetailPage() {
         await fetchAgent()
       }
       
+      // Upload image if one was selected
+      if (imageUpload.selectedFile && agent) {
+        try {
+          await imageUpload.uploadImage(agent.id)
+        } catch (imageError) {
+          // Don't prevent saving the agent if image upload fails
+        }
+      }
+      
       setIsEditing(false)
     } catch (err) {
-      console.error('Failed to update agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to update agent')
     } finally {
       setSaving(false)
@@ -246,7 +268,6 @@ export function AgentDetailPage() {
       
       setAgent(response.archiveAgent)
     } catch (err) {
-      console.error('Failed to archive agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to archive agent')
     } finally {
       setIsUpdatingStatus(false)
@@ -266,7 +287,6 @@ export function AgentDetailPage() {
       
       setAgent(response.unarchiveAgent)
     } catch (err) {
-      console.error('Failed to unarchive agent:', err)
       setError(err instanceof Error ? err.message : 'Failed to unarchive agent')
     } finally {
       setIsUpdatingStatus(false)
@@ -571,6 +591,48 @@ export function AgentDetailPage() {
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <ImageIcon className="h-5 w-5" />
+                <span>Agent Image</span>
+              </CardTitle>
+              <CardDescription>
+                Image representing this agent
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isEditing ? (
+                <ImageUpload
+                  onImageSelect={imageUpload.handleFileSelect}
+                  previewUrl={imageUpload.preview}
+                  isUploading={imageUpload.isUploading}
+                  error={imageUpload.error}
+                />
+              ) : (
+                <div className="space-y-4">
+                  {agent?.imageUrl ? (
+                    <div className="flex flex-col items-center space-y-2">
+                      <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                        <img
+                          src={agent.imageUrl}
+                          alt={`${agent.name} image`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <p className="text-sm text-muted-foreground">Current agent image</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center space-y-2 py-8">
+                      <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">No image uploaded</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">

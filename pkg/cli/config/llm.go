@@ -75,36 +75,40 @@ func (c *LLMConfig) LoadAndValidate() (*llm.ProvidersConfig, error) {
 	return &config, nil
 }
 
-// validateCredentials checks if required credentials are present for configured providers
+// validateCredentials checks if required credentials are present for all configured providers
 func (c *LLMConfig) validateCredentials(config *llm.ProvidersConfig) error {
 	requiredProviders := make(map[string]bool)
 
-	// Check default provider
-	if config.Defaults.Provider != "" {
-		requiredProviders[config.Defaults.Provider] = true
+	// Check all providers defined in config
+	for providerID := range config.Providers {
+		requiredProviders[providerID] = true
 	}
 
-	// Check fallback provider
-	if config.Fallback.Enabled && config.Fallback.Provider != "" {
-		requiredProviders[config.Fallback.Provider] = true
-	}
-
-	// Validate credentials for required providers
+	// Validate credentials for all configured providers
 	for provider := range requiredProviders {
 		switch provider {
 		case "gemini":
 			if c.GeminiProject == "" {
-				return goerr.New("Gemini provider requires project ID", goerr.V("provider", provider))
+				return goerr.New("Gemini provider is configured but project ID is missing",
+					goerr.V("provider", provider),
+					goerr.V("env_var", "TAMAMO_GEMINI_PROJECT_ID"),
+					goerr.V("flag", "--gemini-project-id"))
 			}
 		case "claude":
 			hasDirectAPI := c.ClaudeAPIKey != ""
 			hasVertexAI := c.ClaudeVertexProject != "" && c.ClaudeVertexLocation != ""
 			if !hasDirectAPI && !hasVertexAI {
-				return goerr.New("Claude provider requires either API key or VertexAI project/location", goerr.V("provider", provider))
+				return goerr.New("Claude provider is configured but credentials are missing",
+					goerr.V("provider", provider),
+					goerr.V("env_vars", "TAMAMO_CLAUDE_API_KEY or TAMAMO_CLAUDE_VERTEX_PROJECT+TAMAMO_CLAUDE_VERTEX_LOCATION"),
+					goerr.V("flags", "--claude-api-key or --claude-vertex-project+--claude-vertex-location"))
 			}
 		case "openai":
 			if c.OpenAIAPIKey == "" {
-				return goerr.New("OpenAI provider requires API key", goerr.V("provider", provider))
+				return goerr.New("OpenAI provider is configured but API key is missing",
+					goerr.V("provider", provider),
+					goerr.V("env_var", "TAMAMO_OPENAI_API_KEY"),
+					goerr.V("flag", "--openai-api-key"))
 			}
 		}
 	}

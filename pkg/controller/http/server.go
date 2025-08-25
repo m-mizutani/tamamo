@@ -39,6 +39,7 @@ type Server struct {
 	graphqlCtrl    *graphql_controller.Resolver
 	authCtrl       *auth_controller.Controller
 	userCtrl       *UserController
+	imageCtrl      *ImageController
 	authUseCase    interfaces.AuthUseCases
 	enableGraphiQL bool
 	slackVerifier  slack.PayloadVerifier
@@ -80,6 +81,13 @@ func WithGraphiQL(enable bool) Options {
 func WithUserController(ctrl *UserController) Options {
 	return func(s *Server) {
 		s.userCtrl = ctrl
+	}
+}
+
+// WithImageController sets the Image controller
+func WithImageController(ctrl *ImageController) Options {
+	return func(s *Server) {
+		s.imageCtrl = ctrl
 	}
 }
 
@@ -182,6 +190,26 @@ func New(opts ...Options) *Server {
 			} else {
 				// If no auth, allow access to user info
 				r.Get("/{userID}", s.userCtrl.HandleGetUserInfo)
+			}
+		})
+	}
+
+	// Agent Image API endpoints
+	if s.imageCtrl != nil {
+		r.Route("/api/agents", func(r chi.Router) {
+			// Public endpoints (for image serving)
+			r.Get("/{agentID}/image", s.imageCtrl.HandleGetAgentImage)
+			r.Get("/{agentID}/image/info", s.imageCtrl.HandleGetAgentImageInfo)
+
+			// Protected endpoints (require authentication)
+			if s.authCtrl != nil && !s.noAuth {
+				r.Group(func(r chi.Router) {
+					r.Use(s.authCtrl.RequiredAuth())
+					r.Post("/{agentID}/image", s.imageCtrl.HandleUploadAgentImage)
+				})
+			} else {
+				// If no auth, allow image upload
+				r.Post("/{agentID}/image", s.imageCtrl.HandleUploadAgentImage)
 			}
 		})
 	}
