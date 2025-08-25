@@ -1,27 +1,27 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { X, Image as ImageIcon } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 
 interface ImageUploadProps {
   onImageSelect: (file: File | null) => void;
-  currentImageUrl?: string;
+  previewUrl?: string | null;
   isUploading?: boolean;
-  error?: string;
+  error?: string | null;
   maxFileSize?: number; // in MB
   acceptedTypes?: string[];
 }
 
 export function ImageUpload({
   onImageSelect,
-  currentImageUrl,
+  previewUrl,
   isUploading = false,
   error,
   maxFileSize = 10,
   acceptedTypes = ['image/jpeg', 'image/png']
 }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [preview, setPreview] = useState<string | null>(currentImageUrl || null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): string | null => {
@@ -40,19 +40,15 @@ export function ImageUpload({
   };
 
   const handleFile = useCallback((file: File) => {
-    const validationError = validateFile(file);
-    if (validationError) {
+    const fileValidationError = validateFile(file);
+    if (fileValidationError) {
+      setValidationError(fileValidationError);
       onImageSelect(null);
       return;
     }
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
+    // Clear validation error if file is valid
+    setValidationError(null);
     onImageSelect(file);
   }, [onImageSelect, maxFileSize, acceptedTypes]);
 
@@ -84,7 +80,7 @@ export function ImageUpload({
   }, [handleFile]);
 
   const removeImage = useCallback(() => {
-    setPreview(null);
+    setValidationError(null);
     onImageSelect(null);
     if (inputRef.current) {
       inputRef.current.value = '';
@@ -101,11 +97,11 @@ export function ImageUpload({
         <div className="space-y-4">
           <h3 className="text-sm font-medium">Agent Image</h3>
           
-          {preview ? (
+          {previewUrl ? (
             <div className="relative">
               <div className="relative w-32 h-32 mx-auto rounded-lg overflow-hidden border-2 border-gray-200">
                 <img
-                  src={preview}
+                  src={previewUrl}
                   alt="Agent preview"
                   className="w-full h-full object-cover"
                 />
@@ -179,9 +175,9 @@ export function ImageUpload({
             disabled={isUploading}
           />
 
-          {error && (
+          {(error || validationError) && (
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
-              {error}
+              {error || validationError}
             </div>
           )}
         </div>

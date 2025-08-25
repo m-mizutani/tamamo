@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 
 interface UseImageUploadOptions {
+  initialImageUrl?: string;  // Support for existing image URLs
   onSuccess?: (imageUrl: string) => void;
   onError?: (error: string) => void;
 }
@@ -19,7 +20,7 @@ export function useImageUpload(options: UseImageUploadOptions = {}): UseImageUpl
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(options.initialImageUrl || null);
 
   const handleFileSelect = useCallback((file: File | null) => {
     setSelectedFile(file);
@@ -60,7 +61,7 @@ export function useImageUpload(options: UseImageUploadOptions = {}): UseImageUpl
         throw new Error(errorText || 'Upload failed');
       }
 
-      const result = await response.json();
+      await response.json();
       const imageUrl = `/api/agents/${agentId}/image`;
       
       options.onSuccess?.(imageUrl);

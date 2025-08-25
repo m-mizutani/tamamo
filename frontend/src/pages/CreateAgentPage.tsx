@@ -292,6 +292,7 @@ export function CreateAgentPage() {
           <CardContent>
             <ImageUpload
               onImageSelect={imageUpload.handleFileSelect}
+              previewUrl={imageUpload.preview}
               isUploading={imageUpload.isUploading}
               error={imageUpload.error}
             />

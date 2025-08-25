@@ -73,6 +73,7 @@ export function AgentDetailPage() {
   
   // Image upload hook
   const imageUpload = useImageUpload({
+    initialImageUrl: agent?.imageUrl,
     onSuccess: (imageUrl) => {
       console.log('Image upload success, imageUrl:', imageUrl)
       console.log('Calling fetchAgent() to refresh data...')
@@ -613,7 +614,7 @@ export function AgentDetailPage() {
               {isEditing ? (
                 <ImageUpload
                   onImageSelect={imageUpload.handleFileSelect}
-                  currentImageUrl={agent?.imageUrl}
+                  previewUrl={imageUpload.preview}
                   isUploading={imageUpload.isUploading}
                   error={imageUpload.error}
                 />
