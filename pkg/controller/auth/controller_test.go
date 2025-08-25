@@ -65,7 +65,7 @@ func TestAuthController_Login(t *testing.T) {
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000")
 
 	// Test login redirect
 	req := httptest.NewRequest(http.MethodGet, "/api/auth/login", nil)
@@ -95,7 +95,7 @@ func TestAuthController_Callback(t *testing.T) {
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000")
 
 	t.Run("Missing parameters", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/auth/callback", nil)
@@ -137,7 +137,7 @@ func TestAuthController_Me(t *testing.T) {
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000")
 
 	t.Run("No session", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
@@ -201,7 +201,7 @@ func TestAuthController_Check(t *testing.T) {
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000")
 
 	t.Run("Not authenticated", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/auth/check", nil)
@@ -272,7 +272,7 @@ func TestAuthController_Logout(t *testing.T) {
 		"http://localhost:3000",
 	)
 
-	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000", false)
+	controller := authctrl.NewController(authUseCase, userUseCase, "http://localhost:3000")
 
 	// Create a session
 	sessionID := types.NewUUID(ctx)

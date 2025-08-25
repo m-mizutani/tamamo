@@ -38,7 +38,7 @@ func (uc *ImageUseCaseImpl) UploadAgentImage(ctx context.Context, req *interface
 	_, err := uc.agentUseCase.GetAgent(ctx, req.AgentID)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to verify agent",
-			goerr.V("agent_id", req.AgentID)).WithTags(errors.ErrTagAgentNotFound)
+			goerr.V("agent_id", req.AgentID), goerr.Tag(errors.ErrTagAgentNotFound))
 	}
 
 	// Process and store the image
@@ -56,7 +56,7 @@ func (uc *ImageUseCaseImpl) GetAgentImageData(ctx context.Context, agentID types
 	agentWithVersion, err := uc.agentUseCase.GetAgent(ctx, agentID)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to get agent",
-			goerr.V("agent_id", agentID)).WithTags(errors.ErrTagAgentNotFound)
+			goerr.V("agent_id", agentID), goerr.Tag(errors.ErrTagAgentNotFound))
 	}
 
 	agent := agentWithVersion.Agent
@@ -64,7 +64,7 @@ func (uc *ImageUseCaseImpl) GetAgentImageData(ctx context.Context, agentID types
 	// Check if agent has an image
 	if agent.ImageID == nil {
 		return nil, goerr.New("agent has no image",
-			goerr.V("agent_id", agentID)).WithTags(errors.ErrTagAgentNoImage)
+			goerr.V("agent_id", agentID), goerr.Tag(errors.ErrTagAgentNoImage))
 	}
 
 	// Get agent image info using the image ID from agent
@@ -72,7 +72,7 @@ func (uc *ImageUseCaseImpl) GetAgentImageData(ctx context.Context, agentID types
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to get image",
 			goerr.V("agent_id", agentID),
-			goerr.V("image_id", *agent.ImageID)).WithTags(errors.ErrTagImageNotFound)
+			goerr.V("image_id", *agent.ImageID), goerr.Tag(errors.ErrTagImageNotFound))
 	}
 
 	var imageData []byte
@@ -84,7 +84,7 @@ func (uc *ImageUseCaseImpl) GetAgentImageData(ctx context.Context, agentID types
 		if err != nil {
 			return nil, goerr.Wrap(err, "failed to get thumbnail",
 				goerr.V("agent_id", agentID),
-				goerr.V("thumbnail_size", thumbnailSize)).WithTags(errors.ErrTagThumbnailNotFound)
+				goerr.V("thumbnail_size", thumbnailSize), goerr.Tag(errors.ErrTagThumbnailNotFound))
 		}
 	} else {
 		// Serve original image
@@ -93,7 +93,7 @@ func (uc *ImageUseCaseImpl) GetAgentImageData(ctx context.Context, agentID types
 			return nil, goerr.Wrap(err, "failed to retrieve image data",
 				goerr.V("agent_id", agentID),
 				goerr.V("image_id", agentImage.ID),
-				goerr.V("storage_key", agentImage.StorageKey)).WithTags(errors.ErrTagImageRetrievalFailed)
+				goerr.V("storage_key", agentImage.StorageKey), goerr.Tag(errors.ErrTagImageRetrievalFailed))
 		}
 	}
 
@@ -109,7 +109,7 @@ func (uc *ImageUseCaseImpl) GetAgentImageInfo(ctx context.Context, agentID types
 	agentWithVersion, err := uc.agentUseCase.GetAgent(ctx, agentID)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to get agent",
-			goerr.V("agent_id", agentID)).WithTags(errors.ErrTagAgentNotFound)
+			goerr.V("agent_id", agentID), goerr.Tag(errors.ErrTagAgentNotFound))
 	}
 
 	agent := agentWithVersion.Agent
@@ -117,7 +117,7 @@ func (uc *ImageUseCaseImpl) GetAgentImageInfo(ctx context.Context, agentID types
 	// Check if agent has an image
 	if agent.ImageID == nil {
 		return nil, goerr.New("agent has no image",
-			goerr.V("agent_id", agentID)).WithTags(errors.ErrTagAgentNoImage)
+			goerr.V("agent_id", agentID), goerr.Tag(errors.ErrTagAgentNoImage))
 	}
 
 	// Get agent image info using the image ID from agent
@@ -125,7 +125,7 @@ func (uc *ImageUseCaseImpl) GetAgentImageInfo(ctx context.Context, agentID types
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to get image",
 			goerr.V("agent_id", agentID),
-			goerr.V("image_id", *agent.ImageID)).WithTags(errors.ErrTagImageNotFound)
+			goerr.V("image_id", *agent.ImageID), goerr.Tag(errors.ErrTagImageNotFound))
 	}
 
 	return agentImage, nil
@@ -136,14 +136,14 @@ func (uc *ImageUseCaseImpl) wrapImageError(err error) error {
 	errMsg := err.Error()
 	switch {
 	case strings.Contains(errMsg, "invalid mime type"):
-		return goerr.Wrap(err, "invalid file type").WithTags(errors.ErrTagInvalidFileType)
+		return goerr.Wrap(err, "invalid file type", goerr.Tag(errors.ErrTagInvalidFileType))
 	case strings.Contains(errMsg, "image too large"):
-		return goerr.Wrap(err, "image file too large").WithTags(errors.ErrTagImageTooLarge)
+		return goerr.Wrap(err, "image file too large", goerr.Tag(errors.ErrTagImageTooLarge))
 	case strings.Contains(errMsg, "image too small"):
-		return goerr.Wrap(err, "image dimensions too small").WithTags(errors.ErrTagImageTooSmall)
+		return goerr.Wrap(err, "image dimensions too small", goerr.Tag(errors.ErrTagImageTooSmall))
 	case strings.Contains(errMsg, "corrupted image"):
-		return goerr.Wrap(err, "invalid or corrupted image file").WithTags(errors.ErrTagCorruptedImage)
+		return goerr.Wrap(err, "invalid or corrupted image file", goerr.Tag(errors.ErrTagCorruptedImage))
 	default:
-		return goerr.Wrap(err, "failed to process image").WithTags(errors.ErrTagImageProcessingFailed)
+		return goerr.Wrap(err, "failed to process image", goerr.Tag(errors.ErrTagImageProcessingFailed))
 	}
 }

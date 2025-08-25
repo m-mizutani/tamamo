@@ -252,7 +252,7 @@ func cmdServe() *cli.Command {
 				if err != nil {
 					return goerr.Wrap(err, "failed to configure authentication")
 				}
-				authCtrl = auth_controller.NewController(authUseCase, userUseCase, authCfg.FrontendURL, false)
+				authCtrl = auth_controller.NewController(authUseCase, userUseCase, authCfg.FrontendURL)
 				logger.Info("authentication enabled")
 			} else {
 				logger.Warn("authentication disabled - running in anonymous mode")
