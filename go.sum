@@ -115,8 +115,8 @@ github.com/m-mizutani/goerr/v2 v2.0.0-beta.2 h1:3aA8RKFlWS6kX99+AJohdgIxiE5+Qwv6
 github.com/m-mizutani/goerr/v2 v2.0.0-beta.2/go.mod h1:K9+tBb0+0681yHpyHYqJmoijxn9qJf5grjRb9nMXevc=
 github.com/m-mizutani/gollem v0.10.0 h1:JifdlYS4QED4FynHS8XyxoW1SyB5HPhdPiS3VtSSZV8=
 github.com/m-mizutani/gollem v0.10.0/go.mod h1:SizC92f6sIGUzOudT3Kt1/94Pe4HUiLcKCcNbp5c95g=
-github.com/m-mizutani/gt v0.0.16 h1:bhJqMeqxojsgVBo9wqjPHk4s6o7mkaQLCcOus1hp1Vs=
-github.com/m-mizutani/gt v0.0.16/go.mod h1:0MPYSfGBLmYjTduzADVmIqD58ELQ5IfBFiK/f0FmB3k=
+github.com/m-mizutani/gt v0.0.17 h1:jd1wgxc4DTo/1LAC8o+MOBMGAS84e+ZmgwnvvovpSTs=
+github.com/m-mizutani/gt v0.0.17/go.mod h1:0MPYSfGBLmYjTduzADVmIqD58ELQ5IfBFiK/f0FmB3k=
 github.com/m-mizutani/masq v0.1.12-0.20250818113152-b9316b785b03 h1:alCgqRzvXOHycyvGbtA2GyoOJTW6MuZ3jeR8NnYmbok=
 github.com/m-mizutani/masq v0.1.12-0.20250818113152-b9316b785b03/go.mod h1:H8jy743m5h+niZ1ByiZfPnLNnXzb7Khr/K59vT15f18=
 github.com/mattn/go-colorable v0.1.14 h1:9A9LHSqF/7dyVVX6g0U9cwm9pG3kP9gSzcuIPHPsaIE=
