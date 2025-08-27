@@ -6,6 +6,8 @@ import (
 	"github.com/m-mizutani/ctxlog"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	slack_model "github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/usecase"
+	"github.com/m-mizutani/tamamo/pkg/utils/async"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -13,6 +15,7 @@ import (
 type Controller struct {
 	event       interfaces.SlackEventUseCases
 	slackClient interfaces.SlackClient
+	useCases    *usecase.Slack // Add reference to use cases for message logging
 }
 
 // New creates a new Slack controller
@@ -20,6 +23,15 @@ func New(event interfaces.SlackEventUseCases, slackClient interfaces.SlackClient
 	return &Controller{
 		event:       event,
 		slackClient: slackClient,
+	}
+}
+
+// NewWithUseCases creates a new Slack controller with use cases for message logging
+func NewWithUseCases(event interfaces.SlackEventUseCases, slackClient interfaces.SlackClient, useCases *usecase.Slack) *Controller {
+	return &Controller{
+		event:       event,
+		slackClient: slackClient,
+		useCases:    useCases,
 	}
 }
 
@@ -102,6 +114,13 @@ func (x *Controller) HandleSlackAppMention(ctx context.Context, apiEvent *slacke
 		// Continue processing even if user info fetch fails
 	}
 
+	// Log message asynchronously (if message logging is available)
+	if x.useCases != nil && x.useCases.GetSlackMessageLogging() != nil {
+		async.Dispatch(ctx, func(ctx context.Context) error {
+			return x.useCases.GetSlackMessageLogging().LogSlackAppMentionMessage(ctx, event)
+		})
+	}
+
 	// Process the mention event
 	return x.event.HandleSlackAppMention(ctx, *slackMsg)
 }
@@ -122,6 +141,13 @@ func (x *Controller) HandleSlackMessage(ctx context.Context, apiEvent *slackeven
 	if err := x.enrichMessageWithUserInfo(ctx, slackMsg); err != nil {
 		ctxlog.From(ctx).Warn("failed to enrich message with user info", "error", err)
 		// Continue processing even if user info fetch fails
+	}
+
+	// Log message asynchronously (if message logging is available)
+	if x.useCases != nil && x.useCases.GetSlackMessageLogging() != nil {
+		async.Dispatch(ctx, func(ctx context.Context) error {
+			return x.useCases.GetSlackMessageLogging().LogSlackMessage(ctx, event)
+		})
 	}
 
 	// Process the message event

@@ -2,10 +2,12 @@ package slack
 
 import (
 	"context"
+	"time"
 
 	"github.com/m-mizutani/ctxlog"
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	api "github.com/slack-go/slack"
 )
 
@@ -229,6 +231,38 @@ func (s *Service) GetBotInfo(ctx context.Context, botID string) (*interfaces.Sla
 	return &interfaces.SlackBotInfo{
 		ID:   bot.ID,
 		Name: bot.Name,
+	}, nil
+}
+
+// GetChannelInfo retrieves channel information from Slack API
+func (s *Service) GetChannelInfo(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+	if channelID == "" {
+		return nil, goerr.New("channelID cannot be empty")
+	}
+
+	// Use conversations.info API to get channel information
+	channel, err := s.client.GetConversationInfo(&api.GetConversationInfoInput{
+		ChannelID: channelID,
+	})
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get channel info from Slack",
+			goerr.V("channel_id", channelID))
+	}
+
+	// Determine channel type from Slack API response
+	channelType := slack.DetermineChannelType(
+		channel.IsChannel,
+		channel.IsGroup,
+		channel.IsIM,
+		channel.IsMpIM,
+	)
+
+	return &slack.ChannelInfo{
+		ID:        channel.ID,
+		Name:      channel.Name,
+		Type:      channelType,
+		IsPrivate: channel.IsPrivate,
+		UpdatedAt: time.Now(),
 	}, nil
 }
 
