@@ -3,6 +3,7 @@ package slack_test
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 // Mock SlackClient for channel cache testing
 type mockSlackClientForCache struct {
 	getChannelInfoFunc func(ctx context.Context, channelID string) (*slack.ChannelInfo, error)
+	mu                 sync.Mutex
 	callCount          int
 }
 
@@ -43,7 +45,10 @@ func (m *mockSlackClientForCache) GetBotInfo(ctx context.Context, botID string) 
 }
 
 func (m *mockSlackClientForCache) GetChannelInfo(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+	m.mu.Lock()
 	m.callCount++
+	m.mu.Unlock()
+	
 	if m.getChannelInfoFunc != nil {
 		return m.getChannelInfoFunc(ctx, channelID)
 	}
@@ -56,9 +61,15 @@ func (m *mockSlackClientForCache) GetChannelInfo(ctx context.Context, channelID 
 	}, nil
 }
 
+func (m *mockSlackClientForCache) getCallCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.callCount
+}
+
 func TestChannelCache_BasicOperation(t *testing.T) {
 	ctx := context.Background()
-	
+
 	mockClient := &mockSlackClientForCache{}
 	cache := slackservice.NewChannelCache(mockClient, time.Hour)
 
@@ -68,26 +79,26 @@ func TestChannelCache_BasicOperation(t *testing.T) {
 	gt.NotNil(t, info1)
 	gt.Equal(t, info1.ID, "C123456789")
 	gt.Equal(t, info1.Name, "test-channel")
-	gt.Equal(t, mockClient.callCount, 1)
+	gt.Equal(t, mockClient.getCallCount(), 1)
 
 	// Second call should use cache
 	info2, err := cache.GetChannelInfo(ctx, "C123456789")
 	gt.NoError(t, err)
 	gt.NotNil(t, info2)
 	gt.Equal(t, info2.ID, "C123456789")
-	gt.Equal(t, mockClient.callCount, 1) // Should not increment
+	gt.Equal(t, mockClient.getCallCount(), 1) // Should not increment
 
 	// Different channel should make new call
 	info3, err := cache.GetChannelInfo(ctx, "C987654321")
 	gt.NoError(t, err)
 	gt.NotNil(t, info3)
 	gt.Equal(t, info3.ID, "C987654321")
-	gt.Equal(t, mockClient.callCount, 2) // Should increment
+	gt.Equal(t, mockClient.getCallCount(), 2) // Should increment
 }
 
 func TestChannelCache_CacheHit(t *testing.T) {
 	ctx := context.Background()
-	
+
 	mockClient := &mockSlackClientForCache{}
 	cache := slackservice.NewChannelCache(mockClient, time.Hour)
 
@@ -100,30 +111,30 @@ func TestChannelCache_CacheHit(t *testing.T) {
 		gt.Equal(t, info.ID, channelID)
 	}
 
-	gt.Equal(t, mockClient.callCount, 1) // Only one call to client
+	gt.Equal(t, mockClient.getCallCount(), 1) // Only one call to client
 }
 
 func TestChannelCache_CacheMiss(t *testing.T) {
 	ctx := context.Background()
-	
+
 	mockClient := &mockSlackClientForCache{}
 	cache := slackservice.NewChannelCache(mockClient, time.Hour)
 
 	// Different channels should each make a call
 	channels := []string{"C111111111", "C222222222", "C333333333"}
-	
+
 	for _, channelID := range channels {
 		info, err := cache.GetChannelInfo(ctx, channelID)
 		gt.NoError(t, err)
 		gt.Equal(t, info.ID, channelID)
 	}
 
-	gt.Equal(t, mockClient.callCount, len(channels))
+	gt.Equal(t, mockClient.getCallCount(), len(channels))
 }
 
 func TestChannelCache_TTLExpiration(t *testing.T) {
 	ctx := context.Background()
-	
+
 	mockClient := &mockSlackClientForCache{}
 	// Very short TTL for testing
 	cache := slackservice.NewChannelCache(mockClient, 50*time.Millisecond)
@@ -134,7 +145,7 @@ func TestChannelCache_TTLExpiration(t *testing.T) {
 	info1, err := cache.GetChannelInfo(ctx, channelID)
 	gt.NoError(t, err)
 	gt.Equal(t, info1.ID, channelID)
-	gt.Equal(t, mockClient.callCount, 1)
+	gt.Equal(t, mockClient.getCallCount(), 1)
 
 	// Wait for TTL to expire
 	time.Sleep(100 * time.Millisecond)
@@ -143,12 +154,12 @@ func TestChannelCache_TTLExpiration(t *testing.T) {
 	info2, err := cache.GetChannelInfo(ctx, channelID)
 	gt.NoError(t, err)
 	gt.Equal(t, info2.ID, channelID)
-	gt.Equal(t, mockClient.callCount, 2) // Should increment due to expiration
+	gt.Equal(t, mockClient.getCallCount(), 2) // Should increment due to expiration
 }
 
 func TestChannelCache_ErrorHandling(t *testing.T) {
 	ctx := context.Background()
-	
+
 	mockClient := &mockSlackClientForCache{}
 	cache := slackservice.NewChannelCache(mockClient, time.Hour)
 
@@ -166,18 +177,18 @@ func TestChannelCache_ErrorHandling(t *testing.T) {
 	gt.True(t, len(err.Error()) > 0)
 
 	// Error responses should not be cached
-	gt.Equal(t, mockClient.callCount, 1)
+	gt.Equal(t, mockClient.getCallCount(), 1)
 
 	// Second call should also make client call (errors not cached)
 	info2, err2 := cache.GetChannelInfo(ctx, "C123456789")
 	gt.Error(t, err2)
 	gt.Nil(t, info2)
-	gt.Equal(t, mockClient.callCount, 2)
+	gt.Equal(t, mockClient.getCallCount(), 2)
 }
 
 func TestChannelCache_ConcurrentAccess(t *testing.T) {
 	ctx := context.Background()
-	
+
 	mockClient := &mockSlackClientForCache{}
 	cache := slackservice.NewChannelCache(mockClient, time.Hour)
 
@@ -191,13 +202,13 @@ func TestChannelCache_ConcurrentAccess(t *testing.T) {
 	for i := 0; i < numGoroutines; i++ {
 		go func() {
 			defer func() { done <- true }()
-			
+
 			info, err := cache.GetChannelInfo(ctx, channelID)
 			if err != nil {
 				errorsChan <- err
 				return
 			}
-			
+
 			if info.ID != channelID {
 				errorsChan <- errors.New("incorrect channel ID")
 				return
@@ -217,12 +228,12 @@ func TestChannelCache_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Should only make one call to client despite concurrent access
-	gt.Equal(t, mockClient.callCount, 1)
+	gt.Equal(t, mockClient.getCallCount(), 1)
 }
 
 func TestChannelCache_DifferentChannelTypes(t *testing.T) {
 	ctx := context.Background()
-	
+
 	mockClient := &mockSlackClientForCache{}
 	cache := slackservice.NewChannelCache(mockClient, time.Hour)
 
@@ -257,12 +268,12 @@ func TestChannelCache_DifferentChannelTypes(t *testing.T) {
 		gt.Equal(t, info.IsPrivate, expectedType == slack.ChannelTypePrivate)
 	}
 
-	gt.Equal(t, mockClient.callCount, len(channelTypes))
+	gt.Equal(t, mockClient.getCallCount(), len(channelTypes))
 }
 
 func TestChannelCache_EmptyChannelID(t *testing.T) {
 	ctx := context.Background()
-	
+
 	mockClient := &mockSlackClientForCache{}
 	cache := slackservice.NewChannelCache(mockClient, time.Hour)
 
@@ -270,12 +281,12 @@ func TestChannelCache_EmptyChannelID(t *testing.T) {
 	info, err := cache.GetChannelInfo(ctx, "")
 	gt.Error(t, err)
 	gt.Nil(t, info)
-	gt.Equal(t, mockClient.callCount, 0) // Should not call client
+	gt.Equal(t, mockClient.getCallCount(), 0) // Should not call client
 }
 
 func TestChannelCache_CleanupWorker(t *testing.T) {
 	ctx := context.Background()
-	
+
 	mockClient := &mockSlackClientForCache{}
 	// Very short TTL and cleanup interval for testing
 	cache := slackservice.NewChannelCache(mockClient, 50*time.Millisecond)
@@ -294,7 +305,7 @@ func TestChannelCache_CleanupWorker(t *testing.T) {
 	info2, err := cache.GetChannelInfo(ctx, channelID)
 	gt.NoError(t, err)
 	gt.NotNil(t, info2)
-	
+
 	// Should have made 2 calls (initial + after cleanup)
-	gt.Equal(t, mockClient.callCount, 2)
+	gt.Equal(t, mockClient.getCallCount(), 2)
 }

@@ -96,6 +96,13 @@ func (x *Controller) enrichMessageWithUserInfo(ctx context.Context, slackMsg *sl
 	return nil
 }
 
+// logMessageAsync handles asynchronous message logging for any Slack event
+func (x *Controller) logMessageAsync(ctx context.Context, logFunc func(context.Context) error) {
+	if x.useCases != nil && x.useCases.GetSlackMessageLogging() != nil {
+		async.Dispatch(ctx, logFunc)
+	}
+}
+
 // HandleSlackAppMention handles Slack app mention events
 func (x *Controller) HandleSlackAppMention(ctx context.Context, apiEvent *slackevents.EventsAPIEvent, event *slackevents.AppMentionEvent) error {
 	ctxlog.From(ctx).Debug("handling slack app mention",
@@ -115,11 +122,9 @@ func (x *Controller) HandleSlackAppMention(ctx context.Context, apiEvent *slacke
 	}
 
 	// Log message asynchronously (if message logging is available)
-	if x.useCases != nil && x.useCases.GetSlackMessageLogging() != nil {
-		async.Dispatch(ctx, func(ctx context.Context) error {
-			return x.useCases.GetSlackMessageLogging().LogSlackAppMentionMessage(ctx, event)
-		})
-	}
+	x.logMessageAsync(ctx, func(ctx context.Context) error {
+		return x.useCases.GetSlackMessageLogging().LogSlackAppMentionMessage(ctx, event)
+	})
 
 	// Process the mention event
 	return x.event.HandleSlackAppMention(ctx, *slackMsg)
@@ -144,11 +149,9 @@ func (x *Controller) HandleSlackMessage(ctx context.Context, apiEvent *slackeven
 	}
 
 	// Log message asynchronously (if message logging is available)
-	if x.useCases != nil && x.useCases.GetSlackMessageLogging() != nil {
-		async.Dispatch(ctx, func(ctx context.Context) error {
-			return x.useCases.GetSlackMessageLogging().LogSlackMessage(ctx, event)
-		})
-	}
+	x.logMessageAsync(ctx, func(ctx context.Context) error {
+		return x.useCases.GetSlackMessageLogging().LogSlackMessage(ctx, event)
+	})
 
 	// Process the message event
 	return x.event.HandleSlackMessage(ctx, *slackMsg)

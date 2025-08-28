@@ -171,7 +171,7 @@ func TestAttachment_Structure(t *testing.T) {
 
 func TestSlackMessageLog_JSONMarshaling(t *testing.T) {
 	originalTime := time.Date(2023, 12, 25, 10, 30, 0, 0, time.UTC)
-	
+
 	messageLog := &slack.SlackMessageLog{
 		ID:          types.MessageID("msg_123456789"),
 		TeamID:      "T123456789",
@@ -215,7 +215,7 @@ func TestSlackMessageLog_JSONMarshaling(t *testing.T) {
 	gt.Equal(t, unmarshaledLog.Text, messageLog.Text)
 	gt.Equal(t, len(unmarshaledLog.Attachments), 1)
 	gt.Equal(t, unmarshaledLog.Attachments[0].ID, "file_123")
-	
+
 	// Time should be preserved (within reasonable precision)
 	timeDiff := unmarshaledLog.CreatedAt.Sub(originalTime)
 	gt.True(t, timeDiff < time.Second && timeDiff > -time.Second)
@@ -223,7 +223,7 @@ func TestSlackMessageLog_JSONMarshaling(t *testing.T) {
 
 func TestChannelInfo_JSONMarshaling(t *testing.T) {
 	originalTime := time.Date(2023, 12, 25, 10, 30, 0, 0, time.UTC)
-	
+
 	channelInfo := &slack.ChannelInfo{
 		ID:        "C123456789",
 		Name:      "general",
@@ -247,7 +247,7 @@ func TestChannelInfo_JSONMarshaling(t *testing.T) {
 	gt.Equal(t, unmarshaledInfo.Name, channelInfo.Name)
 	gt.Equal(t, unmarshaledInfo.Type, channelInfo.Type)
 	gt.Equal(t, unmarshaledInfo.IsPrivate, channelInfo.IsPrivate)
-	
+
 	// Time should be preserved (within reasonable precision)
 	timeDiff := unmarshaledInfo.UpdatedAt.Sub(originalTime)
 	gt.True(t, timeDiff < time.Second && timeDiff > -time.Second)

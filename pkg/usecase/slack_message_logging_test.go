@@ -20,10 +20,10 @@ import (
 
 // Mock for SlackMessageLogRepository
 type SlackMessageLogRepositoryMock struct {
-	PutSlackMessageLogFunc            func(ctx context.Context, messageLog *slack.SlackMessageLog) error
-	GetSlackMessageLogsByChannelFunc  func(ctx context.Context, channelID string, limit int) ([]*slack.SlackMessageLog, error)
-	GetSlackMessageLogsByUserFunc     func(ctx context.Context, userID string, limit int) ([]*slack.SlackMessageLog, error)
-	GetSlackMessageLogsFunc           func(ctx context.Context, filter *interfaces.SlackMessageLogFilter) ([]*slack.SlackMessageLog, error)
+	PutSlackMessageLogFunc           func(ctx context.Context, messageLog *slack.SlackMessageLog) error
+	GetSlackMessageLogsByChannelFunc func(ctx context.Context, channelID string, limit int) ([]*slack.SlackMessageLog, error)
+	GetSlackMessageLogsByUserFunc    func(ctx context.Context, userID string, limit int) ([]*slack.SlackMessageLog, error)
+	GetSlackMessageLogsFunc          func(ctx context.Context, filter *interfaces.SlackMessageLogFilter) ([]*slack.SlackMessageLog, error)
 }
 
 func (m *SlackMessageLogRepositoryMock) PutSlackMessageLog(ctx context.Context, messageLog *slack.SlackMessageLog) error {
@@ -238,7 +238,7 @@ func testLogSlackMessageChannelInfoError(t *testing.T) {
 
 	// Verify default values are used
 	gt.NotNil(t, storedMessage)
-	gt.Equal(t, storedMessage.ChannelName, event.Channel) // Fallback to channel ID
+	gt.Equal(t, storedMessage.ChannelName, event.Channel)           // Fallback to channel ID
 	gt.Equal(t, storedMessage.ChannelType, slack.ChannelTypePublic) // Default assumption
 }
 
