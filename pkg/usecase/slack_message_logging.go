@@ -34,8 +34,8 @@ func NewSlackMessageLoggingUseCase(
 }
 
 // LogSlackMessage logs a Slack message to the repository
-func (u *SlackMessageLoggingUseCase) LogSlackMessage(ctx context.Context, event *slackevents.MessageEvent) error {
-	return u.LogSlackMessageWithTeam(ctx, event, "")
+func (u *SlackMessageLoggingUseCase) LogSlackMessage(ctx context.Context, event *slackevents.MessageEvent, teamID string) error {
+	return u.LogSlackMessageWithTeam(ctx, event, teamID)
 }
 
 // LogSlackMessageWithTeam logs a Slack message with team information
@@ -130,7 +130,7 @@ func (u *SlackMessageLoggingUseCase) LogSlackMessageWithTeam(ctx context.Context
 }
 
 // LogSlackAppMentionMessage logs a Slack app mention message
-func (u *SlackMessageLoggingUseCase) LogSlackAppMentionMessage(ctx context.Context, event *slackevents.AppMentionEvent) error {
+func (u *SlackMessageLoggingUseCase) LogSlackAppMentionMessage(ctx context.Context, event *slackevents.AppMentionEvent, teamID string) error {
 	// Convert AppMentionEvent to MessageEvent for reuse
 	messageEvent := &slackevents.MessageEvent{
 		Type:            "message",
@@ -142,7 +142,7 @@ func (u *SlackMessageLoggingUseCase) LogSlackAppMentionMessage(ctx context.Conte
 		// Note: Team and Files info not available in MessageEvent struct
 	}
 
-	return u.LogSlackMessage(ctx, messageEvent)
+	return u.LogSlackMessage(ctx, messageEvent, teamID)
 }
 
 // GetMessageLogs retrieves message logs with filtering (primarily for channel and time period)

@@ -18,21 +18,26 @@ type Controller struct {
 	useCases    *usecase.Slack // Add reference to use cases for message logging
 }
 
-// New creates a new Slack controller
-func New(event interfaces.SlackEventUseCases, slackClient interfaces.SlackClient) *Controller {
-	return &Controller{
-		event:       event,
-		slackClient: slackClient,
+// ControllerOption defines a functional option for the Controller
+type ControllerOption func(*Controller)
+
+// WithUseCases sets the use cases for the controller
+func WithUseCases(useCases *usecase.Slack) ControllerOption {
+	return func(c *Controller) {
+		c.useCases = useCases
 	}
 }
 
-// NewWithUseCases creates a new Slack controller with use cases for message logging
-func NewWithUseCases(event interfaces.SlackEventUseCases, slackClient interfaces.SlackClient, useCases *usecase.Slack) *Controller {
-	return &Controller{
+// New creates a new Slack controller
+func New(event interfaces.SlackEventUseCases, slackClient interfaces.SlackClient, options ...ControllerOption) *Controller {
+	ctrl := &Controller{
 		event:       event,
 		slackClient: slackClient,
-		useCases:    useCases,
 	}
+	for _, opt := range options {
+		opt(ctrl)
+	}
+	return ctrl
 }
 
 // enrichMessageWithUserInfo fetches user display name from Slack API and updates the message
@@ -123,7 +128,7 @@ func (x *Controller) HandleSlackAppMention(ctx context.Context, apiEvent *slacke
 
 	// Log message asynchronously (if message logging is available)
 	x.logMessageAsync(ctx, func(ctx context.Context) error {
-		return x.useCases.GetSlackMessageLogging().LogSlackAppMentionMessage(ctx, event)
+		return x.useCases.GetSlackMessageLogging().LogSlackAppMentionMessage(ctx, event, apiEvent.TeamID)
 	})
 
 	// Process the mention event
@@ -150,7 +155,7 @@ func (x *Controller) HandleSlackMessage(ctx context.Context, apiEvent *slackeven
 
 	// Log message asynchronously (if message logging is available)
 	x.logMessageAsync(ctx, func(ctx context.Context) error {
-		return x.useCases.GetSlackMessageLogging().LogSlackMessage(ctx, event)
+		return x.useCases.GetSlackMessageLogging().LogSlackMessage(ctx, event, apiEvent.TeamID)
 	})
 
 	// Process the message event

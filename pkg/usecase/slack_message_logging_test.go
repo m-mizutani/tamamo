@@ -147,11 +147,12 @@ func testLogSlackMessageSuccess(t *testing.T) {
 	}
 
 	// Execute
-	err := uc.LogSlackMessage(ctx, event)
+	err := uc.LogSlackMessage(ctx, event, "T123456789")
 	gt.NoError(t, err)
 
 	// Verify
 	gt.NotNil(t, storedMessage)
+	gt.Equal(t, storedMessage.TeamID, "T123456789")
 	gt.Equal(t, storedMessage.ChannelID, event.Channel)
 	gt.Equal(t, storedMessage.UserID, event.User)
 	gt.Equal(t, storedMessage.Text, event.Text)
@@ -186,7 +187,7 @@ func testLogSlackMessageRepositoryError(t *testing.T) {
 	}
 
 	// Execute
-	err := uc.LogSlackMessage(ctx, event)
+	err := uc.LogSlackMessage(ctx, event, "T123456789")
 	gt.Error(t, err) // Should return error from repository
 }
 
@@ -222,7 +223,7 @@ func testLogSlackMessageChannelInfoError(t *testing.T) {
 	}
 
 	// Execute
-	err := uc.LogSlackMessage(ctx, event)
+	err := uc.LogSlackMessage(ctx, event, "T123456789")
 	gt.NoError(t, err) // Should succeed with default channel info (best effort)
 
 	// Verify default values are used
@@ -263,7 +264,7 @@ func testLogSlackMessageUserInfoError(t *testing.T) {
 	}
 
 	// Execute
-	err := uc.LogSlackMessage(ctx, event)
+	err := uc.LogSlackMessage(ctx, event, "T123456789")
 	gt.NoError(t, err) // Should succeed without user name (best effort)
 
 	// Verify user name is empty
@@ -298,7 +299,7 @@ func testLogSlackMessageBot(t *testing.T) {
 	}
 
 	// Execute
-	err := uc.LogSlackMessage(ctx, event)
+	err := uc.LogSlackMessage(ctx, event, "T123456789")
 	gt.NoError(t, err)
 
 	// Verify bot message type
@@ -336,7 +337,7 @@ func testLogSlackMessageThread(t *testing.T) {
 	}
 
 	// Execute
-	err := uc.LogSlackMessage(ctx, event)
+	err := uc.LogSlackMessage(ctx, event, "T123456789")
 	gt.NoError(t, err)
 
 	// Verify thread timestamp
@@ -389,7 +390,7 @@ func testLogSlackMessageWithFiles(t *testing.T) {
 	}
 
 	// Execute
-	err := uc.LogSlackMessage(ctx, event)
+	err := uc.LogSlackMessage(ctx, event, "T123456789")
 	gt.NoError(t, err)
 
 	// Verify file attachments were processed
@@ -439,11 +440,12 @@ func TestSlackMessageLoggingUseCase_LogSlackAppMentionMessage(t *testing.T) {
 	}
 
 	// Execute
-	err := uc.LogSlackAppMentionMessage(ctx, event)
+	err := uc.LogSlackAppMentionMessage(ctx, event, "T123456789")
 	gt.NoError(t, err)
 
 	// Verify conversion to message event
 	gt.NotNil(t, storedMessage)
+	gt.Equal(t, storedMessage.TeamID, "T123456789")
 	gt.Equal(t, storedMessage.ChannelID, event.Channel)
 	gt.Equal(t, storedMessage.UserID, event.User)
 	gt.Equal(t, storedMessage.Text, event.Text)

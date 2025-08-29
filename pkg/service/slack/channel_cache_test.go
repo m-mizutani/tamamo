@@ -147,13 +147,19 @@ func TestChannelCache_TTLExpiration(t *testing.T) {
 	gt.Equal(t, info1.ID, channelID)
 	gt.Equal(t, mockClient.getCallCount(), 1)
 
-	// Wait for TTL to expire
-	time.Sleep(100 * time.Millisecond)
-
-	// Second call should fetch from client again
+	// Immediate second call should use cache
 	info2, err := cache.GetChannelInfo(ctx, channelID)
 	gt.NoError(t, err)
 	gt.Equal(t, info2.ID, channelID)
+	gt.Equal(t, mockClient.getCallCount(), 1) // Should not increment
+
+	// Wait for TTL to expire
+	time.Sleep(100 * time.Millisecond)
+
+	// Third call should fetch from client again due to expiration
+	info3, err := cache.GetChannelInfo(ctx, channelID)
+	gt.NoError(t, err)
+	gt.Equal(t, info3.ID, channelID)
 	gt.Equal(t, mockClient.getCallCount(), 2) // Should increment due to expiration
 }
 
@@ -282,30 +288,4 @@ func TestChannelCache_EmptyChannelID(t *testing.T) {
 	gt.Error(t, err)
 	gt.Nil(t, info)
 	gt.Equal(t, mockClient.getCallCount(), 0) // Should not call client
-}
-
-func TestChannelCache_CleanupWorker(t *testing.T) {
-	ctx := context.Background()
-
-	mockClient := &mockSlackClientForCache{}
-	// Very short TTL and cleanup interval for testing
-	cache := slackservice.NewChannelCache(mockClient, 50*time.Millisecond)
-
-	channelID := "C123456789"
-
-	// Add entry to cache
-	info, err := cache.GetChannelInfo(ctx, channelID)
-	gt.NoError(t, err)
-	gt.NotNil(t, info)
-
-	// Wait for cleanup to run (cleanup runs every TTL/2)
-	time.Sleep(100 * time.Millisecond)
-
-	// Entry should be cleaned up, so next call should hit client again
-	info2, err := cache.GetChannelInfo(ctx, channelID)
-	gt.NoError(t, err)
-	gt.NotNil(t, info2)
-
-	// Should have made 2 calls (initial + after cleanup)
-	gt.Equal(t, mockClient.getCallCount(), 2)
 }

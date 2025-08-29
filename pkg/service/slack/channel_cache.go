@@ -73,7 +73,7 @@ func (c *ChannelCache) getCachedInfo(channelID string) *slack.ChannelInfo {
 
 	// Check if cached entry has expired
 	if time.Since(cached.timestamp) > c.ttl {
-		// Entry expired, will be cleaned up later
+		// Entry expired, treat as cache miss
 		return nil
 	}
 
@@ -113,19 +113,6 @@ func (c *ChannelCache) InvalidateAll() {
 	c.cache = make(map[string]*cachedChannelInfo)
 }
 
-// CleanExpiredEntries removes expired entries from cache
-func (c *ChannelCache) CleanExpiredEntries() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	now := time.Now()
-	for channelID, cached := range c.cache {
-		if now.Sub(cached.timestamp) > c.ttl {
-			delete(c.cache, channelID)
-		}
-	}
-}
-
 // GetCacheStats returns cache statistics for monitoring
 func (c *ChannelCache) GetCacheStats() CacheStats {
 	c.mu.RLock()
@@ -156,25 +143,4 @@ type CacheStats struct {
 	ValidEntries   int
 	ExpiredEntries int
 	TTL            time.Duration
-}
-
-// StartCleanupWorker starts a background goroutine to periodically clean up expired entries
-func (c *ChannelCache) StartCleanupWorker(ctx context.Context, interval time.Duration) {
-	if interval <= 0 {
-		interval = 30 * time.Minute // Default cleanup interval
-	}
-
-	go func() {
-		ticker := time.NewTicker(interval)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				c.CleanExpiredEntries()
-			}
-		}
-	}()
 }

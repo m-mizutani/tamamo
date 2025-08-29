@@ -8,6 +8,7 @@ import (
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
+	"github.com/m-mizutani/tamamo/pkg/utils/errors"
 	"google.golang.org/api/iterator"
 )
 
@@ -62,8 +63,8 @@ func (c *Client) PutSlackMessageLog(ctx context.Context, messageLog *slack.Slack
 		if err != nil {
 			// Log error but don't fail the message storage
 			// Channel info is supplementary data
-			return goerr.Wrap(err, "failed to store channel info (non-critical)",
-				goerr.V("channel_id", messageLog.ChannelID))
+			errors.Handle(ctx, goerr.Wrap(err, "failed to store channel info (non-critical)",
+				goerr.V("channel_id", messageLog.ChannelID)))
 		}
 	}
 

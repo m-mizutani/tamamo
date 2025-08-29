@@ -10,55 +10,6 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
 
-func TestSlackMessageLog_Validation(t *testing.T) {
-	t.Run("ValidMessageLog", func(t *testing.T) {
-		testValidMessageLog(t)
-	})
-
-	t.Run("InvalidMessageLog", func(t *testing.T) {
-		testInvalidMessageLog(t)
-	})
-}
-
-func testValidMessageLog(t *testing.T) {
-	messageLog := &slack.SlackMessageLog{
-		ID:          types.MessageID("msg_123456789"),
-		TeamID:      "T123456789",
-		ChannelID:   "C123456789",
-		ChannelName: "general",
-		ChannelType: slack.ChannelTypePublic,
-		UserID:      "U123456789",
-		UserName:    "testuser",
-		BotID:       "",
-		MessageType: slack.MessageTypeUser,
-		Text:        "Hello, world!",
-		Timestamp:   "1234567890.123456",
-		ThreadTS:    "",
-		Attachments: []slack.Attachment{},
-		CreatedAt:   time.Now(),
-	}
-
-	// Valid message log should not cause any validation errors
-	// (Note: Add actual validation method if it exists in the domain model)
-	gt.NotNil(t, messageLog)
-	gt.Equal(t, messageLog.ChannelType, slack.ChannelTypePublic)
-	gt.Equal(t, messageLog.MessageType, slack.MessageTypeUser)
-}
-
-func testInvalidMessageLog(t *testing.T) {
-	// Test with empty required fields
-	messageLog := &slack.SlackMessageLog{
-		// Missing required fields
-		ID:          "",
-		ChannelID:   "",
-		MessageType: "", // Invalid enum value
-	}
-
-	// Check that required fields are empty (this would fail validation if implemented)
-	gt.Equal(t, string(messageLog.ID), "")
-	gt.Equal(t, messageLog.ChannelID, "")
-}
-
 func TestChannelType_EnumValues(t *testing.T) {
 	// Test all valid channel type enum values
 	validChannelTypes := []slack.ChannelType{
