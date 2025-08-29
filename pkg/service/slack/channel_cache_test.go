@@ -48,7 +48,7 @@ func (m *mockSlackClientForCache) GetChannelInfo(ctx context.Context, channelID 
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
-	
+
 	if m.getChannelInfoFunc != nil {
 		return m.getChannelInfoFunc(ctx, channelID)
 	}

@@ -77,10 +77,19 @@ func (u *SlackMessageLoggingUseCase) LogSlackMessageWithTeam(ctx context.Context
 		}
 	}
 
-	// Convert attachments (if any files are mentioned in the message)
+	// Convert file attachments from the message
 	var attachments []slack.Attachment
-	// Note: Files information would need to be extracted from the event differently
-	// For now, we'll leave attachments empty as MessageEvent doesn't directly contain Files
+	if event.Message != nil && event.Message.Files != nil {
+		for _, file := range event.Message.Files {
+			attachments = append(attachments, slack.Attachment{
+				ID:       file.ID,
+				Name:     file.Name,
+				Mimetype: file.Mimetype,
+				FileType: file.Filetype,
+				URL:      file.URLPrivate,
+			})
+		}
+	}
 
 	// Create SlackMessageLog entry
 	messageLog := &slack.SlackMessageLog{
@@ -102,13 +111,11 @@ func (u *SlackMessageLoggingUseCase) LogSlackMessageWithTeam(ctx context.Context
 
 	// Store in repository
 	if err := u.slackMessageLogRepo.PutSlackMessageLog(ctx, messageLog); err != nil {
-		// Log error but don't fail the main process (best effort)
-		logger.Error("failed to store slack message log",
-			"message_id", messageLog.ID,
-			"channel_id", event.Channel,
-			"user_id", event.User,
-			"error", err)
-		return goerr.Wrap(err, "failed to store slack message log")
+		// The error will be handled and logged by the async dispatcher
+		return goerr.Wrap(err, "failed to store slack message log",
+			goerr.V("message_id", messageLog.ID),
+			goerr.V("channel_id", event.Channel),
+			goerr.V("user_id", event.User))
 	}
 
 	logger.Debug("successfully logged slack message",
@@ -138,42 +145,7 @@ func (u *SlackMessageLoggingUseCase) LogSlackAppMentionMessage(ctx context.Conte
 	return u.LogSlackMessage(ctx, messageEvent)
 }
 
-// GetMessageLogsByChannel retrieves message logs for a specific channel
-func (u *SlackMessageLoggingUseCase) GetMessageLogsByChannel(ctx context.Context, channelID string, limit int) ([]*slack.SlackMessageLog, error) {
-	if channelID == "" {
-		return nil, goerr.New("channelID cannot be empty")
-	}
-
-	if limit <= 0 {
-		limit = 50 // Default limit
-	}
-
-	return u.slackMessageLogRepo.GetSlackMessageLogsByChannel(ctx, channelID, limit)
-}
-
-// GetMessageLogsByUser retrieves message logs for a specific user
-func (u *SlackMessageLoggingUseCase) GetMessageLogsByUser(ctx context.Context, userID string, limit int) ([]*slack.SlackMessageLog, error) {
-	if userID == "" {
-		return nil, goerr.New("userID cannot be empty")
-	}
-
-	if limit <= 0 {
-		limit = 50 // Default limit
-	}
-
-	return u.slackMessageLogRepo.GetSlackMessageLogsByUser(ctx, userID, limit)
-}
-
-// GetMessageLogs retrieves message logs with filtering
-func (u *SlackMessageLoggingUseCase) GetMessageLogs(ctx context.Context, filter *interfaces.SlackMessageLogFilter) ([]*slack.SlackMessageLog, error) {
-	if filter == nil {
-		return nil, goerr.New("filter cannot be nil")
-	}
-
-	// Apply default limit if not set
-	if filter.Limit <= 0 {
-		filter.Limit = 50
-	}
-
-	return u.slackMessageLogRepo.GetSlackMessageLogs(ctx, filter)
+// GetMessageLogs retrieves message logs with filtering (primarily for channel and time period)
+func (u *SlackMessageLoggingUseCase) GetMessageLogs(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error) {
+	return u.slackMessageLogRepo.GetSlackMessageLogs(ctx, channel, from, to, limit, offset)
 }

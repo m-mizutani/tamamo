@@ -2,10 +2,10 @@ package firestore
 
 import (
 	"context"
+	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/m-mizutani/goerr/v2"
-	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"google.golang.org/api/iterator"
@@ -14,7 +14,6 @@ import (
 const (
 	collectionSlackChannels = "log_slack_channels"
 	subCollectionMessages   = "messages"
-	docChannelInfo         = "info"
 )
 
 // PutSlackMessageLog stores a Slack message log entry in Firestore using hierarchical structure
@@ -71,49 +70,86 @@ func (c *Client) PutSlackMessageLog(ctx context.Context, messageLog *slack.Slack
 	return nil
 }
 
-// GetSlackMessageLogs retrieves message logs with filtering from Firestore using hierarchical structure
-func (c *Client) GetSlackMessageLogs(ctx context.Context, filter *interfaces.SlackMessageLogFilter) ([]*slack.SlackMessageLog, error) {
-	if filter == nil {
-		return nil, goerr.New("filter cannot be nil")
+// GetSlackMessageLogs retrieves message logs from Firestore using hierarchical structure
+func (c *Client) GetSlackMessageLogs(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error) {
+	// Apply default limit if not specified
+	if limit <= 0 {
+		limit = 100
 	}
 
 	var results []*slack.SlackMessageLog
 
-	// If ChannelID is specified, query that specific channel's messages subcollection
-	if filter.ChannelID != "" {
-		channelResults, err := c.getMessagesFromChannel(ctx, filter)
-		if err != nil {
-			return nil, err
+	// If channel is specified, query that specific channel's messages subcollection
+	if channel != "" {
+		query := c.client.Collection(collectionSlackChannels).
+			Doc(channel).
+			Collection(subCollectionMessages).
+			Query
+
+		// Apply time range filters
+		if from != nil {
+			query = query.Where("created_at", ">=", *from)
 		}
-		results = append(results, channelResults...)
+		if to != nil {
+			query = query.Where("created_at", "<=", *to)
+		}
+
+		// Order by created_at descending (newest first) only if time filters are used
+		if from != nil || to != nil {
+			query = query.OrderBy("created_at", firestore.Desc)
+		}
+
+		// Apply offset and limit
+		if offset > 0 {
+			query = query.Offset(offset)
+		}
+		query = query.Limit(limit)
+
+		iter := query.Documents(ctx)
+		defer iter.Stop()
+
+		for {
+			doc, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return nil, goerr.Wrap(err, "failed to iterate channel messages")
+			}
+
+			var messageLog slack.SlackMessageLog
+			if err := doc.DataTo(&messageLog); err != nil {
+				return nil, goerr.Wrap(err, "failed to parse slack message log",
+					goerr.V("doc_id", doc.Ref.ID))
+			}
+
+			// Ensure ID is set from document ID
+			if messageLog.ID == "" {
+				messageLog.ID = types.MessageID(doc.Ref.ID)
+			}
+
+			results = append(results, &messageLog)
+		}
 	} else {
-		// If no ChannelID specified, we need to use collection group query to search across all channels
+		// If no channel specified, use collection group query to search across all channels
 		query := c.client.CollectionGroup(subCollectionMessages).Query
 
-		// Apply non-channel filters
-		if filter.UserID != "" {
-			query = query.Where("user_id", "==", filter.UserID)
+		// Apply time range filters
+		if from != nil {
+			query = query.Where("created_at", ">=", *from)
 		}
-		if filter.ChannelType != "" {
-			query = query.Where("channel_type", "==", filter.ChannelType)
-		}
-		if filter.MessageType != "" {
-			query = query.Where("message_type", "==", filter.MessageType)
-		}
-		if filter.FromTime != nil {
-			query = query.Where("created_at", ">=", *filter.FromTime)
-		}
-		if filter.ToTime != nil {
-			query = query.Where("created_at", "<=", *filter.ToTime)
+		if to != nil {
+			query = query.Where("created_at", "<=", *to)
 		}
 
 		// Order by created_at descending (newest first)
 		query = query.OrderBy("created_at", firestore.Desc)
 
-		// Apply limit
-		if filter.Limit > 0 {
-			query = query.Limit(filter.Limit)
+		// Apply offset and limit
+		if offset > 0 {
+			query = query.Offset(offset)
 		}
+		query = query.Limit(limit)
 
 		iter := query.Documents(ctx)
 		defer iter.Stop()
@@ -143,94 +179,4 @@ func (c *Client) GetSlackMessageLogs(ctx context.Context, filter *interfaces.Sla
 	}
 
 	return results, nil
-}
-
-// getMessagesFromChannel retrieves messages from a specific channel's subcollection
-func (c *Client) getMessagesFromChannel(ctx context.Context, filter *interfaces.SlackMessageLogFilter) ([]*slack.SlackMessageLog, error) {
-	query := c.client.Collection(collectionSlackChannels).
-		Doc(filter.ChannelID).
-		Collection(subCollectionMessages).
-		Query
-
-	// Apply filters
-	if filter.UserID != "" {
-		query = query.Where("user_id", "==", filter.UserID)
-	}
-	if filter.ChannelType != "" {
-		query = query.Where("channel_type", "==", filter.ChannelType)
-	}
-	if filter.MessageType != "" {
-		query = query.Where("message_type", "==", filter.MessageType)
-	}
-	if filter.FromTime != nil {
-		query = query.Where("created_at", ">=", *filter.FromTime)
-	}
-	if filter.ToTime != nil {
-		query = query.Where("created_at", "<=", *filter.ToTime)
-	}
-
-	// Order by created_at descending (newest first)
-	query = query.OrderBy("created_at", firestore.Desc)
-
-	// Apply limit
-	if filter.Limit > 0 {
-		query = query.Limit(filter.Limit)
-	}
-
-	iter := query.Documents(ctx)
-	defer iter.Stop()
-
-	var results []*slack.SlackMessageLog
-	for {
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, goerr.Wrap(err, "failed to iterate channel messages")
-		}
-
-		var messageLog slack.SlackMessageLog
-		if err := doc.DataTo(&messageLog); err != nil {
-			return nil, goerr.Wrap(err, "failed to parse slack message log",
-				goerr.V("doc_id", doc.Ref.ID))
-		}
-
-		// Ensure ID is set from document ID
-		if messageLog.ID == "" {
-			messageLog.ID = types.MessageID(doc.Ref.ID)
-		}
-
-		results = append(results, &messageLog)
-	}
-
-	return results, nil
-}
-
-// GetSlackMessageLogsByChannel retrieves message logs for a specific channel from Firestore
-func (c *Client) GetSlackMessageLogsByChannel(ctx context.Context, channelID string, limit int) ([]*slack.SlackMessageLog, error) {
-	if channelID == "" {
-		return nil, goerr.New("channelID cannot be empty")
-	}
-
-	filter := &interfaces.SlackMessageLogFilter{
-		ChannelID: channelID,
-		Limit:     limit,
-	}
-
-	return c.GetSlackMessageLogs(ctx, filter)
-}
-
-// GetSlackMessageLogsByUser retrieves message logs for a specific user from Firestore
-func (c *Client) GetSlackMessageLogsByUser(ctx context.Context, userID string, limit int) ([]*slack.SlackMessageLog, error) {
-	if userID == "" {
-		return nil, goerr.New("userID cannot be empty")
-	}
-
-	filter := &interfaces.SlackMessageLogFilter{
-		UserID: userID,
-		Limit:  limit,
-	}
-
-	return c.GetSlackMessageLogs(ctx, filter)
 }

@@ -15,15 +15,14 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	slackservice "github.com/m-mizutani/tamamo/pkg/service/slack"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
+	slackapi "github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 )
 
 // Mock for SlackMessageLogRepository
 type SlackMessageLogRepositoryMock struct {
-	PutSlackMessageLogFunc           func(ctx context.Context, messageLog *slack.SlackMessageLog) error
-	GetSlackMessageLogsByChannelFunc func(ctx context.Context, channelID string, limit int) ([]*slack.SlackMessageLog, error)
-	GetSlackMessageLogsByUserFunc    func(ctx context.Context, userID string, limit int) ([]*slack.SlackMessageLog, error)
-	GetSlackMessageLogsFunc          func(ctx context.Context, filter *interfaces.SlackMessageLogFilter) ([]*slack.SlackMessageLog, error)
+	PutSlackMessageLogFunc  func(ctx context.Context, messageLog *slack.SlackMessageLog) error
+	GetSlackMessageLogsFunc func(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error)
 }
 
 func (m *SlackMessageLogRepositoryMock) PutSlackMessageLog(ctx context.Context, messageLog *slack.SlackMessageLog) error {
@@ -33,23 +32,9 @@ func (m *SlackMessageLogRepositoryMock) PutSlackMessageLog(ctx context.Context, 
 	return nil
 }
 
-func (m *SlackMessageLogRepositoryMock) GetSlackMessageLogsByChannel(ctx context.Context, channelID string, limit int) ([]*slack.SlackMessageLog, error) {
-	if m.GetSlackMessageLogsByChannelFunc != nil {
-		return m.GetSlackMessageLogsByChannelFunc(ctx, channelID, limit)
-	}
-	return []*slack.SlackMessageLog{}, nil
-}
-
-func (m *SlackMessageLogRepositoryMock) GetSlackMessageLogsByUser(ctx context.Context, userID string, limit int) ([]*slack.SlackMessageLog, error) {
-	if m.GetSlackMessageLogsByUserFunc != nil {
-		return m.GetSlackMessageLogsByUserFunc(ctx, userID, limit)
-	}
-	return []*slack.SlackMessageLog{}, nil
-}
-
-func (m *SlackMessageLogRepositoryMock) GetSlackMessageLogs(ctx context.Context, filter *interfaces.SlackMessageLogFilter) ([]*slack.SlackMessageLog, error) {
+func (m *SlackMessageLogRepositoryMock) GetSlackMessageLogs(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error) {
 	if m.GetSlackMessageLogsFunc != nil {
-		return m.GetSlackMessageLogsFunc(ctx, filter)
+		return m.GetSlackMessageLogsFunc(ctx, channel, from, to, limit, offset)
 	}
 	return []*slack.SlackMessageLog{}, nil
 }
@@ -128,6 +113,10 @@ func TestSlackMessageLoggingUseCase_LogSlackMessage(t *testing.T) {
 
 	t.Run("ThreadMessage", func(t *testing.T) {
 		testLogSlackMessageThread(t)
+	})
+
+	t.Run("MessageWithFileAttachments", func(t *testing.T) {
+		testLogSlackMessageWithFiles(t)
 	})
 }
 
@@ -355,6 +344,73 @@ func testLogSlackMessageThread(t *testing.T) {
 	gt.Equal(t, storedMessage.ThreadTS, event.ThreadTimeStamp)
 }
 
+func testLogSlackMessageWithFiles(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup mocks
+	mockRepo := &SlackMessageLogRepositoryMock{}
+	mockClient := &SlackClientMock{}
+
+	var storedMessage *slack.SlackMessageLog
+	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
+		storedMessage = messageLog
+		return nil
+	}
+
+	// Create use case
+	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
+	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+
+	// Test event with file attachments in Message field
+	event := &slackevents.MessageEvent{
+		Type:      "message",
+		User:      "U123456789",
+		Text:      "Check out this file!",
+		TimeStamp: "1234567890.123456",
+		Channel:   "C123456789",
+		Message: &slackapi.Msg{
+			Files: []slackapi.File{
+				{
+					ID:         "F123456789",
+					Name:       "document.pdf",
+					Mimetype:   "application/pdf",
+					Filetype:   "pdf",
+					URLPrivate: "https://files.slack.com/files-pri/T123456789-F123456789/document.pdf",
+				},
+				{
+					ID:         "F987654321",
+					Name:       "image.png",
+					Mimetype:   "image/png",
+					Filetype:   "png",
+					URLPrivate: "https://files.slack.com/files-pri/T123456789-F987654321/image.png",
+				},
+			},
+		},
+	}
+
+	// Execute
+	err := uc.LogSlackMessage(ctx, event)
+	gt.NoError(t, err)
+
+	// Verify file attachments were processed
+	gt.NotNil(t, storedMessage)
+	gt.Equal(t, len(storedMessage.Attachments), 2)
+
+	// Verify first file
+	gt.Equal(t, storedMessage.Attachments[0].ID, "F123456789")
+	gt.Equal(t, storedMessage.Attachments[0].Name, "document.pdf")
+	gt.Equal(t, storedMessage.Attachments[0].Mimetype, "application/pdf")
+	gt.Equal(t, storedMessage.Attachments[0].FileType, "pdf")
+	gt.Equal(t, storedMessage.Attachments[0].URL, "https://files.slack.com/files-pri/T123456789-F123456789/document.pdf")
+
+	// Verify second file
+	gt.Equal(t, storedMessage.Attachments[1].ID, "F987654321")
+	gt.Equal(t, storedMessage.Attachments[1].Name, "image.png")
+	gt.Equal(t, storedMessage.Attachments[1].Mimetype, "image/png")
+	gt.Equal(t, storedMessage.Attachments[1].FileType, "png")
+	gt.Equal(t, storedMessage.Attachments[1].URL, "https://files.slack.com/files-pri/T123456789-F987654321/image.png")
+}
+
 func TestSlackMessageLoggingUseCase_LogSlackAppMentionMessage(t *testing.T) {
 	ctx := context.Background()
 
@@ -395,20 +451,20 @@ func TestSlackMessageLoggingUseCase_LogSlackAppMentionMessage(t *testing.T) {
 }
 
 func TestSlackMessageLoggingUseCase_GetMethods(t *testing.T) {
-	t.Run("GetMessageLogsByChannel", func(t *testing.T) {
-		testGetMessageLogsByChannel(t)
-	})
-
-	t.Run("GetMessageLogsByUser", func(t *testing.T) {
-		testGetMessageLogsByUser(t)
-	})
-
 	t.Run("GetMessageLogs", func(t *testing.T) {
 		testGetMessageLogs(t)
 	})
+
+	t.Run("GetMessageLogsByChannelFilter", func(t *testing.T) {
+		testGetMessageLogsByChannelFilter(t)
+	})
+
+	t.Run("GetMessageLogsWithPagination", func(t *testing.T) {
+		testGetMessageLogsWithPagination(t)
+	})
 }
 
-func testGetMessageLogsByChannel(t *testing.T) {
+func testGetMessageLogsByChannelFilter(t *testing.T) {
 	ctx := context.Background()
 
 	// Setup mocks
@@ -423,10 +479,10 @@ func testGetMessageLogsByChannel(t *testing.T) {
 		},
 	}
 
-	mockRepo.GetSlackMessageLogsByChannelFunc = func(ctx context.Context, channelID string, limit int) ([]*slack.SlackMessageLog, error) {
-		gt.Equal(t, channelID, "C123456789")
-		// Verify limit is handled correctly by UseCase (50 for 0, otherwise as passed)
-		gt.True(t, limit == 10 || limit == 50)
+	mockRepo.GetSlackMessageLogsFunc = func(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error) {
+		gt.Equal(t, channel, "C123456789")
+		gt.Equal(t, limit, 10)
+		gt.Equal(t, offset, 0)
 		return expectedMessages, nil
 	}
 
@@ -434,55 +490,11 @@ func testGetMessageLogsByChannel(t *testing.T) {
 	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
 	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
 
-	// Execute
-	messages, err := uc.GetMessageLogsByChannel(ctx, "C123456789", 10)
+	// Test channel filter with limit and offset
+	messages, err := uc.GetMessageLogs(ctx, "C123456789", nil, nil, 10, 0)
 	gt.NoError(t, err)
 	gt.Equal(t, len(messages), 1)
 	gt.Equal(t, messages[0].ChannelID, "C123456789")
-
-	// Test empty channel ID
-	_, err = uc.GetMessageLogsByChannel(ctx, "", 10)
-	gt.Error(t, err)
-
-	// Test default limit
-	_, err = uc.GetMessageLogsByChannel(ctx, "C123456789", 0)
-	gt.NoError(t, err) // Should use default limit of 50
-}
-
-func testGetMessageLogsByUser(t *testing.T) {
-	ctx := context.Background()
-
-	// Setup mocks
-	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
-
-	expectedMessages := []*slack.SlackMessageLog{
-		{
-			ID:     types.NewMessageID(ctx),
-			UserID: "U123456789",
-			Text:   "Test message",
-		},
-	}
-
-	mockRepo.GetSlackMessageLogsByUserFunc = func(ctx context.Context, userID string, limit int) ([]*slack.SlackMessageLog, error) {
-		gt.Equal(t, userID, "U123456789")
-		gt.Equal(t, limit, 20)
-		return expectedMessages, nil
-	}
-
-	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
-
-	// Execute
-	messages, err := uc.GetMessageLogsByUser(ctx, "U123456789", 20)
-	gt.NoError(t, err)
-	gt.Equal(t, len(messages), 1)
-	gt.Equal(t, messages[0].UserID, "U123456789")
-
-	// Test empty user ID
-	_, err = uc.GetMessageLogsByUser(ctx, "", 20)
-	gt.Error(t, err)
 }
 
 func testGetMessageLogs(t *testing.T) {
@@ -494,18 +506,12 @@ func testGetMessageLogs(t *testing.T) {
 
 	expectedMessages := []*slack.SlackMessageLog{
 		{
-			ID:          types.NewMessageID(ctx),
-			ChannelType: slack.ChannelTypePublic,
-			Text:        "Test message",
+			ID:   types.NewMessageID(ctx),
+			Text: "Test message",
 		},
 	}
 
-	mockRepo.GetSlackMessageLogsFunc = func(ctx context.Context, filter *interfaces.SlackMessageLogFilter) ([]*slack.SlackMessageLog, error) {
-		gt.Equal(t, filter.ChannelType, slack.ChannelTypePublic)
-		// UseCase applies default limit of 50 if 0 is passed
-		if filter.Limit == 0 {
-			filter.Limit = 50
-		}
+	mockRepo.GetSlackMessageLogsFunc = func(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error) {
 		return expectedMessages, nil
 	}
 
@@ -513,27 +519,57 @@ func testGetMessageLogs(t *testing.T) {
 	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
 	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
 
-	// Test with filter
-	filter := &interfaces.SlackMessageLogFilter{
-		ChannelType: slack.ChannelTypePublic,
-		Limit:       30,
-	}
-
-	messages, err := uc.GetMessageLogs(ctx, filter)
+	// Test with basic parameters
+	messages, err := uc.GetMessageLogs(ctx, "", nil, nil, 0, 0)
 	gt.NoError(t, err)
 	gt.Equal(t, len(messages), 1)
-	gt.Equal(t, messages[0].ChannelType, slack.ChannelTypePublic)
 
-	// Test nil filter
-	_, err = uc.GetMessageLogs(ctx, nil)
-	gt.Error(t, err)
+	// Test with time range and pagination
+	now := time.Now()
+	from := now.Add(-time.Hour)
+	to := now.Add(time.Hour)
 
-	// Test default limit
-	filter = &interfaces.SlackMessageLogFilter{
-		ChannelType: slack.ChannelTypePublic,
-		Limit:       0, // Should be set to default
-	}
-	_, err = uc.GetMessageLogs(ctx, filter)
+	messages, err = uc.GetMessageLogs(ctx, "C123456789", &from, &to, 20, 10)
 	gt.NoError(t, err)
-	gt.Equal(t, filter.Limit, 50) // Should be updated to default
+	gt.Equal(t, len(messages), 1)
+}
+
+func testGetMessageLogsWithPagination(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup mocks
+	mockRepo := &SlackMessageLogRepositoryMock{}
+	mockClient := &SlackClientMock{}
+
+	// Create test messages
+	expectedMessages := []*slack.SlackMessageLog{
+		{
+			ID:        types.NewMessageID(ctx),
+			ChannelID: "C123456789",
+			Text:      "Message 1",
+		},
+		{
+			ID:        types.NewMessageID(ctx),
+			ChannelID: "C123456789",
+			Text:      "Message 2",
+		},
+	}
+
+	mockRepo.GetSlackMessageLogsFunc = func(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error) {
+		// Verify pagination parameters
+		gt.Equal(t, limit, 5)
+		gt.Equal(t, offset, 10)
+		return expectedMessages, nil
+	}
+
+	// Create use case
+	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
+	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+
+	// Test pagination
+	messages, err := uc.GetMessageLogs(ctx, "C123456789", nil, nil, 5, 10)
+	gt.NoError(t, err)
+	gt.Equal(t, len(messages), 2)
+	gt.Equal(t, messages[0].Text, "Message 1")
+	gt.Equal(t, messages[1].Text, "Message 2")
 }
