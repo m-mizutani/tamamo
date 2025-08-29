@@ -222,4 +222,5 @@ func TestFirestoreRepository(t *testing.T) {
 	// }
 	// defer client.Close()
 	// testThreadRepository(t, client)
+	// testSlackMessageLogRepository(t, client)
 }

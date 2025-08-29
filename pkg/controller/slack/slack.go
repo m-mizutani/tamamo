@@ -6,6 +6,8 @@ import (
 	"github.com/m-mizutani/ctxlog"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	slack_model "github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/usecase"
+	"github.com/m-mizutani/tamamo/pkg/utils/async"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -13,14 +15,29 @@ import (
 type Controller struct {
 	event       interfaces.SlackEventUseCases
 	slackClient interfaces.SlackClient
+	useCases    *usecase.Slack // Add reference to use cases for message logging
+}
+
+// ControllerOption defines a functional option for the Controller
+type ControllerOption func(*Controller)
+
+// WithUseCases sets the use cases for the controller
+func WithUseCases(useCases *usecase.Slack) ControllerOption {
+	return func(c *Controller) {
+		c.useCases = useCases
+	}
 }
 
 // New creates a new Slack controller
-func New(event interfaces.SlackEventUseCases, slackClient interfaces.SlackClient) *Controller {
-	return &Controller{
+func New(event interfaces.SlackEventUseCases, slackClient interfaces.SlackClient, options ...ControllerOption) *Controller {
+	ctrl := &Controller{
 		event:       event,
 		slackClient: slackClient,
 	}
+	for _, opt := range options {
+		opt(ctrl)
+	}
+	return ctrl
 }
 
 // enrichMessageWithUserInfo fetches user display name from Slack API and updates the message
@@ -102,6 +119,13 @@ func (x *Controller) HandleSlackAppMention(ctx context.Context, apiEvent *slacke
 		// Continue processing even if user info fetch fails
 	}
 
+	// Log message asynchronously
+	if x.useCases != nil {
+		async.Dispatch(ctx, func(ctx context.Context) error {
+			return x.useCases.LogSlackAppMentionMessage(ctx, event, apiEvent.TeamID)
+		})
+	}
+
 	// Process the mention event
 	return x.event.HandleSlackAppMention(ctx, *slackMsg)
 }
@@ -122,6 +146,13 @@ func (x *Controller) HandleSlackMessage(ctx context.Context, apiEvent *slackeven
 	if err := x.enrichMessageWithUserInfo(ctx, slackMsg); err != nil {
 		ctxlog.From(ctx).Warn("failed to enrich message with user info", "error", err)
 		// Continue processing even if user info fetch fails
+	}
+
+	// Log message asynchronously
+	if x.useCases != nil {
+		async.Dispatch(ctx, func(ctx context.Context) error {
+			return x.useCases.LogSlackMessage(ctx, event, apiEvent.TeamID)
+		})
 	}
 
 	// Process the message event

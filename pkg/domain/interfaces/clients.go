@@ -2,6 +2,8 @@ package interfaces
 
 import (
 	"context"
+
+	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 )
 
 // SlackUserProfile represents a user's profile information from Slack
@@ -49,6 +51,7 @@ type SlackClient interface {
 	GetUserProfile(ctx context.Context, userID string) (*SlackUserProfile, error)
 	GetUserInfo(ctx context.Context, userID string) (*SlackUserInfo, error)
 	GetBotInfo(ctx context.Context, botID string) (*SlackBotInfo, error)
+	GetChannelInfo(ctx context.Context, channelID string) (*slack.ChannelInfo, error)
 }
 
 // UserAvatarService manages user avatar data retrieval

@@ -24,6 +24,9 @@ var _ interfaces.SlackClient = &SlackClientMock{}
 //			GetBotInfoFunc: func(ctx context.Context, botID string) (*interfaces.SlackBotInfo, error) {
 //				panic("mock out the GetBotInfo method")
 //			},
+//			GetChannelInfoFunc: func(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+//				panic("mock out the GetChannelInfo method")
+//			},
 //			GetUserInfoFunc: func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
 //				panic("mock out the GetUserInfo method")
 //			},
@@ -49,6 +52,9 @@ type SlackClientMock struct {
 	// GetBotInfoFunc mocks the GetBotInfo method.
 	GetBotInfoFunc func(ctx context.Context, botID string) (*interfaces.SlackBotInfo, error)
 
+	// GetChannelInfoFunc mocks the GetChannelInfo method.
+	GetChannelInfoFunc func(ctx context.Context, channelID string) (*slack.ChannelInfo, error)
+
 	// GetUserInfoFunc mocks the GetUserInfo method.
 	GetUserInfoFunc func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error)
 
@@ -72,6 +78,13 @@ type SlackClientMock struct {
 			Ctx context.Context
 			// BotID is the botID argument value.
 			BotID string
+		}
+		// GetChannelInfo holds details about calls to the GetChannelInfo method.
+		GetChannelInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ChannelID is the channelID argument value.
+			ChannelID string
 		}
 		// GetUserInfo holds details about calls to the GetUserInfo method.
 		GetUserInfo []struct {
@@ -118,6 +131,7 @@ type SlackClientMock struct {
 		}
 	}
 	lockGetBotInfo             sync.RWMutex
+	lockGetChannelInfo         sync.RWMutex
 	lockGetUserInfo            sync.RWMutex
 	lockGetUserProfile         sync.RWMutex
 	lockIsBotUser              sync.RWMutex
@@ -158,6 +172,42 @@ func (mock *SlackClientMock) GetBotInfoCalls() []struct {
 	mock.lockGetBotInfo.RLock()
 	calls = mock.calls.GetBotInfo
 	mock.lockGetBotInfo.RUnlock()
+	return calls
+}
+
+// GetChannelInfo calls GetChannelInfoFunc.
+func (mock *SlackClientMock) GetChannelInfo(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+	if mock.GetChannelInfoFunc == nil {
+		panic("SlackClientMock.GetChannelInfoFunc: method is nil but SlackClient.GetChannelInfo was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		ChannelID string
+	}{
+		Ctx:       ctx,
+		ChannelID: channelID,
+	}
+	mock.lockGetChannelInfo.Lock()
+	mock.calls.GetChannelInfo = append(mock.calls.GetChannelInfo, callInfo)
+	mock.lockGetChannelInfo.Unlock()
+	return mock.GetChannelInfoFunc(ctx, channelID)
+}
+
+// GetChannelInfoCalls gets all the calls that were made to GetChannelInfo.
+// Check the length with:
+//
+//	len(mockedSlackClient.GetChannelInfoCalls())
+func (mock *SlackClientMock) GetChannelInfoCalls() []struct {
+	Ctx       context.Context
+	ChannelID string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		ChannelID string
+	}
+	mock.lockGetChannelInfo.RLock()
+	calls = mock.calls.GetChannelInfo
+	mock.lockGetChannelInfo.RUnlock()
 	return calls
 }
 

@@ -10,13 +10,19 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
 
+var (
+	ErrNilPointer   = goerr.New("nil pointer provided")
+	ErrInvalidInput = goerr.New("invalid input provided")
+)
+
 // Client is an in-memory implementation of ThreadRepository and HistoryRepository
 type Client struct {
-	mu          sync.RWMutex
-	threads     map[types.ThreadID]*slack.Thread
-	messages    map[types.ThreadID][]*slack.Message
-	histories   map[types.HistoryID]*slack.History
-	userStorage *userStorage
+	mu           sync.RWMutex
+	threads      map[types.ThreadID]*slack.Thread
+	messages     map[types.ThreadID][]*slack.Message
+	histories    map[types.HistoryID]*slack.History
+	userStorage  *userStorage
+	slackMsgLogs *slackMessageLogStorage
 }
 
 // New creates a new in-memory client

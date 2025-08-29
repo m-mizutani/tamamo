@@ -83,7 +83,6 @@ func (m *mockAgentUseCase) ValidateVersion(version string) error {
 	return nil
 }
 
-
 // mockStorageAdapter for testing
 type mockStorageAdapter struct {
 	storage map[string][]byte
