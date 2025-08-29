@@ -171,11 +171,11 @@ func cmdServe() *cli.Command {
 				)
 				defer client.Close()
 				repo = client
-				agentRepo = client // Firestore client implements both ThreadRepository and AgentRepository
+				agentRepo = client
 				sessionRepo = firestore.NewSessionRepository(client.GetClient())
 				userRepo = firestore.NewUserRepository(client.GetClient())
 				agentImageRepo = client.NewAgentImageRepository()
-				slackMessageLogRepo = client // Firestore client implements SlackMessageLogRepository
+				slackMessageLogRepo = client
 			} else {
 				// Use memory repository as fallback
 				logger.Warn("using in-memory repository (data will be lost on restart)")
@@ -185,7 +185,7 @@ func cmdServe() *cli.Command {
 				sessionRepo = memory.NewSessionRepository()
 				userRepo = memory.NewUserRepository()
 				agentImageRepo = memory.NewAgentImageRepository()
-				slackMessageLogRepo = memoryClient // Memory client implements SlackMessageLogRepository
+				slackMessageLogRepo = memoryClient
 			}
 
 			logger.Info("starting server",

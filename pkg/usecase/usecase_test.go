@@ -13,7 +13,6 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
-	slackservice "github.com/m-mizutani/tamamo/pkg/service/slack"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
 	slackapi "github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
@@ -134,8 +133,10 @@ func testLogSlackMessageSuccess(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test event
 	event := &slackevents.MessageEvent{
@@ -174,8 +175,10 @@ func testLogSlackMessageRepositoryError(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test event
 	event := &slackevents.MessageEvent{
@@ -210,8 +213,10 @@ func testLogSlackMessageChannelInfoError(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test event
 	event := &slackevents.MessageEvent{
@@ -251,8 +256,10 @@ func testLogSlackMessageUserInfoError(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test event
 	event := &slackevents.MessageEvent{
@@ -286,8 +293,10 @@ func testLogSlackMessageBot(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test bot event
 	event := &slackevents.MessageEvent{
@@ -323,8 +332,10 @@ func testLogSlackMessageThread(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test thread event
 	event := &slackevents.MessageEvent{
@@ -359,8 +370,10 @@ func testLogSlackMessageWithFiles(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test event with file attachments in Message field
 	event := &slackevents.MessageEvent{
@@ -426,8 +439,10 @@ func TestSlackMessageLoggingUseCase_LogSlackAppMentionMessage(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test app mention event
 	event := &slackevents.AppMentionEvent{
@@ -489,8 +504,10 @@ func testGetMessageLogsByChannelFilter(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test channel filter with limit and offset
 	messages, err := uc.GetMessageLogs(ctx, "C123456789", nil, nil, 10, 0)
@@ -518,8 +535,10 @@ func testGetMessageLogs(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test with basic parameters
 	messages, err := uc.GetMessageLogs(ctx, "", nil, nil, 0, 0)
@@ -565,8 +584,10 @@ func testGetMessageLogsWithPagination(t *testing.T) {
 	}
 
 	// Create use case
-	channelCache := slackservice.NewChannelCache(mockClient, time.Hour)
-	uc := usecase.NewSlackMessageLoggingUseCase(mockRepo, mockClient, channelCache)
+	uc := usecase.New(
+		usecase.WithSlackClient(mockClient),
+		usecase.WithSlackMessageLogRepository(mockRepo),
+	)
 
 	// Test pagination
 	messages, err := uc.GetMessageLogs(ctx, "C123456789", nil, nil, 5, 10)
