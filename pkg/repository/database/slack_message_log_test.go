@@ -55,9 +55,7 @@ func getTestFirestoreClient(t *testing.T) *firestore.Client {
 
 	ctx := context.Background()
 	client, err := firestore.New(ctx, projectID, databaseID)
-	if err != nil {
-		t.Fatalf("Failed to create Firestore client: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	return client
 }

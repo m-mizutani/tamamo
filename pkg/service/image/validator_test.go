@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/m-mizutani/gt"
+
 	imageModel "github.com/m-mizutani/tamamo/pkg/domain/model/image"
 	imageService "github.com/m-mizutani/tamamo/pkg/service/image"
 )
@@ -44,9 +46,7 @@ func TestValidator_ValidateFile_ValidJPEG(t *testing.T) {
 	reader := bytes.NewReader(jpegData)
 
 	metadata, err := validator.ValidateFile(reader, "image/jpeg", int64(len(jpegData)))
-	if err != nil {
-		t.Fatalf("Expected valid JPEG to pass validation, got error: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	if metadata.ContentType != "image/jpeg" {
 		t.Errorf("Expected content type image/jpeg, got %s", metadata.ContentType)
@@ -62,9 +62,7 @@ func TestValidator_ValidateFile_ValidPNG(t *testing.T) {
 	reader := bytes.NewReader(pngData)
 
 	metadata, err := validator.ValidateFile(reader, "image/png", int64(len(pngData)))
-	if err != nil {
-		t.Fatalf("Expected valid PNG to pass validation, got error: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	if metadata.ContentType != "image/png" {
 		t.Errorf("Expected content type image/png, got %s", metadata.ContentType)

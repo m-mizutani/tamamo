@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/m-mizutani/gt"
 	"github.com/m-mizutani/tamamo/pkg/adapters/fs"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/image"
@@ -13,9 +14,7 @@ import (
 func TestClient_PutAndGet(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "fs_client_test")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
+	gt.NoError(t, err).Required()
 	defer os.RemoveAll(tempDir)
 
 	// Create client
@@ -24,24 +23,19 @@ func TestClient_PutAndGet(t *testing.T) {
 		Permissions:   0755,
 	}
 	client, err := fs.New(config)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	ctx := context.Background()
 	key := "test-file.txt"
 	data := []byte("test data")
 
 	// Test Put
-	if err := client.Put(ctx, key, data); err != nil {
-		t.Fatalf("Failed to put data: %v", err)
-	}
+	err = client.Put(ctx, key, data)
+	gt.NoError(t, err).Required()
 
 	// Test Get
 	retrieved, err := client.Get(ctx, key)
-	if err != nil {
-		t.Fatalf("Failed to get data: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	if string(retrieved) != string(data) {
 		t.Errorf("Expected %s, got %s", string(data), string(retrieved))
@@ -50,9 +44,7 @@ func TestClient_PutAndGet(t *testing.T) {
 
 func TestClient_GetNotFound(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "fs_client_test")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
+	gt.NoError(t, err).Required()
 	defer os.RemoveAll(tempDir)
 
 	config := &fs.Config{
@@ -60,9 +52,7 @@ func TestClient_GetNotFound(t *testing.T) {
 		Permissions:   0755,
 	}
 	client, err := fs.New(config)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	ctx := context.Background()
 	_, err = client.Get(ctx, "nonexistent-file.txt")
@@ -73,9 +63,7 @@ func TestClient_GetNotFound(t *testing.T) {
 
 func TestClient_SecurityValidation(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "fs_client_test")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
+	gt.NoError(t, err).Required()
 	defer os.RemoveAll(tempDir)
 
 	config := &fs.Config{
@@ -83,9 +71,7 @@ func TestClient_SecurityValidation(t *testing.T) {
 		Permissions:   0755,
 	}
 	client, err := fs.New(config)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	ctx := context.Background()
 	data := []byte("test data")
