@@ -3,6 +3,7 @@ package slack_test
 import (
 	"context"
 	"errors"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -288,4 +289,84 @@ func TestChannelCache_EmptyChannelID(t *testing.T) {
 	gt.Error(t, err)
 	gt.Nil(t, info)
 	gt.Equal(t, mockClient.getCallCount(), 0) // Should not call client
+}
+
+// TestChannelCache_RealSlackAPI tests actual Slack API integration
+// This test runs only when TEST_SLACK_OAUTH_TOKEN and TEST_SLACK_CHANNEL are set
+func TestChannelCache_RealSlackAPI(t *testing.T) {
+	token := os.Getenv("TEST_SLACK_OAUTH_TOKEN")
+	channelID := os.Getenv("TEST_SLACK_CHANNEL")
+
+	if token == "" || channelID == "" {
+		t.Skip("Skipping real Slack API test: TEST_SLACK_OAUTH_TOKEN or TEST_SLACK_CHANNEL not set")
+	}
+
+	ctx := context.Background()
+
+	// Create real Slack client
+	realClient, err := slackservice.New(token)
+	gt.NoError(t, err)
+	cache := slackservice.NewChannelCache(realClient, time.Hour)
+
+	// First call should fetch from actual Slack API
+	info1, err := cache.GetChannelInfo(ctx, channelID)
+	gt.NoError(t, err)
+	gt.NotNil(t, info1)
+	gt.Equal(t, info1.ID, channelID)
+	gt.True(t, len(info1.Name) > 0) // Should have a non-empty name
+
+	// Verify channel type is valid
+	validTypes := []slack.ChannelType{
+		slack.ChannelTypePublic,
+		slack.ChannelTypePrivate,
+		slack.ChannelTypeIM,
+		slack.ChannelTypeMPIM,
+	}
+	typeValid := false
+	for _, vt := range validTypes {
+		if info1.Type == vt {
+			typeValid = true
+			break
+		}
+	}
+	gt.True(t, typeValid)
+
+	// Second call should use cache (verify by timing)
+	start := time.Now()
+	info2, err := cache.GetChannelInfo(ctx, channelID)
+	elapsed := time.Since(start)
+	gt.NoError(t, err)
+	gt.NotNil(t, info2)
+	
+	// Cached call should be very fast (less than 10ms)
+	// Real API call would typically take 100ms+
+	gt.True(t, elapsed < 10*time.Millisecond)
+	
+	// Verify cached data matches original
+	gt.Equal(t, info2.ID, info1.ID)
+	gt.Equal(t, info2.Name, info1.Name)
+	gt.Equal(t, info2.Type, info1.Type)
+	gt.Equal(t, info2.IsPrivate, info1.IsPrivate)
+
+	// Test with invalid channel ID
+	invalidInfo, err := cache.GetChannelInfo(ctx, "INVALID_CHANNEL")
+	gt.Error(t, err)
+	gt.Nil(t, invalidInfo)
+
+	// Test cache expiration with short TTL
+	shortCache := slackservice.NewChannelCache(realClient, 100*time.Millisecond)
+	
+	// First call
+	info3, err := shortCache.GetChannelInfo(ctx, channelID)
+	gt.NoError(t, err)
+	gt.NotNil(t, info3)
+	
+	// Wait for cache to expire
+	time.Sleep(150 * time.Millisecond)
+	
+	// This should make a new API call
+	info4, err := shortCache.GetChannelInfo(ctx, channelID)
+	gt.NoError(t, err)
+	gt.NotNil(t, info4)
+	gt.Equal(t, info4.ID, channelID)
 }

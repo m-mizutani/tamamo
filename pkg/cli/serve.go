@@ -284,7 +284,7 @@ func cmdServe() *cli.Command {
 			)
 
 			// Create controllers
-			slackCtrl := slack_controller.New(uc, slackSvc, slack_controller.WithUseCases(uc))
+			slackCtrl := slack_controller.New(uc, slackSvc)
 
 			// Create agent use case
 			agentUseCase := usecase.NewAgentUseCases(agentRepo)
