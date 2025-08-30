@@ -3,96 +3,81 @@ package database_test
 import (
 	"context"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/m-mizutani/gt"
+	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/repository/database/firestore"
 	"github.com/m-mizutani/tamamo/pkg/repository/database/memory"
 )
 
-func TestMemorySlackMessageLogRepository(t *testing.T) {
+// TestSlackMessageLogRepository runs the common test suite for both implementations
+func TestSlackMessageLogRepository(t *testing.T) {
+	// Test Memory implementation
+	t.Run("Memory", func(t *testing.T) {
+		repo := memory.New()
+		runSlackMessageLogTestSuite(t, repo)
+	})
+
+	// Test Firestore implementation
+	t.Run("Firestore", func(t *testing.T) {
+		projectID := os.Getenv("TEST_FIRESTORE_PROJECT")
+		if projectID == "" {
+			t.Skip("TEST_FIRESTORE_PROJECT environment variable must be set for Firestore tests")
+		}
+
+		databaseID := os.Getenv("TEST_FIRESTORE_DATABASE")
+		if databaseID == "" {
+			databaseID = "(default)"
+		}
+
+		ctx := context.Background()
+		client, err := firestore.New(ctx, projectID, databaseID)
+		gt.NoError(t, err).Required()
+		defer client.Close()
+
+		runSlackMessageLogTestSuite(t, client)
+	})
+}
+
+// runSlackMessageLogTestSuite runs all tests for a SlackMessageLogRepository implementation
+func runSlackMessageLogTestSuite(t *testing.T, repo interfaces.SlackMessageLogRepository) {
 	t.Run("PutAndGetSlackMessageLog", func(t *testing.T) {
-		testPutAndGetSlackMessageLog(t, memory.New())
+		testPutAndGetSlackMessageLog(t, repo)
 	})
 
 	t.Run("GetSlackMessageLogsWithFiltering", func(t *testing.T) {
-		testGetSlackMessageLogsWithFiltering(t, memory.New())
+		testGetSlackMessageLogsWithFiltering(t, repo)
 	})
 
 	t.Run("GetSlackMessageLogsWithPagination", func(t *testing.T) {
-		testGetSlackMessageLogsWithPagination(t, memory.New())
+		testGetSlackMessageLogsWithPagination(t, repo)
 	})
 
 	t.Run("GetSlackMessageLogsWithTimeRange", func(t *testing.T) {
-		testGetSlackMessageLogsWithTimeRange(t, memory.New())
+		testGetSlackMessageLogsWithTimeRange(t, repo)
 	})
 
 	t.Run("GetSlackMessageLogsAcrossChannels", func(t *testing.T) {
-		testGetSlackMessageLogsAcrossChannels(t, memory.New())
+		testGetSlackMessageLogsAcrossChannels(t, repo)
 	})
 
 	t.Run("ConcurrentAccess", func(t *testing.T) {
-		testConcurrentAccess(t, memory.New())
+		testConcurrentAccess(t, repo)
 	})
 }
 
-// getTestFirestoreClient creates a Firestore client for testing
-func getTestFirestoreClient(t *testing.T) *firestore.Client {
-	t.Helper()
-
-	projectID := os.Getenv("TEST_FIRESTORE_PROJECT")
-	if projectID == "" {
-		t.Skip("TEST_FIRESTORE_PROJECT environment variable must be set for Firestore tests")
-	}
-
-	databaseID := os.Getenv("TEST_FIRESTORE_DATABASE")
-	if databaseID == "" {
-		databaseID = "(default)"
-	}
-
-	ctx := context.Background()
-	client, err := firestore.New(ctx, projectID, databaseID)
-	gt.NoError(t, err).Required()
-
-	return client
-}
-
-func TestFirestoreSlackMessageLogRepository(t *testing.T) {
-	client := getTestFirestoreClient(t)
-	defer client.Close()
-
-	t.Run("PutAndGetSlackMessageLog", func(t *testing.T) {
-		testPutAndGetSlackMessageLog(t, client)
-	})
-
-	t.Run("GetSlackMessageLogsWithFiltering", func(t *testing.T) {
-		testGetSlackMessageLogsWithFiltering(t, client)
-	})
-
-	t.Run("GetSlackMessageLogsWithPagination", func(t *testing.T) {
-		testGetSlackMessageLogsWithPagination(t, client)
-	})
-
-	t.Run("GetSlackMessageLogsWithTimeRange", func(t *testing.T) {
-		testGetSlackMessageLogsWithTimeRange(t, client)
-	})
-
-	t.Run("GetSlackMessageLogsAcrossChannels", func(t *testing.T) {
-		testGetSlackMessageLogsAcrossChannels(t, client)
-	})
-}
-
-func testPutAndGetSlackMessageLog(t *testing.T, repo interface {
-	PutSlackMessageLog(ctx context.Context, messageLog *slack.SlackMessageLog) error
-	GetSlackMessageLogs(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error)
-}) {
+func testPutAndGetSlackMessageLog(t *testing.T, repo interfaces.SlackMessageLogRepository) {
 	ctx := context.Background()
 
 	// Generate unique channel ID for test isolation
-	channelID := "C" + types.NewUUID(ctx).String()[:13] + "-test"
+	// Use last 13 chars of UUID to avoid collision with time-based UUIDv7
+	uuid := types.NewUUID(ctx).String()
+	channelID := "C" + uuid[len(uuid)-13:] + "-test"
 
 	// Create test message log
 	messageLog := &slack.SlackMessageLog{
@@ -156,17 +141,15 @@ func testPutAndGetSlackMessageLog(t *testing.T, repo interface {
 	gt.Equal(t, foundMessage.Attachments[0].ID, "F123456789")
 }
 
-func testGetSlackMessageLogsWithFiltering(t *testing.T, repo interface {
-	PutSlackMessageLog(ctx context.Context, messageLog *slack.SlackMessageLog) error
-	GetSlackMessageLogs(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error)
-}) {
+func testGetSlackMessageLogsWithFiltering(t *testing.T, repo interfaces.SlackMessageLogRepository) {
 	ctx := context.Background()
 
 	// Generate unique channel IDs for test isolation
+	// Use last 13 chars of UUID to avoid collision with time-based UUIDv7
 	baseUUID1 := types.NewUUID(ctx).String()
 	baseUUID2 := types.NewUUID(ctx).String()
-	channel1 := "C" + baseUUID1[:13] + "-1"
-	channel2 := "C" + baseUUID2[:13] + "-2"
+	channel1 := "C" + baseUUID1[len(baseUUID1)-13:] + "-1"
+	channel2 := "C" + baseUUID2[len(baseUUID2)-13:] + "-2"
 
 	message1 := &slack.SlackMessageLog{
 		ID:          types.NewMessageID(ctx),
@@ -213,14 +196,13 @@ func testGetSlackMessageLogsWithFiltering(t *testing.T, repo interface {
 	gt.Equal(t, channel2Messages[0].ID, message2.ID)
 }
 
-func testGetSlackMessageLogsWithPagination(t *testing.T, repo interface {
-	PutSlackMessageLog(ctx context.Context, messageLog *slack.SlackMessageLog) error
-	GetSlackMessageLogs(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error)
-}) {
+func testGetSlackMessageLogsWithPagination(t *testing.T, repo interfaces.SlackMessageLogRepository) {
 	ctx := context.Background()
 
 	// Generate unique channel ID for test isolation
-	channelID := "C" + types.NewUUID(ctx).String()[:13] + "-test"
+	// Use last 13 chars of UUID to avoid collision with time-based UUIDv7
+	uuid := types.NewUUID(ctx).String()
+	channelID := "C" + uuid[len(uuid)-13:] + "-test"
 	messageCount := 5
 
 	// Create multiple test messages
@@ -268,14 +250,13 @@ func testGetSlackMessageLogsWithPagination(t *testing.T, repo interface {
 	gt.Equal(t, len(messageIDs), messageCount)
 }
 
-func testGetSlackMessageLogsWithTimeRange(t *testing.T, repo interface {
-	PutSlackMessageLog(ctx context.Context, messageLog *slack.SlackMessageLog) error
-	GetSlackMessageLogs(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error)
-}) {
+func testGetSlackMessageLogsWithTimeRange(t *testing.T, repo interfaces.SlackMessageLogRepository) {
 	ctx := context.Background()
 
 	// Generate unique channel ID for test isolation
-	channelID := "C" + types.NewUUID(ctx).String()[:13] + "-test"
+	// Use last 13 chars of UUID to avoid collision with time-based UUIDv7
+	uuid := types.NewUUID(ctx).String()
+	channelID := "C" + uuid[len(uuid)-13:] + "-test"
 	now := time.Now().UTC() // Use UTC for consistent timezone handling
 
 	// Create messages with different timestamps
@@ -343,16 +324,16 @@ func testGetSlackMessageLogsWithTimeRange(t *testing.T, repo interface {
 	gt.Equal(t, len(allMessages), 2)
 }
 
-func testGetSlackMessageLogsAcrossChannels(t *testing.T, repo interface {
-	PutSlackMessageLog(ctx context.Context, messageLog *slack.SlackMessageLog) error
-	GetSlackMessageLogs(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error)
-}) {
+func testGetSlackMessageLogsAcrossChannels(t *testing.T, repo interfaces.SlackMessageLogRepository) {
 	ctx := context.Background()
 
 	// Generate unique channel IDs for test isolation
+	// Use last 13 chars of UUID to avoid collision with time-based UUIDv7
+	uuid1 := types.NewUUID(ctx).String()
+	uuid2 := types.NewUUID(ctx).String()
 	channels := []string{
-		"C" + types.NewUUID(ctx).String()[:13] + "-ch1",
-		"C" + types.NewUUID(ctx).String()[:13] + "-ch2",
+		"C" + uuid1[len(uuid1)-13:] + "-ch1",
+		"C" + uuid2[len(uuid2)-13:] + "-ch2",
 	}
 	messages := make([]*slack.SlackMessageLog, len(channels))
 
@@ -383,14 +364,13 @@ func testGetSlackMessageLogsAcrossChannels(t *testing.T, repo interface {
 	}
 }
 
-func testConcurrentAccess(t *testing.T, repo interface {
-	PutSlackMessageLog(ctx context.Context, messageLog *slack.SlackMessageLog) error
-	GetSlackMessageLogs(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error)
-}) {
+func testConcurrentAccess(t *testing.T, repo interfaces.SlackMessageLogRepository) {
 	ctx := context.Background()
 
 	// Generate unique channel ID for test isolation
-	channelID := "C" + types.NewUUID(ctx).String()[:13] + "-test"
+	// Use last 13 chars of UUID to avoid collision with time-based UUIDv7
+	uuid := types.NewUUID(ctx).String()
+	channelID := "C" + uuid[len(uuid)-13:] + "-test"
 	numGoroutines := 10
 	messagesPerGoroutine := 5
 
@@ -398,10 +378,14 @@ func testConcurrentAccess(t *testing.T, repo interface {
 	done := make(chan bool, numGoroutines)
 	errors := make(chan error, numGoroutines*messagesPerGoroutine)
 
+	// Use WaitGroup for better synchronization
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
 	// Concurrent writes
 	for i := 0; i < numGoroutines; i++ {
 		go func(goroutineID int) {
-			defer func() { done <- true }()
+			defer wg.Done()
 
 			for j := 0; j < messagesPerGoroutine; j++ {
 				messageLog := &slack.SlackMessageLog{
@@ -420,16 +404,21 @@ func testConcurrentAccess(t *testing.T, repo interface {
 					errors <- err
 				}
 			}
+			done <- true
 		}(i)
 	}
 
 	// Wait for all goroutines to complete
+	go func() {
+		wg.Wait()
+		close(errors)
+	}()
+
 	for i := 0; i < numGoroutines; i++ {
 		<-done
 	}
 
 	// Check for errors
-	close(errors)
 	for err := range errors {
 		t.Errorf("Concurrent access error: %v", err)
 	}
