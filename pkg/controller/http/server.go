@@ -42,41 +42,28 @@ type ErrorResponse struct {
 	Details map[string]any `json:"details,omitempty"`
 }
 
+// addTypedDetail is a generic helper to add a typed value to details if it exists in the error
+func addTypedDetail[T any](details map[string]any, goErr *goerr.Error, key goerr.TypedKey[T]) {
+	if value, ok := goerr.GetTypedValue(goErr, key); ok {
+		details[key.Name()] = value
+	}
+}
+
 // extractSafeTypedValues extracts only safe typed values that are appropriate for client responses
 func extractSafeTypedValues(goErr *goerr.Error) map[string]any {
 	details := make(map[string]any)
 
-	// Extract safe values using GetTypedValue with proper type inference
-	if value, ok := goerr.GetTypedValue(goErr, apperr.AgentUUIDKey); ok {
-		details[apperr.AgentUUIDKey.Name()] = value
-	}
-	if value, ok := goerr.GetTypedValue(goErr, apperr.AgentIDKey); ok {
-		details[apperr.AgentIDKey.Name()] = value
-	}
-	if value, ok := goerr.GetTypedValue(goErr, apperr.UserIDKey); ok {
-		details[apperr.UserIDKey.Name()] = value
-	}
-	if value, ok := goerr.GetTypedValue(goErr, apperr.ChannelIDKey); ok {
-		details[apperr.ChannelIDKey.Name()] = value
-	}
-	if value, ok := goerr.GetTypedValue(goErr, apperr.ThreadIDKey); ok {
-		details[apperr.ThreadIDKey.Name()] = value
-	}
-	if value, ok := goerr.GetTypedValue(goErr, apperr.MessageIDKey); ok {
-		details[apperr.MessageIDKey.Name()] = value
-	}
-	if value, ok := goerr.GetTypedValue(goErr, apperr.RequestIDKey); ok {
-		details[apperr.RequestIDKey.Name()] = value
-	}
-	if value, ok := goerr.GetTypedValue(goErr, apperr.FilenameKey); ok {
-		details[apperr.FilenameKey.Name()] = value
-	}
-	if value, ok := goerr.GetTypedValue(goErr, apperr.LLMProviderKey); ok {
-		details[apperr.LLMProviderKey.Name()] = value
-	}
-	if value, ok := goerr.GetTypedValue(goErr, apperr.LLMModelKey); ok {
-		details[apperr.LLMModelKey.Name()] = value
-	}
+	// Extract safe values using the helper
+	addTypedDetail(details, goErr, apperr.AgentUUIDKey)
+	addTypedDetail(details, goErr, apperr.AgentIDKey)
+	addTypedDetail(details, goErr, apperr.UserIDKey)
+	addTypedDetail(details, goErr, apperr.ChannelIDKey)
+	addTypedDetail(details, goErr, apperr.ThreadIDKey)
+	addTypedDetail(details, goErr, apperr.MessageIDKey)
+	addTypedDetail(details, goErr, apperr.RequestIDKey)
+	addTypedDetail(details, goErr, apperr.FilenameKey)
+	addTypedDetail(details, goErr, apperr.LLMProviderKey)
+	addTypedDetail(details, goErr, apperr.LLMModelKey)
 
 	// Note: Don't include sensitive keys like ErrorCountKey, RetryCountKey, TokenCountKey, etc.
 
@@ -95,7 +82,7 @@ func handleHTTPError(w http.ResponseWriter, err error) {
 
 	// Extract error information
 	response := &ErrorResponse{
-		Error:   "An error occurred",
+		Error:   "error",
 		Message: err.Error(),
 	}
 
