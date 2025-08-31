@@ -392,12 +392,8 @@ func (uc *Slack) handleAgentError(ctx context.Context, slackMsg slack.Message, e
 	if errors.Is(err, slack.ErrAgentNotFound) {
 		// Extract agent ID from error context
 		agentID := ""
-		if ge := goerr.Unwrap(err); ge != nil {
-			if agentIDVal := ge.Values()["agent_id"]; agentIDVal != nil {
-				if agentIDStr, ok := agentIDVal.(string); ok {
-					agentID = agentIDStr
-				}
-			}
+		if agentIDVal, ok := goerr.GetTypedValue(err, apperr.AgentIDKey); ok {
+			agentID = agentIDVal
 		}
 
 		errorMessage = uc.generateAgentErrorMessage(ctx, agentID)
