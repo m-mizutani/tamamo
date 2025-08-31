@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"io/fs"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	slack_controller "github.com/m-mizutani/tamamo/pkg/controller/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/domain/types/apperr"
 	"github.com/m-mizutani/tamamo/pkg/utils/errors"
 	"github.com/m-mizutani/tamamo/pkg/utils/safe"
 )
@@ -30,6 +32,87 @@ var staticFileExtensions = []string{
 	".js",             // JavaScript files
 	".woff", ".woff2", // Web fonts
 	".ttf", ".otf", // Font files
+}
+
+// ErrorResponse represents a standardized error response
+type ErrorResponse struct {
+	Error   string         `json:"error"`
+	Message string         `json:"message"`
+	Code    string         `json:"code,omitempty"`
+	Details map[string]any `json:"details,omitempty"`
+}
+
+// extractSafeTypedValues extracts only safe typed values that are appropriate for client responses
+func extractSafeTypedValues(goErr *goerr.Error) map[string]any {
+	details := make(map[string]any)
+
+	// Extract safe values using GetTypedValue with proper type inference
+	if value, ok := goerr.GetTypedValue(goErr, apperr.AgentUUIDKey); ok {
+		details[apperr.AgentUUIDKey.Name()] = value
+	}
+	if value, ok := goerr.GetTypedValue(goErr, apperr.AgentIDKey); ok {
+		details[apperr.AgentIDKey.Name()] = value
+	}
+	if value, ok := goerr.GetTypedValue(goErr, apperr.UserIDKey); ok {
+		details[apperr.UserIDKey.Name()] = value
+	}
+	if value, ok := goerr.GetTypedValue(goErr, apperr.ChannelIDKey); ok {
+		details[apperr.ChannelIDKey.Name()] = value
+	}
+	if value, ok := goerr.GetTypedValue(goErr, apperr.ThreadIDKey); ok {
+		details[apperr.ThreadIDKey.Name()] = value
+	}
+	if value, ok := goerr.GetTypedValue(goErr, apperr.MessageIDKey); ok {
+		details[apperr.MessageIDKey.Name()] = value
+	}
+	if value, ok := goerr.GetTypedValue(goErr, apperr.RequestIDKey); ok {
+		details[apperr.RequestIDKey.Name()] = value
+	}
+	if value, ok := goerr.GetTypedValue(goErr, apperr.FilenameKey); ok {
+		details[apperr.FilenameKey.Name()] = value
+	}
+	if value, ok := goerr.GetTypedValue(goErr, apperr.LLMProviderKey); ok {
+		details[apperr.LLMProviderKey.Name()] = value
+	}
+	if value, ok := goerr.GetTypedValue(goErr, apperr.LLMModelKey); ok {
+		details[apperr.LLMModelKey.Name()] = value
+	}
+
+	// Note: Don't include sensitive keys like ErrorCountKey, RetryCountKey, TokenCountKey, etc.
+
+	// Only return details if we found any safe values
+	if len(details) == 0 {
+		return nil
+	}
+
+	return details
+}
+
+// handleHTTPError handles errors with goerr v2 tags and returns appropriate HTTP responses
+func handleHTTPError(w http.ResponseWriter, err error) {
+	// Determine HTTP status code based on error tags
+	statusCode := apperr.HTTPStatusFromError(err)
+
+	// Extract error information
+	response := &ErrorResponse{
+		Error:   "An error occurred",
+		Message: err.Error(),
+	}
+
+	// Add safe typed values as details
+	if goErr := goerr.Unwrap(err); goErr != nil {
+		response.Details = extractSafeTypedValues(goErr)
+	}
+
+	// Set response headers
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	// Encode and send response
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		// Fallback if JSON encoding fails
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 // Server represents the HTTP server

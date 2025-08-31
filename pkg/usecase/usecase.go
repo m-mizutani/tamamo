@@ -127,6 +127,5 @@ func New(opts ...SlackOption) *Slack {
 	return uc
 }
 
-
 // Ensure Slack implements required interfaces
 var _ interfaces.SlackEventUseCases = (*Slack)(nil)
