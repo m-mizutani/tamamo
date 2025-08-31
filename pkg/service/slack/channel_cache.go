@@ -8,6 +8,7 @@ import (
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"golang.org/x/sync/singleflight"
 )
 
 // ChannelCache provides cached access to channel information with TTL
@@ -16,6 +17,7 @@ type ChannelCache struct {
 	cache  map[string]*cachedChannelInfo
 	client interfaces.SlackClient
 	ttl    time.Duration
+	sf     singleflight.Group // Prevent duplicate concurrent requests
 }
 
 // cachedChannelInfo holds channel information with timestamp
@@ -48,17 +50,31 @@ func (c *ChannelCache) GetChannelInfo(ctx context.Context, channelID string) (*s
 		return info, nil
 	}
 
-	// Cache miss - fetch from Slack API
-	info, err := c.client.GetChannelInfo(ctx, channelID)
+	// Use singleflight to prevent duplicate concurrent requests for the same channel
+	result, err, _ := c.sf.Do(channelID, func() (interface{}, error) {
+		// Double-check cache in case another goroutine just populated it
+		if info := c.getCachedInfo(channelID); info != nil {
+			return info, nil
+		}
+
+		// Cache miss - fetch from Slack API
+		info, err := c.client.GetChannelInfo(ctx, channelID)
+		if err != nil {
+			return nil, goerr.Wrap(err, "failed to get channel info from Slack client",
+				goerr.V("channel_id", channelID))
+		}
+
+		// Store in cache
+		c.setCachedInfo(channelID, info)
+
+		return info, nil
+	})
+
 	if err != nil {
-		return nil, goerr.Wrap(err, "failed to get channel info from Slack client",
-			goerr.V("channel_id", channelID))
+		return nil, err
 	}
 
-	// Store in cache
-	c.setCachedInfo(channelID, info)
-
-	return info, nil
+	return result.(*slack.ChannelInfo), nil
 }
 
 // getCachedInfo retrieves channel info from cache if not expired
