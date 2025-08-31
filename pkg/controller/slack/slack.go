@@ -6,6 +6,7 @@ import (
 	"github.com/m-mizutani/ctxlog"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	slack_model "github.com/m-mizutani/tamamo/pkg/domain/model/slack"
+	"github.com/m-mizutani/tamamo/pkg/utils/async"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -102,6 +103,11 @@ func (x *Controller) HandleSlackAppMention(ctx context.Context, apiEvent *slacke
 		// Continue processing even if user info fetch fails
 	}
 
+	// Log message asynchronously
+	async.Dispatch(ctx, func(ctx context.Context) error {
+		return x.event.LogSlackAppMentionMessage(ctx, event, apiEvent.TeamID)
+	})
+
 	// Process the mention event
 	return x.event.HandleSlackAppMention(ctx, *slackMsg)
 }
@@ -123,6 +129,11 @@ func (x *Controller) HandleSlackMessage(ctx context.Context, apiEvent *slackeven
 		ctxlog.From(ctx).Warn("failed to enrich message with user info", "error", err)
 		// Continue processing even if user info fetch fails
 	}
+
+	// Log message asynchronously
+	async.Dispatch(ctx, func(ctx context.Context) error {
+		return x.event.LogSlackMessage(ctx, event, apiEvent.TeamID)
+	})
 
 	// Process the message event
 	return x.event.HandleSlackMessage(ctx, *slackMsg)

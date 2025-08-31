@@ -5,6 +5,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/m-mizutani/gt"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	imageModel "github.com/m-mizutani/tamamo/pkg/domain/model/image"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
@@ -55,9 +56,7 @@ func TestProcessor_ProcessAndStore(t *testing.T) {
 
 	// Process and store image
 	agentImage, err := processor.ProcessAndStore(ctx, agentID, reader, "image/jpeg", int64(len(jpegData)))
-	if err != nil {
-		t.Fatalf("Failed to process and store image: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	// Verify agent image
 	if agentImage.AgentID != agentID {
@@ -131,15 +130,11 @@ func TestProcessor_GetImageData(t *testing.T) {
 	reader := bytes.NewReader(jpegData)
 
 	agentImage, err := processor.ProcessAndStore(ctx, agentID, reader, "image/jpeg", int64(len(jpegData)))
-	if err != nil {
-		t.Fatalf("Failed to process and store image: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	// Retrieve image data
 	retrievedData, err := processor.GetImageData(ctx, agentImage)
-	if err != nil {
-		t.Fatalf("Failed to get image data: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	// Verify data
 	if len(retrievedData) == 0 {
@@ -165,9 +160,7 @@ func TestProcessor_GetThumbnailData(t *testing.T) {
 	reader := bytes.NewReader(jpegData)
 
 	agentImage, err := processor.ProcessAndStore(ctx, agentID, reader, "image/jpeg", int64(len(jpegData)))
-	if err != nil {
-		t.Fatalf("Failed to process and store image: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	// Test retrieving thumbnails
 	for size := range agentImage.ThumbnailKeys {

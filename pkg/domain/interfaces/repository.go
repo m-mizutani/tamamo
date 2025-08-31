@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"context"
+	"time"
 
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
@@ -106,4 +107,13 @@ type AgentImageRepository interface {
 
 	// Update updates an existing agent image
 	Update(ctx context.Context, agentImage *image.AgentImage) error
+}
+
+// SlackMessageLogRepository manages Slack message log persistence
+type SlackMessageLogRepository interface {
+	// PutSlackMessageLog stores a Slack message log entry
+	PutSlackMessageLog(ctx context.Context, messageLog *slack.SlackMessageLog) error
+
+	// GetSlackMessageLogs retrieves message logs with filtering (primarily for channel and time period)
+	GetSlackMessageLogs(ctx context.Context, channel string, from *time.Time, to *time.Time, limit int, offset int) ([]*slack.SlackMessageLog, error)
 }

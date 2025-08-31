@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/m-mizutani/gt"
 	httpCtrl "github.com/m-mizutani/tamamo/pkg/controller/http"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
@@ -83,7 +84,6 @@ func (m *mockAgentUseCase) ValidateVersion(version string) error {
 	return nil
 }
 
-
 // mockStorageAdapter for testing
 type mockStorageAdapter struct {
 	storage map[string][]byte
@@ -152,12 +152,9 @@ func TestImageController_HandleUploadAgentImage(t *testing.T) {
 	h.Set("Content-Disposition", `form-data; name="file"; filename="test.jpg"`)
 	h.Set("Content-Type", "image/jpeg")
 	part, err := writer.CreatePart(h)
-	if err != nil {
-		t.Fatalf("Failed to create form file: %v", err)
-	}
-	if _, err := part.Write(jpegData); err != nil {
-		t.Fatalf("Failed to write image data: %v", err)
-	}
+	gt.NoError(t, err).Required()
+	_, err = part.Write(jpegData)
+	gt.NoError(t, err).Required()
 	writer.Close()
 
 	// Create request
@@ -215,9 +212,7 @@ func TestImageController_HandleGetAgentImage(t *testing.T) {
 
 	// Process and store image
 	agentImage, err := processor.ProcessAndStore(ctx, agentID, reader, "image/jpeg", int64(len(jpegData)))
-	if err != nil {
-		t.Fatalf("Failed to process and store image: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	// Update agent with image ID
 	testAgent.ImageID = &agentImage.ID
@@ -277,9 +272,7 @@ func TestImageController_HandleGetAgentImageInfo(t *testing.T) {
 
 	// Process and store image
 	agentImage, err := processor.ProcessAndStore(ctx, agentID, reader, "image/jpeg", int64(len(jpegData)))
-	if err != nil {
-		t.Fatalf("Failed to process and store image: %v", err)
-	}
+	gt.NoError(t, err).Required()
 
 	// Update agent with image ID
 	testAgent.ImageID = &agentImage.ID

@@ -139,6 +139,7 @@ func cmdServe() *cli.Command {
 			var sessionRepo interfaces.SessionRepository
 			var userRepo interfaces.UserRepository
 			var agentImageRepo interfaces.AgentImageRepository
+			var slackMessageLogRepo interfaces.SlackMessageLogRepository
 			firestoreCfg.SetDefaults()
 
 			// Validate Firestore configuration
@@ -170,18 +171,21 @@ func cmdServe() *cli.Command {
 				)
 				defer client.Close()
 				repo = client
-				agentRepo = client // Firestore client implements both ThreadRepository and AgentRepository
+				agentRepo = client
 				sessionRepo = firestore.NewSessionRepository(client.GetClient())
 				userRepo = firestore.NewUserRepository(client.GetClient())
 				agentImageRepo = client.NewAgentImageRepository()
+				slackMessageLogRepo = client
 			} else {
 				// Use memory repository as fallback
 				logger.Warn("using in-memory repository (data will be lost on restart)")
-				repo = memory.New()
+				memoryClient := memory.New()
+				repo = memoryClient
 				agentRepo = memory.NewAgentMemoryClient()
 				sessionRepo = memory.NewSessionRepository()
 				userRepo = memory.NewUserRepository()
 				agentImageRepo = memory.NewAgentImageRepository()
+				slackMessageLogRepo = memoryClient
 			}
 
 			logger.Info("starting server",
@@ -273,6 +277,7 @@ func cmdServe() *cli.Command {
 				usecase.WithRepository(repo),
 				usecase.WithAgentRepository(agentRepo),
 				usecase.WithAgentImageRepository(agentImageRepo),
+				usecase.WithSlackMessageLogRepository(slackMessageLogRepo),
 				usecase.WithStorageRepository(storageRepo),
 				usecase.WithLLMFactory(llmFactory),
 				usecase.WithServerBaseURL(serverBaseURL),

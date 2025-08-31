@@ -218,8 +218,9 @@ func TestFirestoreRepository(t *testing.T) {
 	// Uncomment when running with emulator
 	// client, err := firestore.New(context.Background(), "test-project", "")
 	// if err != nil {
-	// 	t.Fatalf("Failed to create Firestore client: %v", err)
+	// gt.NoError(t, err).Required()
 	// }
 	// defer client.Close()
 	// testThreadRepository(t, client)
+	// testSlackMessageLogRepository(t, client)
 }

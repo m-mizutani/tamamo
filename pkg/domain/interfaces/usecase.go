@@ -10,11 +10,14 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
+	"github.com/slack-go/slack/slackevents"
 )
 
 type SlackEventUseCases interface {
 	HandleSlackAppMention(ctx context.Context, slackMsg slack.Message) error
 	HandleSlackMessage(ctx context.Context, slackMsg slack.Message) error
+	LogSlackAppMentionMessage(ctx context.Context, event *slackevents.AppMentionEvent, teamID string) error
+	LogSlackMessage(ctx context.Context, event *slackevents.MessageEvent, teamID string) error
 }
 
 // Agent use case request/response types

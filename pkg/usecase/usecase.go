@@ -1,23 +1,28 @@
 package usecase
 
 import (
+	"time"
+
 	"github.com/m-mizutani/gollem"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/repository/storage"
 	"github.com/m-mizutani/tamamo/pkg/service/llm"
+	slackservice "github.com/m-mizutani/tamamo/pkg/service/slack"
 )
 
 // Slack holds all use cases
 type Slack struct {
-	slackClient     interfaces.SlackClient
-	repository      interfaces.ThreadRepository
-	agentRepository interfaces.AgentRepository
-	agentImageRepo  interfaces.AgentImageRepository
-	storageRepo     *storage.Client
-	llmClient       gollem.LLMClient // Deprecated: use llmFactory instead
-	llmModel        string           // Deprecated: use llmFactory instead
-	llmFactory      *llm.Factory
-	serverBaseURL   string // Base URL for constructing image URLs
+	slackClient         interfaces.SlackClient
+	repository          interfaces.ThreadRepository
+	agentRepository     interfaces.AgentRepository
+	agentImageRepo      interfaces.AgentImageRepository
+	slackMessageLogRepo interfaces.SlackMessageLogRepository
+	storageRepo         *storage.Client
+	llmClient           gollem.LLMClient // Deprecated: use llmFactory instead
+	llmModel            string           // Deprecated: use llmFactory instead
+	llmFactory          *llm.Factory
+	serverBaseURL       string // Base URL for constructing image URLs
+	channelCache        *slackservice.ChannelCache
 }
 
 // SlackOption is a functional option for Slack
@@ -93,6 +98,13 @@ func WithGeminiModel(model string) SlackOption {
 	return WithLLMModel(model)
 }
 
+// WithSlackMessageLogRepository sets the Slack message log repository
+func WithSlackMessageLogRepository(repo interfaces.SlackMessageLogRepository) SlackOption {
+	return func(uc *Slack) {
+		uc.slackMessageLogRepo = repo
+	}
+}
+
 // WithServerBaseURL sets the server base URL for constructing image URLs
 func WithServerBaseURL(baseURL string) SlackOption {
 	return func(uc *Slack) {
@@ -106,8 +118,15 @@ func New(opts ...SlackOption) *Slack {
 	for _, opt := range opts {
 		opt(uc)
 	}
+
+	// Initialize channel cache if slack client is available
+	if uc.slackClient != nil {
+		uc.channelCache = slackservice.NewChannelCache(uc.slackClient, time.Hour)
+	}
+
 	return uc
 }
+
 
 // Ensure Slack implements required interfaces
 var _ interfaces.SlackEventUseCases = (*Slack)(nil)
