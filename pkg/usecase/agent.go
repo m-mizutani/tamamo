@@ -13,6 +13,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
+	"github.com/m-mizutani/tamamo/pkg/domain/types/apperr"
 )
 
 type agentUseCaseImpl struct {
@@ -53,7 +54,7 @@ func (u *agentUseCaseImpl) CreateAgent(ctx context.Context, req *interfaces.Crea
 		return nil, goerr.Wrap(err, "failed to check agent ID existence")
 	}
 	if exists {
-		return nil, goerr.New("agent ID already exists", goerr.V("agent_id", req.AgentID))
+		return nil, goerr.New("agent ID already exists", goerr.TV(apperr.AgentIDKey, req.AgentID))
 	}
 
 	// Create agent
@@ -180,7 +181,7 @@ func (u *agentUseCaseImpl) UpdateAgent(ctx context.Context, id types.UUID, req *
 				return nil, goerr.Wrap(err, "failed to check agent ID existence")
 			}
 			if exists {
-				return nil, goerr.New("agent ID already exists", goerr.V("agent_id", *req.AgentID))
+				return nil, goerr.New("agent ID already exists", goerr.TV(apperr.AgentIDKey, *req.AgentID))
 			}
 		}
 
@@ -395,9 +396,9 @@ func (u *agentUseCaseImpl) CreateAgentVersion(ctx context.Context, req *interfac
 		// Log the error but don't fail the version creation since the version was already created
 		// This creates data inconsistency that needs to be addressed
 		return agentVersion, goerr.Wrap(err, "version created but failed to update agent's latest version tag",
-			goerr.V("agent_uuid", req.AgentUUID),
+			goerr.TV(apperr.AgentUUIDKey, req.AgentUUID),
 			goerr.V("version", req.Version),
-			goerr.V("agent_id", agentObj.AgentID))
+			goerr.TV(apperr.AgentIDKey, agentObj.AgentID))
 	}
 
 	return agentVersion, nil
@@ -494,7 +495,7 @@ func (u *agentUseCaseImpl) ArchiveAgent(ctx context.Context, id types.UUID) (*in
 
 	// Check if already archived
 	if agentObj.Status == agent.StatusArchived {
-		return nil, goerr.New("agent is already archived", goerr.V("agent_id", agentObj.AgentID))
+		return nil, goerr.New("agent is already archived", goerr.TV(apperr.AgentIDKey, agentObj.AgentID))
 	}
 
 	// Update status to archived
@@ -537,7 +538,7 @@ func (u *agentUseCaseImpl) UnarchiveAgent(ctx context.Context, id types.UUID) (*
 
 	// Check if already active
 	if agentObj.Status == agent.StatusActive {
-		return nil, goerr.New("agent is already active", goerr.V("agent_id", agentObj.AgentID))
+		return nil, goerr.New("agent is already active", goerr.TV(apperr.AgentIDKey, agentObj.AgentID))
 	}
 
 	// Update status to active

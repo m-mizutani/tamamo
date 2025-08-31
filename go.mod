@@ -11,15 +11,16 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/m-mizutani/clog v0.0.8
 	github.com/m-mizutani/ctxlog v0.2.0
-	github.com/m-mizutani/goerr/v2 v2.0.0-beta.2
+	github.com/m-mizutani/goerr/v2 v2.0.0-beta.3
 	github.com/m-mizutani/gollem v0.10.0
-	github.com/m-mizutani/gt v0.0.17
-	github.com/m-mizutani/masq v0.1.12-0.20250818113152-b9316b785b03
+	github.com/m-mizutani/gt v0.1.0
+	github.com/m-mizutani/masq v0.1.12-0.20250831035949-b037154d5bff
 	github.com/sashabaranov/go-openai v1.40.1
 	github.com/slack-go/slack v0.17.3
 	github.com/urfave/cli/v3 v3.4.1
 	github.com/vektah/gqlparser/v2 v2.5.30
 	golang.org/x/image v0.30.0
+	golang.org/x/sync v0.16.0
 	google.golang.org/api v0.247.0
 	google.golang.org/grpc v1.74.2
 	gopkg.in/yaml.v3 v3.0.1
@@ -85,7 +86,6 @@ require (
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/time v0.12.0 // indirect

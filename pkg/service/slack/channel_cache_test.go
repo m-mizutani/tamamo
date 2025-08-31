@@ -337,11 +337,11 @@ func TestChannelCache_RealSlackAPI(t *testing.T) {
 	elapsed := time.Since(start)
 	gt.NoError(t, err)
 	gt.NotNil(t, info2)
-	
+
 	// Cached call should be very fast (less than 10ms)
 	// Real API call would typically take 100ms+
 	gt.True(t, elapsed < 10*time.Millisecond)
-	
+
 	// Verify cached data matches original
 	gt.Equal(t, info2.ID, info1.ID)
 	gt.Equal(t, info2.Name, info1.Name)
@@ -355,15 +355,15 @@ func TestChannelCache_RealSlackAPI(t *testing.T) {
 
 	// Test cache expiration with short TTL
 	shortCache := slackservice.NewChannelCache(realClient, 100*time.Millisecond)
-	
+
 	// First call
 	info3, err := shortCache.GetChannelInfo(ctx, channelID)
 	gt.NoError(t, err)
 	gt.NotNil(t, info3)
-	
+
 	// Wait for cache to expire
 	time.Sleep(150 * time.Millisecond)
-	
+
 	// This should make a new API call
 	info4, err := shortCache.GetChannelInfo(ctx, channelID)
 	gt.NoError(t, err)

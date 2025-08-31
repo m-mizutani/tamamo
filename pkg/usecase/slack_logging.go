@@ -8,6 +8,7 @@ import (
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
+	"github.com/m-mizutani/tamamo/pkg/domain/types/apperr"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -96,9 +97,9 @@ func (uc *Slack) LogSlackMessageWithTeam(ctx context.Context, event *slackevents
 	if err := uc.slackMessageLogRepo.PutSlackMessageLog(ctx, messageLog); err != nil {
 		// The error will be handled and logged by the async dispatcher
 		return goerr.Wrap(err, "failed to store slack message log",
-			goerr.V("message_id", messageLog.ID),
-			goerr.V("channel_id", event.Channel),
-			goerr.V("user_id", event.User))
+			goerr.TV(apperr.MessageIDKey, messageLog.ID),
+			goerr.TV(apperr.ChannelIDKey, event.Channel),
+			goerr.TV(apperr.UserIDKey, event.User))
 	}
 
 	logger.Debug("successfully logged slack message",

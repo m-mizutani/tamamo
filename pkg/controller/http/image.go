@@ -7,8 +7,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/m-mizutani/ctxlog"
-	"github.com/m-mizutani/goerr/v2"
-	"github.com/m-mizutani/tamamo/pkg/domain/errors"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/utils/safe"
@@ -226,57 +224,6 @@ func (c *ImageController) HandleGetAgentImageInfo(w http.ResponseWriter, r *http
 
 // handleImageError handles errors from image use cases using goerr tags for stable error classification
 func (c *ImageController) handleImageError(w http.ResponseWriter, err error) {
-	var httpStatus int
-	var message string
-
-	// Use goerr.Unwrap to get the goerr error and check tags
-	if goErr := goerr.Unwrap(err); goErr != nil {
-		switch {
-		// HTTP 404 errors
-		case goErr.HasTag(errors.ErrTagAgentNotFound):
-			httpStatus = http.StatusNotFound
-			message = "Agent not found"
-		case goErr.HasTag(errors.ErrTagAgentNoImage):
-			httpStatus = http.StatusNotFound
-			message = "Agent has no image"
-		case goErr.HasTag(errors.ErrTagImageNotFound):
-			httpStatus = http.StatusNotFound
-			message = "Image not found"
-		case goErr.HasTag(errors.ErrTagThumbnailNotFound):
-			httpStatus = http.StatusNotFound
-			message = "Thumbnail not found"
-
-		// HTTP 400 errors - validation failures
-		case goErr.HasTag(errors.ErrTagInvalidFileType):
-			httpStatus = http.StatusBadRequest
-			message = "Invalid file type. Only JPEG and PNG are allowed."
-		case goErr.HasTag(errors.ErrTagImageTooLarge):
-			httpStatus = http.StatusBadRequest
-			message = "Image file too large."
-		case goErr.HasTag(errors.ErrTagImageTooSmall):
-			httpStatus = http.StatusBadRequest
-			message = "Image dimensions too small."
-		case goErr.HasTag(errors.ErrTagCorruptedImage):
-			httpStatus = http.StatusBadRequest
-			message = "Invalid or corrupted image file."
-
-		// HTTP 500 errors - system failures
-		case goErr.HasTag(errors.ErrTagImageProcessingFailed):
-			httpStatus = http.StatusInternalServerError
-			message = "Failed to process image"
-		case goErr.HasTag(errors.ErrTagImageRetrievalFailed):
-			httpStatus = http.StatusInternalServerError
-			message = "Failed to retrieve image"
-
-		default:
-			httpStatus = http.StatusInternalServerError
-			message = "Internal server error"
-		}
-	} else {
-		// Fallback for non-goerr errors
-		httpStatus = http.StatusInternalServerError
-		message = "Internal server error"
-	}
-
-	http.Error(w, message, httpStatus)
+	// Use the unified error handler from server.go
+	handleHTTPError(w, err)
 }

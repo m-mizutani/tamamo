@@ -12,6 +12,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
+	"github.com/m-mizutani/tamamo/pkg/domain/types/apperr"
 	pkgErrors "github.com/m-mizutani/tamamo/pkg/utils/errors"
 )
 
@@ -276,14 +277,14 @@ func (uc *Slack) resolveAgent(ctx context.Context, agentMention *slack.AgentMent
 				_, err := uc.agentRepository.GetAgent(ctx, *thread.AgentUUID)
 				if err != nil {
 					return nil, goerr.Wrap(err, "failed to get agent from repository",
-						goerr.V("agent_uuid", *thread.AgentUUID))
+						goerr.TV(apperr.AgentUUIDKey, *thread.AgentUUID))
 				}
 
 				// Get agent version information
 				agentVersion, err := uc.agentRepository.GetAgentVersion(ctx, *thread.AgentUUID, thread.AgentVersion)
 				if err != nil {
 					return nil, goerr.Wrap(err, "failed to get agent version",
-						goerr.V("agent_uuid", *thread.AgentUUID),
+						goerr.TV(apperr.AgentUUIDKey, *thread.AgentUUID),
 						goerr.V("version", thread.AgentVersion))
 				}
 
@@ -332,15 +333,15 @@ func (uc *Slack) resolveAgent(ctx context.Context, agentMention *slack.AgentMent
 	agentInfo, err := uc.agentRepository.GetAgentByAgentIDActive(ctx, agentMention.AgentID)
 	if err != nil {
 		return nil, goerr.Wrap(slack.ErrAgentNotFound, "agent not found or archived",
-			goerr.V("agent_id", agentMention.AgentID))
+			goerr.TV(apperr.AgentIDKey, agentMention.AgentID))
 	}
 
 	// Get latest version of the agent
 	latestVersion, err := uc.agentRepository.GetLatestAgentVersion(ctx, agentInfo.ID)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to get latest agent version",
-			goerr.V("agent_uuid", agentInfo.ID),
-			goerr.V("agent_id", agentMention.AgentID))
+			goerr.TV(apperr.AgentUUIDKey, agentInfo.ID),
+			goerr.TV(apperr.AgentIDKey, agentMention.AgentID))
 	}
 
 	logger.Debug("resolved agent",
@@ -391,12 +392,8 @@ func (uc *Slack) handleAgentError(ctx context.Context, slackMsg slack.Message, e
 	if errors.Is(err, slack.ErrAgentNotFound) {
 		// Extract agent ID from error context
 		agentID := ""
-		if ge := goerr.Unwrap(err); ge != nil {
-			if agentIDVal := ge.Values()["agent_id"]; agentIDVal != nil {
-				if agentIDStr, ok := agentIDVal.(string); ok {
-					agentID = agentIDStr
-				}
-			}
+		if agentIDVal, ok := goerr.GetTypedValue(err, apperr.AgentIDKey); ok {
+			agentID = agentIDVal
 		}
 
 		errorMessage = uc.generateAgentErrorMessage(ctx, agentID)
@@ -597,10 +594,10 @@ func (uc *Slack) chatWithAgent(ctx context.Context, slackMsg slack.Message, thre
 	session, err := llmClient.NewSession(ctx, sessionOptions...)
 	if err != nil {
 		return goerr.Wrap(err, "failed to create LLM session",
-			goerr.V("thread_id", threadID),
-			goerr.V("channel", slackMsg.Channel),
-			goerr.V("user", slackMsg.UserID),
-			goerr.V("agent_uuid", agent.uuid),
+			goerr.TV(apperr.ThreadIDKey, threadID),
+			goerr.TV(apperr.ChannelIDKey, slackMsg.Channel),
+			goerr.TV(apperr.UserIDKey, slackMsg.UserID),
+			goerr.TV(apperr.AgentUUIDKey, agent.uuid),
 		)
 	}
 
@@ -608,10 +605,10 @@ func (uc *Slack) chatWithAgent(ctx context.Context, slackMsg slack.Message, thre
 	resp, err := session.GenerateContent(ctx, gollem.Text(userMessage))
 	if err != nil {
 		return goerr.Wrap(err, "failed to generate content with LLM",
-			goerr.V("thread_id", threadID),
+			goerr.TV(apperr.ThreadIDKey, threadID),
 			goerr.V("message", userMessage),
-			goerr.V("channel", slackMsg.Channel),
-			goerr.V("agent_uuid", agent.uuid),
+			goerr.TV(apperr.ChannelIDKey, slackMsg.Channel),
+			goerr.TV(apperr.AgentUUIDKey, agent.uuid),
 		)
 	}
 
@@ -696,8 +693,8 @@ func (uc *Slack) getLLMClient(ctx context.Context, agent *agentContext, slackMsg
 			fallbackClient, fallbackErr := uc.llmFactory.GetFallbackClient(ctx)
 			if fallbackErr != nil {
 				return nil, goerr.Wrap(err, "failed to create LLM client and fallback also failed",
-					goerr.V("provider", agent.llmProvider),
-					goerr.V("model", agent.llmModel),
+					goerr.TV(apperr.LLMProviderKey, agent.llmProvider),
+					goerr.TV(apperr.LLMModelKey, agent.llmModel),
 					goerr.V("fallback_error", fallbackErr),
 				)
 			}

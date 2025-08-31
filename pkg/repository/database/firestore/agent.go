@@ -10,6 +10,7 @@ import (
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
+	"github.com/m-mizutani/tamamo/pkg/domain/types/apperr"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -142,8 +143,8 @@ func (c *Client) CreateAgent(ctx context.Context, agentObj *agent.Agent) error {
 	_, err := c.client.Collection(collectionAgents).Doc(agentObj.ID.String()).Set(ctx, doc)
 	if err != nil {
 		return goerr.Wrap(err, "failed to create agent",
-			goerr.V("agent_id", agentObj.AgentID),
-			goerr.V("id", agentObj.ID.String()))
+			goerr.TV(apperr.AgentIDKey, agentObj.AgentID),
+			goerr.TV(apperr.AgentUUIDKey, agentObj.ID))
 	}
 
 	return nil
