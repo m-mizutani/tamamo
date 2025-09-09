@@ -235,3 +235,35 @@ func (s *OAuthService) GetAccessibleResources(accessToken string) ([]AccessibleR
 
 	return resources, nil
 }
+
+// RefreshAccessToken refreshes the access token using the refresh token
+func (s *OAuthService) RefreshAccessToken(refreshToken string) (*TokenResponse, error) {
+	tokenURL := "https://auth.atlassian.com/oauth/token"
+
+	data := url.Values{
+		"grant_type":    {"refresh_token"},
+		"client_id":     {s.config.ClientID},
+		"client_secret": {s.config.ClientSecret},
+		"refresh_token": {refreshToken},
+	}
+
+	resp, err := http.PostForm(tokenURL, data)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to refresh access token")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, goerr.New("token refresh failed",
+			goerr.V("status", resp.StatusCode),
+			goerr.V("response", string(body)))
+	}
+
+	var tokenResponse TokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+		return nil, goerr.Wrap(err, "failed to decode token response")
+	}
+
+	return &tokenResponse, nil
+}

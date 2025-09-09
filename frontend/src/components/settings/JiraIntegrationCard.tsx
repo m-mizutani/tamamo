@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +19,7 @@ export function JiraIntegrationCard() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
+  const popupPollInterval = useRef<number | null>(null)
 
   const loadIntegration = async () => {
     try {
@@ -35,6 +36,14 @@ export function JiraIntegrationCard() {
 
   useEffect(() => {
     loadIntegration()
+    
+    // Cleanup function to clear interval on unmount
+    return () => {
+      if (popupPollInterval.current) {
+        clearInterval(popupPollInterval.current)
+        popupPollInterval.current = null
+      }
+    }
   }, [])
 
   const handleConnect = async () => {
@@ -56,10 +65,18 @@ export function JiraIntegrationCard() {
         )
 
         if (popup) {
+          // Clear any existing interval before starting a new one
+          if (popupPollInterval.current) {
+            clearInterval(popupPollInterval.current)
+          }
+
           // Poll for popup closure to refresh status
-          const checkClosed = setInterval(() => {
+          popupPollInterval.current = window.setInterval(() => {
             if (popup.closed) {
-              clearInterval(checkClosed)
+              if (popupPollInterval.current) {
+                clearInterval(popupPollInterval.current)
+                popupPollInterval.current = null
+              }
               // Refresh integration status after popup closes
               setTimeout(() => {
                 loadIntegration()

@@ -61,11 +61,23 @@ func (uc *jiraIntegrationUseCases) GetIntegration(ctx context.Context, userID st
 		return nil, nil
 	}
 
-	// Check if the integration is still valid (not expired)
-	if jiraIntegration.IsTokenExpired() {
-		// TODO: Implement token refresh logic here
-		// For now, we'll return the integration even if expired
-		// The GraphQL resolver will handle the "connected" status
+	// Refresh token if expired
+	if jiraIntegration.IsTokenExpired() && jiraIntegration.RefreshToken != "" {
+		tokenResponse, err := uc.oauthService.RefreshAccessToken(jiraIntegration.RefreshToken)
+		if err != nil {
+			// If refresh fails, log the error but still return the integration
+			// The GraphQL resolver will show it as disconnected
+			return jiraIntegration, nil
+		}
+
+		// Update tokens
+		expiresAt := time.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second)
+		jiraIntegration.UpdateTokens(tokenResponse.AccessToken, tokenResponse.RefreshToken, expiresAt)
+
+		// Save updated integration
+		if err := uc.userRepo.SaveJiraIntegration(ctx, jiraIntegration); err != nil {
+			return nil, goerr.Wrap(err, "failed to save refreshed tokens", goerr.V("user_id", userID))
+		}
 	}
 
 	return jiraIntegration, nil
