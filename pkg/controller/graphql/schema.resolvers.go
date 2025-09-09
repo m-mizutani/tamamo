@@ -21,6 +21,14 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
 
+// contextKey is a custom type for context keys to avoid collisions
+type contextKey string
+
+const (
+	// httpResponseWriterKey is the context key for storing the HTTP response writer
+	httpResponseWriterKey contextKey = "http_response_writer"
+)
+
 // CreateAgent is the resolver for the createAgent field.
 func (r *mutationResolver) CreateAgent(ctx context.Context, input graphql1.CreateAgentInput) (*graphql1.Agent, error) {
 	// Validate LLM provider and model if factory is available
@@ -624,12 +632,25 @@ func getCurrentUser(ctx context.Context) *user.User {
 func getResponseWriter(ctx context.Context) http.ResponseWriter {
 	// Extract response writer from context
 	// This requires middleware that sets the response writer in context
-	if w := ctx.Value("http_response_writer"); w != nil {
+	if w := ctx.Value(httpResponseWriterKey); w != nil {
 		if responseWriter, ok := w.(http.ResponseWriter); ok {
 			return responseWriter
 		}
 	}
 	return nil
+}
+
+// WithResponseWriter adds the HTTP response writer to the context.
+// This should be called by the middleware that handles GraphQL requests.
+// The response writer can then be retrieved in GraphQL resolvers using getResponseWriter.
+//
+// Example usage in middleware:
+//
+//	ctx := graphql.WithResponseWriter(r.Context(), w)
+//	r = r.WithContext(ctx)
+//	next.ServeHTTP(w, r)
+func WithResponseWriter(ctx context.Context, w http.ResponseWriter) context.Context {
+	return context.WithValue(ctx, httpResponseWriterKey, w)
 }
 
 func convertJiraIntegrationToGraphQL(integration *integration.JiraIntegration) *graphql1.JiraIntegration {
