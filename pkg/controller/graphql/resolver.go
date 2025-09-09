@@ -4,6 +4,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
 	"github.com/m-mizutani/tamamo/pkg/service/image"
 	"github.com/m-mizutani/tamamo/pkg/service/llm"
+	"github.com/m-mizutani/tamamo/pkg/usecase"
 )
 
 // This file will not be regenerated automatically.
@@ -17,6 +18,7 @@ type Resolver struct {
 	llmFactory     *llm.Factory
 	imageProcessor *image.Processor
 	agentImageRepo interfaces.AgentImageRepository
+	jiraUseCases   usecase.JiraIntegrationUseCases
 }
 
 // NewResolver creates a new resolver instance
@@ -27,6 +29,7 @@ func NewResolver(
 	llmFactory *llm.Factory,
 	imageProcessor *image.Processor,
 	agentImageRepo interfaces.AgentImageRepository,
+	jiraUseCases usecase.JiraIntegrationUseCases,
 ) *Resolver {
 	return &Resolver{
 		threadRepo:     threadRepo,
@@ -35,5 +38,6 @@ func NewResolver(
 		llmFactory:     llmFactory,
 		imageProcessor: imageProcessor,
 		agentImageRepo: agentImageRepo,
+		jiraUseCases:   jiraUseCases,
 	}
 }

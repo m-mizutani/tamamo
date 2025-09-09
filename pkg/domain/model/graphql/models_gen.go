@@ -79,6 +79,17 @@ type CreateAgentVersionInput struct {
 	LlmModel     string      `json:"llmModel"`
 }
 
+type JiraIntegration struct {
+	ID          string     `json:"id"`
+	Connected   bool       `json:"connected"`
+	SiteURL     *string    `json:"siteUrl,omitempty"`
+	ConnectedAt *time.Time `json:"connectedAt,omitempty"`
+}
+
+type JiraOAuthURL struct {
+	URL string `json:"url"`
+}
+
 type LLMConfig struct {
 	Providers        []*LLMProviderInfo `json:"providers"`
 	DefaultProvider  string             `json:"defaultProvider"`

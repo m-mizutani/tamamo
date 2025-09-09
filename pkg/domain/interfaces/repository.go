@@ -7,6 +7,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/image"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/integration"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
@@ -95,6 +96,11 @@ type UserRepository interface {
 	GetBySlackIDAndTeamID(ctx context.Context, slackID, teamID string) (*user.User, error)
 	Create(ctx context.Context, user *user.User) error
 	Update(ctx context.Context, user *user.User) error
+
+	// Jira Integration methods
+	SaveJiraIntegration(ctx context.Context, integration *integration.JiraIntegration) error
+	GetJiraIntegration(ctx context.Context, userID string) (*integration.JiraIntegration, error)
+	DeleteJiraIntegration(ctx context.Context, userID string) error
 }
 
 // AgentImageRepository manages agent image persistence

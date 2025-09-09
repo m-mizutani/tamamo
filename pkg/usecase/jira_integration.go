@@ -1,0 +1,90 @@
+package usecase
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/m-mizutani/goerr/v2"
+	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/integration"
+	"github.com/m-mizutani/tamamo/pkg/service/jira"
+)
+
+type JiraIntegrationUseCases interface {
+	InitiateOAuth(ctx context.Context, w http.ResponseWriter, userID string) (string, error)
+	GetIntegration(ctx context.Context, userID string) (*integration.JiraIntegration, error)
+	Disconnect(ctx context.Context, userID string) error
+}
+
+type jiraIntegrationUseCases struct {
+	userRepo     interfaces.UserRepository
+	oauthService *jira.OAuthService
+}
+
+func NewJiraIntegrationUseCases(
+	userRepo interfaces.UserRepository,
+	oauthService *jira.OAuthService,
+) JiraIntegrationUseCases {
+	return &jiraIntegrationUseCases{
+		userRepo:     userRepo,
+		oauthService: oauthService,
+	}
+}
+
+// InitiateOAuth starts the OAuth flow and returns the authorization URL
+func (uc *jiraIntegrationUseCases) InitiateOAuth(ctx context.Context, w http.ResponseWriter, userID string) (string, error) {
+	// Generate OAuth URL with state
+	authURL, state, err := uc.oauthService.GenerateOAuthURL()
+	if err != nil {
+		return "", goerr.Wrap(err, "failed to generate OAuth URL")
+	}
+
+	// Set state cookie for CSRF protection
+	if err := uc.oauthService.SetOAuthStateCookie(w, state, userID); err != nil {
+		return "", goerr.Wrap(err, "failed to set state cookie")
+	}
+
+	return authURL, nil
+}
+
+// GetIntegration retrieves the current Jira integration status for a user
+func (uc *jiraIntegrationUseCases) GetIntegration(ctx context.Context, userID string) (*integration.JiraIntegration, error) {
+	jiraIntegration, err := uc.userRepo.GetJiraIntegration(ctx, userID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get Jira integration", goerr.V("user_id", userID))
+	}
+
+	// Return nil if no integration exists (not connected)
+	if jiraIntegration == nil {
+		return nil, nil
+	}
+
+	// Check if the integration is still valid (not expired)
+	if jiraIntegration.IsTokenExpired() {
+		// TODO: Implement token refresh logic here
+		// For now, we'll return the integration even if expired
+		// The GraphQL resolver will handle the "connected" status
+	}
+
+	return jiraIntegration, nil
+}
+
+// Disconnect removes the Jira integration for a user
+func (uc *jiraIntegrationUseCases) Disconnect(ctx context.Context, userID string) error {
+	// Check if integration exists
+	existing, err := uc.userRepo.GetJiraIntegration(ctx, userID)
+	if err != nil {
+		return goerr.Wrap(err, "failed to check existing integration", goerr.V("user_id", userID))
+	}
+
+	if existing == nil {
+		return goerr.New("no Jira integration found", goerr.V("user_id", userID))
+	}
+
+	// Delete the integration
+	if err := uc.userRepo.DeleteJiraIntegration(ctx, userID); err != nil {
+		return goerr.Wrap(err, "failed to delete Jira integration", goerr.V("user_id", userID))
+	}
+
+	return nil
+}

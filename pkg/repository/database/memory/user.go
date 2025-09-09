@@ -6,30 +6,34 @@ import (
 
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/integration"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 )
 
 // userStorage holds user data in memory
 type userStorage struct {
-	users        map[types.UserID]*user.User
-	slackIDIndex map[string]map[string]types.UserID // slackID -> teamID -> userID
-	mu           sync.RWMutex
+	users            map[types.UserID]*user.User
+	slackIDIndex     map[string]map[string]types.UserID      // slackID -> teamID -> userID
+	jiraIntegrations map[string]*integration.JiraIntegration // userID -> JiraIntegration
+	mu               sync.RWMutex
 }
 
 // NewUserRepository creates a new user repository
 func NewUserRepository() interfaces.UserRepository {
 	return &userStorage{
-		users:        make(map[types.UserID]*user.User),
-		slackIDIndex: make(map[string]map[string]types.UserID),
+		users:            make(map[types.UserID]*user.User),
+		slackIDIndex:     make(map[string]map[string]types.UserID),
+		jiraIntegrations: make(map[string]*integration.JiraIntegration),
 	}
 }
 
 // newUserStorage creates a new user storage
 func newUserStorage() *userStorage {
 	return &userStorage{
-		users:        make(map[types.UserID]*user.User),
-		slackIDIndex: make(map[string]map[string]types.UserID),
+		users:            make(map[types.UserID]*user.User),
+		slackIDIndex:     make(map[string]map[string]types.UserID),
+		jiraIntegrations: make(map[string]*integration.JiraIntegration),
 	}
 }
 
@@ -143,5 +147,41 @@ func (s *userStorage) Update(ctx context.Context, u *user.User) error {
 	userCopy := *u
 	s.users[u.ID] = &userCopy
 
+	return nil
+}
+
+// SaveJiraIntegration saves a Jira integration to memory
+func (s *userStorage) SaveJiraIntegration(ctx context.Context, integration *integration.JiraIntegration) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Create a copy to prevent external modification
+	integrationCopy := *integration
+	s.jiraIntegrations[integration.UserID] = &integrationCopy
+
+	return nil
+}
+
+// GetJiraIntegration retrieves a Jira integration from memory
+func (s *userStorage) GetJiraIntegration(ctx context.Context, userID string) (*integration.JiraIntegration, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	integration, exists := s.jiraIntegrations[userID]
+	if !exists {
+		return nil, nil // Return nil when not found (not connected)
+	}
+
+	// Return a copy to prevent external modification
+	integrationCopy := *integration
+	return &integrationCopy, nil
+}
+
+// DeleteJiraIntegration deletes a Jira integration from memory
+func (s *userStorage) DeleteJiraIntegration(ctx context.Context, userID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.jiraIntegrations, userID)
 	return nil
 }

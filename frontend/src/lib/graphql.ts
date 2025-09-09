@@ -554,3 +554,29 @@ export async function graphqlRequest<T>(
 
   return result.data;
 }
+
+// Jira Integration queries and mutations
+export const GET_JIRA_INTEGRATION = `
+  query GetJiraIntegration {
+    jiraIntegration {
+      id
+      connected
+      siteUrl
+      connectedAt
+    }
+  }
+`;
+
+export const INITIATE_JIRA_OAUTH = `
+  mutation InitiateJiraOAuth {
+    initiateJiraOAuth {
+      url
+    }
+  }
+`;
+
+export const DISCONNECT_JIRA = `
+  mutation DisconnectJira {
+    disconnectJira
+  }
+`;
