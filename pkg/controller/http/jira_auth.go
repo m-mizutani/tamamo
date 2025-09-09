@@ -59,11 +59,37 @@ func (c *JiraAuthController) HandleOAuthCallback(w http.ResponseWriter, r *http.
 	// Clear the state cookie
 	c.oauthService.ClearOAuthStateCookie(w)
 
-	// For now, we'll simulate token exchange success
-	// In a real implementation, this would call the Jira token endpoint
-	// and save the integration through the use case via userID from the cookie
-	_ = userID // TODO: Use userID to save integration
-	
+	// Exchange authorization code for tokens
+	tokenResponse, err := c.oauthService.ExchangeCodeForToken(code)
+	if err != nil {
+		c.renderErrorPage(w, fmt.Sprintf("Failed to exchange authorization code: %v", err))
+		return
+	}
+
+	// Get accessible Jira resources
+	resources, err := c.oauthService.GetAccessibleResources(tokenResponse.AccessToken)
+	if err != nil {
+		c.renderErrorPage(w, fmt.Sprintf("Failed to get accessible resources: %v", err))
+		return
+	}
+
+	// For now, use the first available resource
+	// In a more sophisticated implementation, we might let users choose
+	if len(resources) == 0 {
+		c.renderErrorPage(w, "No accessible Jira sites found")
+		return
+	}
+
+	resource := resources[0]
+
+	// Save the integration through the use case
+	err = c.jiraUseCases.SaveIntegration(r.Context(), userID, resource.ID, resource.URL,
+		tokenResponse.AccessToken, tokenResponse.RefreshToken, tokenResponse.ExpiresIn)
+	if err != nil {
+		c.renderErrorPage(w, fmt.Sprintf("Failed to save integration: %v", err))
+		return
+	}
+
 	// Render success page
 	c.renderSuccessPage(w)
 }

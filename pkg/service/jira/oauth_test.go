@@ -51,7 +51,7 @@ func TestOAuthService_GenerateOAuthURL(t *testing.T) {
 func TestOAuthService_StateCookieOperations(t *testing.T) {
 	config := jira.OAuthConfig{
 		ClientID:     "test-client-id",
-		ClientSecret: "test-client-secret", 
+		ClientSecret: "test-client-secret",
 		RedirectURI:  "http://localhost:8080/api/auth/jira/callback",
 	}
 	oauthService := jira.NewOAuthService(config)

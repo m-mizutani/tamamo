@@ -123,15 +123,15 @@ func TestJiraIntegrationUseCases_IntegrationFlow(t *testing.T) {
 	t.Run("simulate successful integration save", func(t *testing.T) {
 		// Simulate saving an integration (normally done by OAuth callback)
 		testIntegration := &integration.JiraIntegration{
-			UserID:          testUserID,
-			CloudID:         "test-cloud-id",
-			SiteURL:         "test.atlassian.net",
-			AccessToken:     "test-access-token",
-			RefreshToken:    "test-refresh-token",
-			TokenExpiresAt:  time.Now().Add(1 * time.Hour),
-			Scopes:          []string{"read:jira-user", "read:jira-work"},
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
+			UserID:         testUserID,
+			CloudID:        "test-cloud-id",
+			SiteURL:        "test.atlassian.net",
+			AccessToken:    "test-access-token",
+			RefreshToken:   "test-refresh-token",
+			TokenExpiresAt: time.Now().Add(1 * time.Hour),
+			Scopes:         []string{"read:jira-user", "read:jira-work"},
+			CreatedAt:      time.Now(),
+			UpdatedAt:      time.Now(),
 		}
 
 		err := mockUserRepo.SaveJiraIntegration(ctx, testIntegration)

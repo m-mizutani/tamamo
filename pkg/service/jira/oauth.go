@@ -3,7 +3,9 @@ package jira
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -20,6 +22,23 @@ type OAuthConfig struct {
 
 type OAuthService struct {
 	config OAuthConfig
+}
+
+// TokenResponse represents the response from Jira's OAuth token endpoint
+type TokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
+	Scope        string `json:"scope"`
+	TokenType    string `json:"token_type"`
+}
+
+// AccessibleResource represents a Jira site the user has access to
+type AccessibleResource struct {
+	ID     string   `json:"id"`
+	URL    string   `json:"url"`
+	Name   string   `json:"name"`
+	Scopes []string `json:"scopes"`
 }
 
 func NewOAuthService(config OAuthConfig) *OAuthService {
@@ -148,4 +167,71 @@ func (s *OAuthService) ClearOAuthStateCookie(w http.ResponseWriter) {
 // ValidateState validates that the provided state matches the expected state
 func (s *OAuthService) ValidateState(providedState, expectedState string) bool {
 	return providedState == expectedState
+}
+
+// ExchangeCodeForToken exchanges the authorization code for an access token
+func (s *OAuthService) ExchangeCodeForToken(code string) (*TokenResponse, error) {
+	tokenURL := "https://auth.atlassian.com/oauth/token"
+
+	data := url.Values{
+		"grant_type":    {"authorization_code"},
+		"client_id":     {s.config.ClientID},
+		"client_secret": {s.config.ClientSecret},
+		"code":          {code},
+		"redirect_uri":  {s.config.RedirectURI},
+	}
+
+	resp, err := http.PostForm(tokenURL, data)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to exchange code for token")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, goerr.New("token exchange failed",
+			goerr.V("status", resp.StatusCode),
+			goerr.V("response", string(body)))
+	}
+
+	var tokenResponse TokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+		return nil, goerr.Wrap(err, "failed to decode token response")
+	}
+
+	return &tokenResponse, nil
+}
+
+// GetAccessibleResources retrieves the list of Jira sites the user has access to
+func (s *OAuthService) GetAccessibleResources(accessToken string) ([]AccessibleResource, error) {
+	resourcesURL := "https://api.atlassian.com/oauth/token/accessible-resources"
+
+	req, err := http.NewRequest("GET", resourcesURL, nil)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to create request")
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Accept", "application/json")
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get accessible resources")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, goerr.New("failed to get accessible resources",
+			goerr.V("status", resp.StatusCode),
+			goerr.V("response", string(body)))
+	}
+
+	var resources []AccessibleResource
+	if err := json.NewDecoder(resp.Body).Decode(&resources); err != nil {
+		return nil, goerr.Wrap(err, "failed to decode resources response")
+	}
+
+	return resources, nil
 }

@@ -105,4 +105,49 @@ func TestJiraIntegrationUseCases(t *testing.T) {
 		gt.Error(t, err)
 		gt.S(t, err.Error()).Contains("no Jira integration found")
 	})
+
+	t.Run("SaveIntegration creates new integration successfully", func(t *testing.T) {
+		ctx := context.Background()
+		userID := "test-user-save"
+		cloudID := "cloud-456"
+		siteURL := "test.atlassian.net"
+		accessToken := "access-token-123"
+		refreshToken := "refresh-token-456"
+		expiresIn := 3600
+
+		// Save integration
+		err := uc.SaveIntegration(ctx, userID, cloudID, siteURL, accessToken, refreshToken, expiresIn)
+		gt.NoError(t, err)
+
+		// Verify it was saved correctly
+		savedIntegration, err := uc.GetIntegration(ctx, userID)
+		gt.NoError(t, err)
+		gt.V(t, savedIntegration).NotNil()
+		gt.V(t, savedIntegration.UserID).Equal(userID)
+		gt.V(t, savedIntegration.CloudID).Equal(cloudID)
+		gt.V(t, savedIntegration.SiteURL).Equal(siteURL)
+		gt.V(t, savedIntegration.AccessToken).Equal(accessToken)
+		gt.V(t, savedIntegration.RefreshToken).Equal(refreshToken)
+	})
+
+	t.Run("SaveIntegration overwrites existing integration", func(t *testing.T) {
+		ctx := context.Background()
+		userID := "test-user-overwrite"
+
+		// Save first integration
+		err := uc.SaveIntegration(ctx, userID, "cloud-1", "site1.atlassian.net", "token1", "refresh1", 3600)
+		gt.NoError(t, err)
+
+		// Save second integration (should overwrite)
+		err = uc.SaveIntegration(ctx, userID, "cloud-2", "site2.atlassian.net", "token2", "refresh2", 7200)
+		gt.NoError(t, err)
+
+		// Verify the latest integration is saved
+		savedIntegration, err := uc.GetIntegration(ctx, userID)
+		gt.NoError(t, err)
+		gt.V(t, savedIntegration).NotNil()
+		gt.V(t, savedIntegration.CloudID).Equal("cloud-2")
+		gt.V(t, savedIntegration.SiteURL).Equal("site2.atlassian.net")
+		gt.V(t, savedIntegration.AccessToken).Equal("token2")
+	})
 }

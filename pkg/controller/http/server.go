@@ -104,17 +104,17 @@ func handleHTTPError(w http.ResponseWriter, err error) {
 
 // Server represents the HTTP server
 type Server struct {
-	router          *chi.Mux
-	slackCtrl       *slack_controller.Controller
-	graphqlCtrl     *graphql_controller.Resolver
-	authCtrl        *auth_controller.Controller
-	userCtrl        *UserController
-	imageCtrl       *ImageController
-	jiraAuthCtrl    *JiraAuthController
-	authUseCase     interfaces.AuthUseCases
-	enableGraphiQL  bool
-	slackVerifier   slack.PayloadVerifier
-	noAuth          bool
+	router         *chi.Mux
+	slackCtrl      *slack_controller.Controller
+	graphqlCtrl    *graphql_controller.Resolver
+	authCtrl       *auth_controller.Controller
+	userCtrl       *UserController
+	imageCtrl      *ImageController
+	jiraAuthCtrl   *JiraAuthController
+	authUseCase    interfaces.AuthUseCases
+	enableGraphiQL bool
+	slackVerifier  slack.PayloadVerifier
+	noAuth         bool
 }
 
 // Options is a functional option for Server
