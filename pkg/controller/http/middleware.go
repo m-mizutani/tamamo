@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/m-mizutani/ctxlog"
 	"github.com/m-mizutani/goerr/v2"
+	graphql_controller "github.com/m-mizutani/tamamo/pkg/controller/graphql"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/utils/errors"
 )
@@ -151,6 +152,10 @@ func graphQLLoggingMiddleware(next http.Handler) http.Handler {
 
 		// Wrap response writer to capture status and response
 		wrapped := &graphQLResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+		// Add the response writer to the request context so GraphQL resolvers can access it
+		ctx := graphql_controller.WithResponseWriter(r.Context(), wrapped)
+		r = r.WithContext(ctx)
 
 		next.ServeHTTP(wrapped, r)
 

@@ -8,15 +8,25 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 
 	"github.com/99designs/gqlgen/graphql"
 	goerr "github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/controller/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/agent"
 	graphql1 "github.com/m-mizutani/tamamo/pkg/domain/model/graphql"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/integration"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
+)
+
+// contextKey is a custom type for context keys to avoid collisions
+type contextKey string
+
+const (
+	// httpResponseWriterKey is the context key for storing the HTTP response writer
+	httpResponseWriterKey contextKey = "http_response_writer"
 )
 
 // CreateAgent is the resolver for the createAgent field.
@@ -196,6 +206,47 @@ func (r *mutationResolver) UpdateFallbackLlm(ctx context.Context, enabled bool, 
 	// This would typically update a configuration file or database
 	// For now, we return an error as this requires persistent storage implementation
 	return nil, goerr.New("updateFallbackLLM not yet implemented - requires persistent configuration storage")
+}
+
+// InitiateJiraOAuth is the resolver for the initiateJiraOAuth field.
+func (r *mutationResolver) InitiateJiraOAuth(ctx context.Context) (*graphql1.JiraOAuthURL, error) {
+	// Get current user from context
+	user := getCurrentUser(ctx)
+	if user == nil {
+		return nil, goerr.New("authentication required")
+	}
+
+	// Get HTTP response writer from context (needed for setting cookies)
+	w := getResponseWriter(ctx)
+	if w == nil {
+		return nil, goerr.New("HTTP response writer not available")
+	}
+
+	// Initiate OAuth flow
+	authURL, err := r.jiraUseCases.InitiateOAuth(ctx, w, user.ID.String())
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to initiate OAuth flow")
+	}
+
+	return &graphql1.JiraOAuthURL{
+		URL: authURL,
+	}, nil
+}
+
+// DisconnectJira is the resolver for the disconnectJira field.
+func (r *mutationResolver) DisconnectJira(ctx context.Context) (bool, error) {
+	// Get current user from context
+	user := getCurrentUser(ctx)
+	if user == nil {
+		return false, goerr.New("authentication required")
+	}
+
+	// Disconnect Jira integration
+	if err := r.jiraUseCases.Disconnect(ctx, user.ID.String()); err != nil {
+		return false, goerr.Wrap(err, "failed to disconnect Jira integration")
+	}
+
+	return true, nil
 }
 
 // Thread is the resolver for the thread field.
@@ -519,6 +570,24 @@ func (r *queryResolver) LlmConfig(ctx context.Context) (*graphql1.LLMConfig, err
 	}, nil
 }
 
+// JiraIntegration is the resolver for the jiraIntegration field.
+func (r *queryResolver) JiraIntegration(ctx context.Context) (*graphql1.JiraIntegration, error) {
+	// Get current user from context
+	user := getCurrentUser(ctx)
+	if user == nil {
+		return nil, goerr.New("authentication required")
+	}
+
+	// Get Jira integration from use case
+	jiraIntegration, err := r.jiraUseCases.GetIntegration(ctx, user.ID.String())
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get Jira integration")
+	}
+
+	// Convert to GraphQL response
+	return convertJiraIntegrationToGraphQL(jiraIntegration), nil
+}
+
 // ID is the resolver for the id field.
 func (r *threadResolver) ID(ctx context.Context, obj *slack.Thread) (string, error) {
 	return string(obj.ID), nil
@@ -545,3 +614,66 @@ type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type threadResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
+
+// Helper functions
+
+func getCurrentUser(ctx context.Context) *user.User {
+	session, ok := auth.UserFromContext(ctx)
+	if !ok {
+		return nil
+	}
+	// For simplicity, create a user from session info
+	// In a real implementation, you might want to fetch full user details
+	return &user.User{
+		ID: session.UserID,
+	}
+}
+
+func getResponseWriter(ctx context.Context) http.ResponseWriter {
+	// Extract response writer from context
+	// This requires middleware that sets the response writer in context
+	if w := ctx.Value(httpResponseWriterKey); w != nil {
+		if responseWriter, ok := w.(http.ResponseWriter); ok {
+			return responseWriter
+		}
+	}
+	return nil
+}
+
+// WithResponseWriter adds the HTTP response writer to the context.
+// This should be called by the middleware that handles GraphQL requests.
+// The response writer can then be retrieved in GraphQL resolvers using getResponseWriter.
+//
+// Example usage in middleware:
+//
+//	ctx := graphql.WithResponseWriter(r.Context(), w)
+//	r = r.WithContext(ctx)
+//	next.ServeHTTP(w, r)
+func WithResponseWriter(ctx context.Context, w http.ResponseWriter) context.Context {
+	return context.WithValue(ctx, httpResponseWriterKey, w)
+}
+
+func convertJiraIntegrationToGraphQL(integration *integration.JiraIntegration) *graphql1.JiraIntegration {
+	if integration == nil {
+		// Return disconnected state when no integration exists
+		return &graphql1.JiraIntegration{
+			ID:          "0", // Use "0" for non-existent integration
+			Connected:   false,
+			SiteURL:     nil,
+			ConnectedAt: nil,
+		}
+	}
+
+	connected := integration.IsConnected()
+	var siteURL *string
+	if integration.SiteURL != "" {
+		siteURL = &integration.SiteURL
+	}
+
+	return &graphql1.JiraIntegration{
+		ID:          integration.UserID, // Use UserID as ID for simplicity
+		Connected:   connected,
+		SiteURL:     siteURL,
+		ConnectedAt: &integration.CreatedAt,
+	}
+}

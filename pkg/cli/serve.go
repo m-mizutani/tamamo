@@ -24,6 +24,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/repository/database/memory"
 	"github.com/m-mizutani/tamamo/pkg/repository/storage"
 	"github.com/m-mizutani/tamamo/pkg/service/image"
+	"github.com/m-mizutani/tamamo/pkg/service/jira"
 	"github.com/m-mizutani/tamamo/pkg/service/slack"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
 	"github.com/urfave/cli/v3"
@@ -37,6 +38,7 @@ func cmdServe() *cli.Command {
 		authCfg        config.Auth
 		llmCfg         config.LLMConfig
 		storageCfg     config.Storage
+		jiraCfg        config.Jira
 		enableGraphiQL bool
 	)
 
@@ -61,6 +63,7 @@ func cmdServe() *cli.Command {
 	flags = append(flags, authCfg.Flags()...)
 	flags = append(flags, llmCfg.Flags()...)
 	flags = append(flags, storageCfg.Flags()...)
+	flags = append(flags, jiraCfg.Flags()...)
 
 	return &cli.Command{
 		Name:    "serve",
@@ -288,7 +291,29 @@ func cmdServe() *cli.Command {
 
 			// Create agent use case
 			agentUseCase := usecase.NewAgentUseCases(agentRepo)
-			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase, userUseCase, llmFactory, imageProcessor, agentImageRepo)
+
+			// Create Jira integration components (if configured)
+			var jiraUseCases usecase.JiraIntegrationUseCases
+			var jiraAuthController *server.JiraAuthController
+			if jiraCfg.IsEnabled() {
+				if err := jiraCfg.Validate(); err != nil {
+					return goerr.Wrap(err, "invalid Jira configuration")
+				}
+
+				jiraOAuthConfig := jiraCfg.BuildOAuthConfig()
+				jiraOAuthService := jira.NewOAuthService(jiraOAuthConfig)
+				jiraUseCases = usecase.NewJiraIntegrationUseCases(userRepo, jiraOAuthService)
+				jiraAuthController = server.NewJiraAuthController(jiraUseCases, jiraOAuthService)
+
+				logger.Info("Jira integration enabled",
+					"client_id", jiraOAuthConfig.ClientID,
+					"redirect_uri", jiraOAuthConfig.RedirectURI,
+				)
+			} else {
+				logger.Info("Jira integration disabled (missing configuration)")
+			}
+
+			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase, userUseCase, llmFactory, imageProcessor, agentImageRepo, jiraUseCases)
 
 			// Create user controller
 			userCtrl := server.NewUserController(userUseCase)
@@ -306,6 +331,11 @@ func cmdServe() *cli.Command {
 				server.WithGraphiQL(enableGraphiQL),
 				server.WithSlackVerifier(slackCfg.Verifier()),
 				server.WithNoAuth(authCfg.NoAuthentication),
+			}
+
+			// Add Jira auth controller if configured
+			if jiraAuthController != nil {
+				serverOptions = append(serverOptions, server.WithJiraAuthController(jiraAuthController))
 			}
 
 			// Add auth controller if authentication is enabled

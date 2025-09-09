@@ -109,6 +109,17 @@ type LLMConfig {
   fallbackModel: String!
 }
 
+type JiraIntegration {
+  id: ID!
+  connected: Boolean!
+  siteUrl: String
+  connectedAt: Time
+}
+
+type JiraOAuthURL {
+  url: String!
+}
+
 input CreateAgentInput {
   agentId: String!
   name: String!
@@ -155,6 +166,8 @@ type Query {
   currentUser: User
   
   llmConfig: LLMConfig!
+  
+  jiraIntegration: JiraIntegration
 }
 
 type Mutation {
@@ -169,6 +182,9 @@ type Mutation {
   
   updateDefaultLLM(provider: String!, model: String!): LLMConfig!
   updateFallbackLLM(enabled: Boolean!, provider: String, model: String): LLMConfig!
+  
+  initiateJiraOAuth: JiraOAuthURL!
+  disconnectJira: Boolean!
 }
 
 schema {

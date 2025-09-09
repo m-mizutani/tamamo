@@ -6,6 +6,7 @@ package mock
 import (
 	"context"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/integration"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
 	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"sync"
@@ -320,11 +321,20 @@ var _ interfaces.UserRepository = &UserRepositoryMock{}
 //			CreateFunc: func(ctx context.Context, userMoqParam *user.User) error {
 //				panic("mock out the Create method")
 //			},
+//			DeleteJiraIntegrationFunc: func(ctx context.Context, userID string) error {
+//				panic("mock out the DeleteJiraIntegration method")
+//			},
 //			GetByIDFunc: func(ctx context.Context, id types.UserID) (*user.User, error) {
 //				panic("mock out the GetByID method")
 //			},
 //			GetBySlackIDAndTeamIDFunc: func(ctx context.Context, slackID string, teamID string) (*user.User, error) {
 //				panic("mock out the GetBySlackIDAndTeamID method")
+//			},
+//			GetJiraIntegrationFunc: func(ctx context.Context, userID string) (*integration.JiraIntegration, error) {
+//				panic("mock out the GetJiraIntegration method")
+//			},
+//			SaveJiraIntegrationFunc: func(ctx context.Context, integrationMoqParam *integration.JiraIntegration) error {
+//				panic("mock out the SaveJiraIntegration method")
 //			},
 //			UpdateFunc: func(ctx context.Context, userMoqParam *user.User) error {
 //				panic("mock out the Update method")
@@ -339,11 +349,20 @@ type UserRepositoryMock struct {
 	// CreateFunc mocks the Create method.
 	CreateFunc func(ctx context.Context, userMoqParam *user.User) error
 
+	// DeleteJiraIntegrationFunc mocks the DeleteJiraIntegration method.
+	DeleteJiraIntegrationFunc func(ctx context.Context, userID string) error
+
 	// GetByIDFunc mocks the GetByID method.
 	GetByIDFunc func(ctx context.Context, id types.UserID) (*user.User, error)
 
 	// GetBySlackIDAndTeamIDFunc mocks the GetBySlackIDAndTeamID method.
 	GetBySlackIDAndTeamIDFunc func(ctx context.Context, slackID string, teamID string) (*user.User, error)
+
+	// GetJiraIntegrationFunc mocks the GetJiraIntegration method.
+	GetJiraIntegrationFunc func(ctx context.Context, userID string) (*integration.JiraIntegration, error)
+
+	// SaveJiraIntegrationFunc mocks the SaveJiraIntegration method.
+	SaveJiraIntegrationFunc func(ctx context.Context, integrationMoqParam *integration.JiraIntegration) error
 
 	// UpdateFunc mocks the Update method.
 	UpdateFunc func(ctx context.Context, userMoqParam *user.User) error
@@ -356,6 +375,13 @@ type UserRepositoryMock struct {
 			Ctx context.Context
 			// UserMoqParam is the userMoqParam argument value.
 			UserMoqParam *user.User
+		}
+		// DeleteJiraIntegration holds details about calls to the DeleteJiraIntegration method.
+		DeleteJiraIntegration []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// UserID is the userID argument value.
+			UserID string
 		}
 		// GetByID holds details about calls to the GetByID method.
 		GetByID []struct {
@@ -373,6 +399,20 @@ type UserRepositoryMock struct {
 			// TeamID is the teamID argument value.
 			TeamID string
 		}
+		// GetJiraIntegration holds details about calls to the GetJiraIntegration method.
+		GetJiraIntegration []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// UserID is the userID argument value.
+			UserID string
+		}
+		// SaveJiraIntegration holds details about calls to the SaveJiraIntegration method.
+		SaveJiraIntegration []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// IntegrationMoqParam is the integrationMoqParam argument value.
+			IntegrationMoqParam *integration.JiraIntegration
+		}
 		// Update holds details about calls to the Update method.
 		Update []struct {
 			// Ctx is the ctx argument value.
@@ -382,8 +422,11 @@ type UserRepositoryMock struct {
 		}
 	}
 	lockCreate                sync.RWMutex
+	lockDeleteJiraIntegration sync.RWMutex
 	lockGetByID               sync.RWMutex
 	lockGetBySlackIDAndTeamID sync.RWMutex
+	lockGetJiraIntegration    sync.RWMutex
+	lockSaveJiraIntegration   sync.RWMutex
 	lockUpdate                sync.RWMutex
 }
 
@@ -420,6 +463,42 @@ func (mock *UserRepositoryMock) CreateCalls() []struct {
 	mock.lockCreate.RLock()
 	calls = mock.calls.Create
 	mock.lockCreate.RUnlock()
+	return calls
+}
+
+// DeleteJiraIntegration calls DeleteJiraIntegrationFunc.
+func (mock *UserRepositoryMock) DeleteJiraIntegration(ctx context.Context, userID string) error {
+	if mock.DeleteJiraIntegrationFunc == nil {
+		panic("UserRepositoryMock.DeleteJiraIntegrationFunc: method is nil but UserRepository.DeleteJiraIntegration was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		UserID string
+	}{
+		Ctx:    ctx,
+		UserID: userID,
+	}
+	mock.lockDeleteJiraIntegration.Lock()
+	mock.calls.DeleteJiraIntegration = append(mock.calls.DeleteJiraIntegration, callInfo)
+	mock.lockDeleteJiraIntegration.Unlock()
+	return mock.DeleteJiraIntegrationFunc(ctx, userID)
+}
+
+// DeleteJiraIntegrationCalls gets all the calls that were made to DeleteJiraIntegration.
+// Check the length with:
+//
+//	len(mockedUserRepository.DeleteJiraIntegrationCalls())
+func (mock *UserRepositoryMock) DeleteJiraIntegrationCalls() []struct {
+	Ctx    context.Context
+	UserID string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		UserID string
+	}
+	mock.lockDeleteJiraIntegration.RLock()
+	calls = mock.calls.DeleteJiraIntegration
+	mock.lockDeleteJiraIntegration.RUnlock()
 	return calls
 }
 
@@ -496,6 +575,78 @@ func (mock *UserRepositoryMock) GetBySlackIDAndTeamIDCalls() []struct {
 	mock.lockGetBySlackIDAndTeamID.RLock()
 	calls = mock.calls.GetBySlackIDAndTeamID
 	mock.lockGetBySlackIDAndTeamID.RUnlock()
+	return calls
+}
+
+// GetJiraIntegration calls GetJiraIntegrationFunc.
+func (mock *UserRepositoryMock) GetJiraIntegration(ctx context.Context, userID string) (*integration.JiraIntegration, error) {
+	if mock.GetJiraIntegrationFunc == nil {
+		panic("UserRepositoryMock.GetJiraIntegrationFunc: method is nil but UserRepository.GetJiraIntegration was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		UserID string
+	}{
+		Ctx:    ctx,
+		UserID: userID,
+	}
+	mock.lockGetJiraIntegration.Lock()
+	mock.calls.GetJiraIntegration = append(mock.calls.GetJiraIntegration, callInfo)
+	mock.lockGetJiraIntegration.Unlock()
+	return mock.GetJiraIntegrationFunc(ctx, userID)
+}
+
+// GetJiraIntegrationCalls gets all the calls that were made to GetJiraIntegration.
+// Check the length with:
+//
+//	len(mockedUserRepository.GetJiraIntegrationCalls())
+func (mock *UserRepositoryMock) GetJiraIntegrationCalls() []struct {
+	Ctx    context.Context
+	UserID string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		UserID string
+	}
+	mock.lockGetJiraIntegration.RLock()
+	calls = mock.calls.GetJiraIntegration
+	mock.lockGetJiraIntegration.RUnlock()
+	return calls
+}
+
+// SaveJiraIntegration calls SaveJiraIntegrationFunc.
+func (mock *UserRepositoryMock) SaveJiraIntegration(ctx context.Context, integrationMoqParam *integration.JiraIntegration) error {
+	if mock.SaveJiraIntegrationFunc == nil {
+		panic("UserRepositoryMock.SaveJiraIntegrationFunc: method is nil but UserRepository.SaveJiraIntegration was just called")
+	}
+	callInfo := struct {
+		Ctx                 context.Context
+		IntegrationMoqParam *integration.JiraIntegration
+	}{
+		Ctx:                 ctx,
+		IntegrationMoqParam: integrationMoqParam,
+	}
+	mock.lockSaveJiraIntegration.Lock()
+	mock.calls.SaveJiraIntegration = append(mock.calls.SaveJiraIntegration, callInfo)
+	mock.lockSaveJiraIntegration.Unlock()
+	return mock.SaveJiraIntegrationFunc(ctx, integrationMoqParam)
+}
+
+// SaveJiraIntegrationCalls gets all the calls that were made to SaveJiraIntegration.
+// Check the length with:
+//
+//	len(mockedUserRepository.SaveJiraIntegrationCalls())
+func (mock *UserRepositoryMock) SaveJiraIntegrationCalls() []struct {
+	Ctx                 context.Context
+	IntegrationMoqParam *integration.JiraIntegration
+} {
+	var calls []struct {
+		Ctx                 context.Context
+		IntegrationMoqParam *integration.JiraIntegration
+	}
+	mock.lockSaveJiraIntegration.RLock()
+	calls = mock.calls.SaveJiraIntegration
+	mock.lockSaveJiraIntegration.RUnlock()
 	return calls
 }
 

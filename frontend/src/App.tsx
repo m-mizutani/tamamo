@@ -6,6 +6,7 @@ import { ArchivedAgentsPage } from '@/pages/ArchivedAgentsPage'
 import { CreateAgentPage } from '@/pages/CreateAgentPage'
 import { AgentDetailPage } from '@/pages/AgentDetailPage'
 import { AgentVersionHistoryPage } from '@/pages/AgentVersionHistoryPage'
+import { SettingsPage } from '@/pages/SettingsPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { Toaster } from 'sonner'
@@ -36,12 +37,7 @@ function AppContent() {
         <Route path="/agents/new" element={<CreateAgentPage />} />
         <Route path="/agents/:id" element={<AgentDetailPage />} />
         <Route path="/agents/:id/versions" element={<AgentVersionHistoryPage />} />
-        <Route path="/settings" element={
-          <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-            <p className="text-muted-foreground">Settings page - Coming soon</p>
-          </div>
-        } />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </MainLayout>
     <Toaster richColors position="top-right" />

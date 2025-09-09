@@ -110,6 +110,7 @@ type Server struct {
 	authCtrl       *auth_controller.Controller
 	userCtrl       *UserController
 	imageCtrl      *ImageController
+	jiraAuthCtrl   *JiraAuthController
 	authUseCase    interfaces.AuthUseCases
 	enableGraphiQL bool
 	slackVerifier  slack.PayloadVerifier
@@ -158,6 +159,13 @@ func WithUserController(ctrl *UserController) Options {
 func WithImageController(ctrl *ImageController) Options {
 	return func(s *Server) {
 		s.imageCtrl = ctrl
+	}
+}
+
+// WithJiraAuthController sets the Jira auth controller
+func WithJiraAuthController(ctrl *JiraAuthController) Options {
+	return func(s *Server) {
+		s.jiraAuthCtrl = ctrl
 	}
 }
 
@@ -217,6 +225,17 @@ func New(opts ...Options) *Server {
 			}
 			r.Post("/event", slackEventHandler(s.slackCtrl))
 			// Future: r.Post("/interaction", slackInteractionHandler(s.slackCtrl))
+		})
+	})
+
+	// API routes
+	r.Route("/api", func(r chi.Router) {
+		r.Route("/auth", func(r chi.Router) {
+			r.Route("/jira", func(r chi.Router) {
+				if s.jiraAuthCtrl != nil {
+					r.Get("/callback", s.jiraAuthCtrl.HandleOAuthCallback)
+				}
+			})
 		})
 	})
 

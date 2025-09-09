@@ -8,6 +8,7 @@ require (
 	github.com/99designs/gqlgen v0.17.78
 	github.com/fatih/color v1.18.0
 	github.com/go-chi/chi/v5 v5.2.2
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/m-mizutani/clog v0.0.8
 	github.com/m-mizutani/ctxlog v0.2.0
