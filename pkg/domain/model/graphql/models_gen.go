@@ -114,6 +114,18 @@ type LLMProviderInfo struct {
 type Mutation struct {
 }
 
+type NotionIntegration struct {
+	ID            string     `json:"id"`
+	Connected     bool       `json:"connected"`
+	WorkspaceName *string    `json:"workspaceName,omitempty"`
+	WorkspaceIcon *string    `json:"workspaceIcon,omitempty"`
+	ConnectedAt   *time.Time `json:"connectedAt,omitempty"`
+}
+
+type NotionOAuthURL struct {
+	URL string `json:"url"`
+}
+
 type Query struct {
 }
 

@@ -25,6 +25,7 @@ import (
 	"github.com/m-mizutani/tamamo/pkg/repository/storage"
 	"github.com/m-mizutani/tamamo/pkg/service/image"
 	"github.com/m-mizutani/tamamo/pkg/service/jira"
+	"github.com/m-mizutani/tamamo/pkg/service/notion"
 	"github.com/m-mizutani/tamamo/pkg/service/slack"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
 	"github.com/urfave/cli/v3"
@@ -33,12 +34,14 @@ import (
 func cmdServe() *cli.Command {
 	var (
 		addr           string
+		appCfg         config.App
 		slackCfg       config.Slack
 		firestoreCfg   config.Firestore
 		authCfg        config.Auth
 		llmCfg         config.LLMConfig
 		storageCfg     config.Storage
 		jiraCfg        config.Jira
+		notionCfg      config.Notion
 		enableGraphiQL bool
 	)
 
@@ -58,12 +61,14 @@ func cmdServe() *cli.Command {
 			Destination: &enableGraphiQL,
 		},
 	}
+	flags = append(flags, appCfg.Flags()...)
 	flags = append(flags, slackCfg.Flags()...)
 	flags = append(flags, firestoreCfg.Flags()...)
 	flags = append(flags, authCfg.Flags()...)
 	flags = append(flags, llmCfg.Flags()...)
 	flags = append(flags, storageCfg.Flags()...)
 	flags = append(flags, jiraCfg.Flags()...)
+	flags = append(flags, notionCfg.Flags()...)
 
 	return &cli.Command{
 		Name:    "serve",
@@ -72,6 +77,11 @@ func cmdServe() *cli.Command {
 		Flags:   flags,
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			logger := ctxlog.From(ctx)
+
+			// Validate application configuration
+			if err := appCfg.Validate(); err != nil {
+				return goerr.Wrap(err, "invalid application configuration")
+			}
 
 			// Validate authentication configuration
 			if err := authCfg.Validate(); err != nil {
@@ -300,7 +310,7 @@ func cmdServe() *cli.Command {
 					return goerr.Wrap(err, "invalid Jira configuration")
 				}
 
-				jiraOAuthConfig := jiraCfg.BuildOAuthConfig()
+				jiraOAuthConfig := jiraCfg.BuildOAuthConfig(appCfg.FrontendURL)
 				jiraOAuthService := jira.NewOAuthService(jiraOAuthConfig)
 				jiraUseCases = usecase.NewJiraIntegrationUseCases(userRepo, jiraOAuthService)
 				jiraAuthController = server.NewJiraAuthController(jiraUseCases, jiraOAuthService)
@@ -313,7 +323,28 @@ func cmdServe() *cli.Command {
 				logger.Info("Jira integration disabled (missing configuration)")
 			}
 
-			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase, userUseCase, llmFactory, imageProcessor, agentImageRepo, jiraUseCases)
+			// Create Notion integration components (if configured)
+			var notionUseCases usecase.NotionIntegrationUseCases
+			var notionAuthController *server.NotionAuthController
+			if notionCfg.IsEnabled() {
+				if err := notionCfg.Validate(); err != nil {
+					return goerr.Wrap(err, "invalid Notion configuration")
+				}
+
+				notionOAuthConfig := notionCfg.BuildOAuthConfig(appCfg.FrontendURL)
+				notionOAuthService := notion.NewOAuthService(notionOAuthConfig)
+				notionUseCases = usecase.NewNotionIntegrationUseCases(userRepo, notionOAuthService)
+				notionAuthController = server.NewNotionAuthController(notionUseCases, notionOAuthService)
+
+				logger.Info("Notion integration enabled",
+					"client_id", notionOAuthConfig.ClientID,
+					"redirect_uri", notionOAuthConfig.RedirectURI,
+				)
+			} else {
+				logger.Info("Notion integration disabled (missing configuration)")
+			}
+
+			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase, userUseCase, llmFactory, imageProcessor, agentImageRepo, jiraUseCases, notionUseCases)
 
 			// Create user controller
 			userCtrl := server.NewUserController(userUseCase)
@@ -336,6 +367,11 @@ func cmdServe() *cli.Command {
 			// Add Jira auth controller if configured
 			if jiraAuthController != nil {
 				serverOptions = append(serverOptions, server.WithJiraAuthController(jiraAuthController))
+			}
+
+			// Add Notion auth controller if configured
+			if notionAuthController != nil {
+				serverOptions = append(serverOptions, server.WithNotionAuthController(notionAuthController))
 			}
 
 			// Add auth controller if authentication is enabled

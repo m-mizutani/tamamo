@@ -36,6 +36,9 @@ var _ interfaces.SlackClient = &SlackClientMock{}
 //			IsBotUserFunc: func(userID string) bool {
 //				panic("mock out the IsBotUser method")
 //			},
+//			IsWorkspaceMemberFunc: func(ctx context.Context, email string) (bool, error) {
+//				panic("mock out the IsWorkspaceMember method")
+//			},
 //			PostMessageFunc: func(ctx context.Context, channelID string, threadTS string, text string) error {
 //				panic("mock out the PostMessage method")
 //			},
@@ -63,6 +66,9 @@ type SlackClientMock struct {
 
 	// IsBotUserFunc mocks the IsBotUser method.
 	IsBotUserFunc func(userID string) bool
+
+	// IsWorkspaceMemberFunc mocks the IsWorkspaceMember method.
+	IsWorkspaceMemberFunc func(ctx context.Context, email string) (bool, error)
 
 	// PostMessageFunc mocks the PostMessage method.
 	PostMessageFunc func(ctx context.Context, channelID string, threadTS string, text string) error
@@ -105,6 +111,13 @@ type SlackClientMock struct {
 			// UserID is the userID argument value.
 			UserID string
 		}
+		// IsWorkspaceMember holds details about calls to the IsWorkspaceMember method.
+		IsWorkspaceMember []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Email is the email argument value.
+			Email string
+		}
 		// PostMessage holds details about calls to the PostMessage method.
 		PostMessage []struct {
 			// Ctx is the ctx argument value.
@@ -135,6 +148,7 @@ type SlackClientMock struct {
 	lockGetUserInfo            sync.RWMutex
 	lockGetUserProfile         sync.RWMutex
 	lockIsBotUser              sync.RWMutex
+	lockIsWorkspaceMember      sync.RWMutex
 	lockPostMessage            sync.RWMutex
 	lockPostMessageWithOptions sync.RWMutex
 }
@@ -312,6 +326,42 @@ func (mock *SlackClientMock) IsBotUserCalls() []struct {
 	mock.lockIsBotUser.RLock()
 	calls = mock.calls.IsBotUser
 	mock.lockIsBotUser.RUnlock()
+	return calls
+}
+
+// IsWorkspaceMember calls IsWorkspaceMemberFunc.
+func (mock *SlackClientMock) IsWorkspaceMember(ctx context.Context, email string) (bool, error) {
+	if mock.IsWorkspaceMemberFunc == nil {
+		panic("SlackClientMock.IsWorkspaceMemberFunc: method is nil but SlackClient.IsWorkspaceMember was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Email string
+	}{
+		Ctx:   ctx,
+		Email: email,
+	}
+	mock.lockIsWorkspaceMember.Lock()
+	mock.calls.IsWorkspaceMember = append(mock.calls.IsWorkspaceMember, callInfo)
+	mock.lockIsWorkspaceMember.Unlock()
+	return mock.IsWorkspaceMemberFunc(ctx, email)
+}
+
+// IsWorkspaceMemberCalls gets all the calls that were made to IsWorkspaceMember.
+// Check the length with:
+//
+//	len(mockedSlackClient.IsWorkspaceMemberCalls())
+func (mock *SlackClientMock) IsWorkspaceMemberCalls() []struct {
+	Ctx   context.Context
+	Email string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Email string
+	}
+	mock.lockIsWorkspaceMember.RLock()
+	calls = mock.calls.IsWorkspaceMember
+	mock.lockIsWorkspaceMember.RUnlock()
 	return calls
 }
 

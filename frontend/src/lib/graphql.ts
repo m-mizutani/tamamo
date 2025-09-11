@@ -580,3 +580,30 @@ export const DISCONNECT_JIRA = `
     disconnectJira
   }
 `;
+
+// Notion Integration queries and mutations
+export const GET_NOTION_INTEGRATION = `
+  query GetNotionIntegration {
+    notionIntegration {
+      id
+      connected
+      workspaceName
+      connectedAt
+    }
+  }
+`;
+
+export const INITIATE_NOTION_OAUTH = `
+  mutation InitiateNotionOAuth {
+    initiateNotionOAuth {
+      url
+    }
+  }
+`;
+
+export const DISCONNECT_NOTION = `
+  mutation DisconnectNotion {
+    disconnectNotion
+  }
+`;
+

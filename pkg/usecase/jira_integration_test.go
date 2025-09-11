@@ -165,7 +165,7 @@ func TestJiraIntegrationUseCases(t *testing.T) {
 		retrievedIntegration, err := uc.GetIntegration(ctx, userID)
 		gt.NoError(t, err)
 		gt.V(t, retrievedIntegration).NotNil()
-		
+
 		// The token should be expired
 		gt.V(t, retrievedIntegration.IsTokenExpired()).Equal(true)
 	})

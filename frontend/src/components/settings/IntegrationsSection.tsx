@@ -1,4 +1,5 @@
 import { JiraIntegrationCard } from './JiraIntegrationCard'
+import { NotionIntegrationCard } from './NotionIntegrationCard'
 
 export function IntegrationsSection() {
   return (
@@ -12,6 +13,7 @@ export function IntegrationsSection() {
       
       <div className="grid gap-4">
         <JiraIntegrationCard />
+        <NotionIntegrationCard />
       </div>
     </div>
   )

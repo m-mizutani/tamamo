@@ -21,4 +21,7 @@ var (
 	// Authentication errors
 	ErrAuthenticationRequired = errors.New("authentication required")
 	ErrUnauthorized           = errors.New("unauthorized")
+	
+	// Access control errors
+	ErrNotWorkspaceMember = errors.New("user is not a member of the Slack workspace")
 )

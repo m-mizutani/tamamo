@@ -324,6 +324,9 @@ var _ interfaces.UserRepository = &UserRepositoryMock{}
 //			DeleteJiraIntegrationFunc: func(ctx context.Context, userID string) error {
 //				panic("mock out the DeleteJiraIntegration method")
 //			},
+//			DeleteNotionIntegrationFunc: func(ctx context.Context, userID string) error {
+//				panic("mock out the DeleteNotionIntegration method")
+//			},
 //			GetByIDFunc: func(ctx context.Context, id types.UserID) (*user.User, error) {
 //				panic("mock out the GetByID method")
 //			},
@@ -333,8 +336,14 @@ var _ interfaces.UserRepository = &UserRepositoryMock{}
 //			GetJiraIntegrationFunc: func(ctx context.Context, userID string) (*integration.JiraIntegration, error) {
 //				panic("mock out the GetJiraIntegration method")
 //			},
+//			GetNotionIntegrationFunc: func(ctx context.Context, userID string) (*integration.NotionIntegration, error) {
+//				panic("mock out the GetNotionIntegration method")
+//			},
 //			SaveJiraIntegrationFunc: func(ctx context.Context, integrationMoqParam *integration.JiraIntegration) error {
 //				panic("mock out the SaveJiraIntegration method")
+//			},
+//			SaveNotionIntegrationFunc: func(ctx context.Context, integrationMoqParam *integration.NotionIntegration) error {
+//				panic("mock out the SaveNotionIntegration method")
 //			},
 //			UpdateFunc: func(ctx context.Context, userMoqParam *user.User) error {
 //				panic("mock out the Update method")
@@ -352,6 +361,9 @@ type UserRepositoryMock struct {
 	// DeleteJiraIntegrationFunc mocks the DeleteJiraIntegration method.
 	DeleteJiraIntegrationFunc func(ctx context.Context, userID string) error
 
+	// DeleteNotionIntegrationFunc mocks the DeleteNotionIntegration method.
+	DeleteNotionIntegrationFunc func(ctx context.Context, userID string) error
+
 	// GetByIDFunc mocks the GetByID method.
 	GetByIDFunc func(ctx context.Context, id types.UserID) (*user.User, error)
 
@@ -361,8 +373,14 @@ type UserRepositoryMock struct {
 	// GetJiraIntegrationFunc mocks the GetJiraIntegration method.
 	GetJiraIntegrationFunc func(ctx context.Context, userID string) (*integration.JiraIntegration, error)
 
+	// GetNotionIntegrationFunc mocks the GetNotionIntegration method.
+	GetNotionIntegrationFunc func(ctx context.Context, userID string) (*integration.NotionIntegration, error)
+
 	// SaveJiraIntegrationFunc mocks the SaveJiraIntegration method.
 	SaveJiraIntegrationFunc func(ctx context.Context, integrationMoqParam *integration.JiraIntegration) error
+
+	// SaveNotionIntegrationFunc mocks the SaveNotionIntegration method.
+	SaveNotionIntegrationFunc func(ctx context.Context, integrationMoqParam *integration.NotionIntegration) error
 
 	// UpdateFunc mocks the Update method.
 	UpdateFunc func(ctx context.Context, userMoqParam *user.User) error
@@ -378,6 +396,13 @@ type UserRepositoryMock struct {
 		}
 		// DeleteJiraIntegration holds details about calls to the DeleteJiraIntegration method.
 		DeleteJiraIntegration []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// UserID is the userID argument value.
+			UserID string
+		}
+		// DeleteNotionIntegration holds details about calls to the DeleteNotionIntegration method.
+		DeleteNotionIntegration []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// UserID is the userID argument value.
@@ -406,12 +431,26 @@ type UserRepositoryMock struct {
 			// UserID is the userID argument value.
 			UserID string
 		}
+		// GetNotionIntegration holds details about calls to the GetNotionIntegration method.
+		GetNotionIntegration []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// UserID is the userID argument value.
+			UserID string
+		}
 		// SaveJiraIntegration holds details about calls to the SaveJiraIntegration method.
 		SaveJiraIntegration []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// IntegrationMoqParam is the integrationMoqParam argument value.
 			IntegrationMoqParam *integration.JiraIntegration
+		}
+		// SaveNotionIntegration holds details about calls to the SaveNotionIntegration method.
+		SaveNotionIntegration []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// IntegrationMoqParam is the integrationMoqParam argument value.
+			IntegrationMoqParam *integration.NotionIntegration
 		}
 		// Update holds details about calls to the Update method.
 		Update []struct {
@@ -421,13 +460,16 @@ type UserRepositoryMock struct {
 			UserMoqParam *user.User
 		}
 	}
-	lockCreate                sync.RWMutex
-	lockDeleteJiraIntegration sync.RWMutex
-	lockGetByID               sync.RWMutex
-	lockGetBySlackIDAndTeamID sync.RWMutex
-	lockGetJiraIntegration    sync.RWMutex
-	lockSaveJiraIntegration   sync.RWMutex
-	lockUpdate                sync.RWMutex
+	lockCreate                  sync.RWMutex
+	lockDeleteJiraIntegration   sync.RWMutex
+	lockDeleteNotionIntegration sync.RWMutex
+	lockGetByID                 sync.RWMutex
+	lockGetBySlackIDAndTeamID   sync.RWMutex
+	lockGetJiraIntegration      sync.RWMutex
+	lockGetNotionIntegration    sync.RWMutex
+	lockSaveJiraIntegration     sync.RWMutex
+	lockSaveNotionIntegration   sync.RWMutex
+	lockUpdate                  sync.RWMutex
 }
 
 // Create calls CreateFunc.
@@ -499,6 +541,42 @@ func (mock *UserRepositoryMock) DeleteJiraIntegrationCalls() []struct {
 	mock.lockDeleteJiraIntegration.RLock()
 	calls = mock.calls.DeleteJiraIntegration
 	mock.lockDeleteJiraIntegration.RUnlock()
+	return calls
+}
+
+// DeleteNotionIntegration calls DeleteNotionIntegrationFunc.
+func (mock *UserRepositoryMock) DeleteNotionIntegration(ctx context.Context, userID string) error {
+	if mock.DeleteNotionIntegrationFunc == nil {
+		panic("UserRepositoryMock.DeleteNotionIntegrationFunc: method is nil but UserRepository.DeleteNotionIntegration was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		UserID string
+	}{
+		Ctx:    ctx,
+		UserID: userID,
+	}
+	mock.lockDeleteNotionIntegration.Lock()
+	mock.calls.DeleteNotionIntegration = append(mock.calls.DeleteNotionIntegration, callInfo)
+	mock.lockDeleteNotionIntegration.Unlock()
+	return mock.DeleteNotionIntegrationFunc(ctx, userID)
+}
+
+// DeleteNotionIntegrationCalls gets all the calls that were made to DeleteNotionIntegration.
+// Check the length with:
+//
+//	len(mockedUserRepository.DeleteNotionIntegrationCalls())
+func (mock *UserRepositoryMock) DeleteNotionIntegrationCalls() []struct {
+	Ctx    context.Context
+	UserID string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		UserID string
+	}
+	mock.lockDeleteNotionIntegration.RLock()
+	calls = mock.calls.DeleteNotionIntegration
+	mock.lockDeleteNotionIntegration.RUnlock()
 	return calls
 }
 
@@ -614,6 +692,42 @@ func (mock *UserRepositoryMock) GetJiraIntegrationCalls() []struct {
 	return calls
 }
 
+// GetNotionIntegration calls GetNotionIntegrationFunc.
+func (mock *UserRepositoryMock) GetNotionIntegration(ctx context.Context, userID string) (*integration.NotionIntegration, error) {
+	if mock.GetNotionIntegrationFunc == nil {
+		panic("UserRepositoryMock.GetNotionIntegrationFunc: method is nil but UserRepository.GetNotionIntegration was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		UserID string
+	}{
+		Ctx:    ctx,
+		UserID: userID,
+	}
+	mock.lockGetNotionIntegration.Lock()
+	mock.calls.GetNotionIntegration = append(mock.calls.GetNotionIntegration, callInfo)
+	mock.lockGetNotionIntegration.Unlock()
+	return mock.GetNotionIntegrationFunc(ctx, userID)
+}
+
+// GetNotionIntegrationCalls gets all the calls that were made to GetNotionIntegration.
+// Check the length with:
+//
+//	len(mockedUserRepository.GetNotionIntegrationCalls())
+func (mock *UserRepositoryMock) GetNotionIntegrationCalls() []struct {
+	Ctx    context.Context
+	UserID string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		UserID string
+	}
+	mock.lockGetNotionIntegration.RLock()
+	calls = mock.calls.GetNotionIntegration
+	mock.lockGetNotionIntegration.RUnlock()
+	return calls
+}
+
 // SaveJiraIntegration calls SaveJiraIntegrationFunc.
 func (mock *UserRepositoryMock) SaveJiraIntegration(ctx context.Context, integrationMoqParam *integration.JiraIntegration) error {
 	if mock.SaveJiraIntegrationFunc == nil {
@@ -647,6 +761,42 @@ func (mock *UserRepositoryMock) SaveJiraIntegrationCalls() []struct {
 	mock.lockSaveJiraIntegration.RLock()
 	calls = mock.calls.SaveJiraIntegration
 	mock.lockSaveJiraIntegration.RUnlock()
+	return calls
+}
+
+// SaveNotionIntegration calls SaveNotionIntegrationFunc.
+func (mock *UserRepositoryMock) SaveNotionIntegration(ctx context.Context, integrationMoqParam *integration.NotionIntegration) error {
+	if mock.SaveNotionIntegrationFunc == nil {
+		panic("UserRepositoryMock.SaveNotionIntegrationFunc: method is nil but UserRepository.SaveNotionIntegration was just called")
+	}
+	callInfo := struct {
+		Ctx                 context.Context
+		IntegrationMoqParam *integration.NotionIntegration
+	}{
+		Ctx:                 ctx,
+		IntegrationMoqParam: integrationMoqParam,
+	}
+	mock.lockSaveNotionIntegration.Lock()
+	mock.calls.SaveNotionIntegration = append(mock.calls.SaveNotionIntegration, callInfo)
+	mock.lockSaveNotionIntegration.Unlock()
+	return mock.SaveNotionIntegrationFunc(ctx, integrationMoqParam)
+}
+
+// SaveNotionIntegrationCalls gets all the calls that were made to SaveNotionIntegration.
+// Check the length with:
+//
+//	len(mockedUserRepository.SaveNotionIntegrationCalls())
+func (mock *UserRepositoryMock) SaveNotionIntegrationCalls() []struct {
+	Ctx                 context.Context
+	IntegrationMoqParam *integration.NotionIntegration
+} {
+	var calls []struct {
+		Ctx                 context.Context
+		IntegrationMoqParam *integration.NotionIntegration
+	}
+	mock.lockSaveNotionIntegration.RLock()
+	calls = mock.calls.SaveNotionIntegration
+	mock.lockSaveNotionIntegration.RUnlock()
 	return calls
 }
 

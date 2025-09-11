@@ -101,6 +101,11 @@ type UserRepository interface {
 	SaveJiraIntegration(ctx context.Context, integration *integration.JiraIntegration) error
 	GetJiraIntegration(ctx context.Context, userID string) (*integration.JiraIntegration, error)
 	DeleteJiraIntegration(ctx context.Context, userID string) error
+
+	// Notion Integration methods
+	SaveNotionIntegration(ctx context.Context, integration *integration.NotionIntegration) error
+	GetNotionIntegration(ctx context.Context, userID string) (*integration.NotionIntegration, error)
+	DeleteNotionIntegration(ctx context.Context, userID string) error
 }
 
 // AgentImageRepository manages agent image persistence
