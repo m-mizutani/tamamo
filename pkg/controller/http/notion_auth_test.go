@@ -24,12 +24,6 @@ func TestNotionAuthController_HandleOAuthCallback(t *testing.T) {
 		},
 	}
 
-	// Create mock SlackClient
-	mockSlackClient := &mock.SlackClientMock{
-		IsWorkspaceMemberFunc: func(ctx context.Context, email string) (bool, error) {
-			return true, nil // Allow all members for tests
-		},
-	}
 
 	oauthConfig := notion.OAuthConfig{
 		ClientID:     "test-client-id",
@@ -37,7 +31,7 @@ func TestNotionAuthController_HandleOAuthCallback(t *testing.T) {
 		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
 	}
 	oauthService := notion.NewOAuthService(oauthConfig)
-	notionUseCases := usecase.NewNotionIntegrationUseCases(mockUserRepo, oauthService, mockSlackClient)
+	notionUseCases := usecase.NewNotionIntegrationUseCases(mockUserRepo, oauthService)
 
 	// Create controller
 	controller := server.NewNotionAuthController(notionUseCases, oauthService)
@@ -109,12 +103,6 @@ func TestNotionIntegrationUseCases_IntegrationFlow(t *testing.T) {
 		},
 	}
 
-	// Create mock SlackClient
-	mockSlackClient := &mock.SlackClientMock{
-		IsWorkspaceMemberFunc: func(ctx context.Context, email string) (bool, error) {
-			return true, nil // Allow all members for tests
-		},
-	}
 
 	oauthConfig := notion.OAuthConfig{
 		ClientID:     "test-client-id",
@@ -123,7 +111,7 @@ func TestNotionIntegrationUseCases_IntegrationFlow(t *testing.T) {
 	}
 	oauthService := notion.NewOAuthService(oauthConfig)
 
-	useCases := usecase.NewNotionIntegrationUseCases(mockUserRepo, oauthService, mockSlackClient)
+	useCases := usecase.NewNotionIntegrationUseCases(mockUserRepo, oauthService)
 
 	testUserID := "test-user-123"
 

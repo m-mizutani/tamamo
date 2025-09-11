@@ -6,9 +6,7 @@ import (
 
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
-	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/integration"
-	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/service/notion"
 )
 
@@ -22,18 +20,15 @@ type NotionIntegrationUseCases interface {
 type notionIntegrationUseCases struct {
 	userRepo     interfaces.UserRepository
 	oauthService *notion.OAuthService
-	slackClient  interfaces.SlackClient
 }
 
 func NewNotionIntegrationUseCases(
 	userRepo interfaces.UserRepository,
 	oauthService *notion.OAuthService,
-	slackClient interfaces.SlackClient,
 ) NotionIntegrationUseCases {
 	return &notionIntegrationUseCases{
 		userRepo:     userRepo,
 		oauthService: oauthService,
-		slackClient:  slackClient,
 	}
 }
 
@@ -71,31 +66,6 @@ func (uc *notionIntegrationUseCases) GetIntegration(ctx context.Context, userID 
 
 // SaveIntegration saves the Notion integration details after successful OAuth
 func (uc *notionIntegrationUseCases) SaveIntegration(ctx context.Context, userID, workspaceID, workspaceName, workspaceIcon, botID, accessToken string) error {
-	// First, verify that the user is a member of the Slack workspace
-	// Get user information to retrieve their email
-	user, err := uc.userRepo.GetByID(ctx, types.UserID(userID))
-	if err != nil {
-		return goerr.Wrap(err, "failed to get user", goerr.V("user_id", userID))
-	}
-	if user == nil {
-		return goerr.New("user not found", goerr.V("user_id", userID))
-	}
-
-	// Check if the user's email is associated with a Slack workspace member
-	if user.Email != "" {
-		isMember, err := uc.slackClient.IsWorkspaceMember(ctx, user.Email)
-		if err != nil {
-			return goerr.Wrap(err, "failed to check workspace membership", 
-				goerr.V("user_id", userID),
-				goerr.V("email", user.Email))
-		}
-		if !isMember {
-			return goerr.Wrap(auth.ErrNotWorkspaceMember, "access denied",
-				goerr.V("user_id", userID),
-				goerr.V("email", user.Email))
-		}
-	}
-
 	// Create new integration
 	notionIntegration := integration.NewNotionIntegration(userID)
 	notionIntegration.UpdateWorkspaceInfo(workspaceID, workspaceName, workspaceIcon, botID)

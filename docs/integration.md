@@ -194,54 +194,16 @@ export TAMAMO_NOTION_CLIENT_ID="your-client-id"
 
 # Notion OAuth Client Secret
 export TAMAMO_NOTION_CLIENT_SECRET="your-client-secret"
-
-# Allowed Notion Workspace IDs (optional - restricts access to specific workspaces)
-export TAMAMO_NOTION_ALLOWED_WORKSPACES="workspace-id-1,workspace-id-2"
 ```
 
-### 5. Workspace Access Control (Optional)
-
-By default, any Notion workspace can connect to Tamamo through OAuth. To restrict access to specific workspaces, configure the allowed workspace IDs:
-
-1. **Find Workspace ID**: There are several ways to find the Notion workspace ID:
-   
-   **Method 1: From Notion Web UI**
-   - Open your Notion workspace in a web browser
-   - Go to Settings & members (click your workspace name → Settings & members)
-   - Copy the URL from your browser address bar
-   - The workspace ID is in the URL: `https://www.notion.so/settings/[WORKSPACE_ID]`
-   - Example: If URL is `https://www.notion.so/settings/b1234567-89ab-cdef-1234-567890abcdef`, then workspace ID is `b1234567-89ab-cdef-1234-567890abcdef`
-   
-   **Method 2: From any Notion page URL**
-   - Open any page in your Notion workspace
-   - Look at the URL: `https://www.notion.so/[WORKSPACE_ID]/Page-title-hash`
-   - The workspace ID is the first part after `notion.so/`
-   - Example: `https://www.notion.so/mycompany/My-Page-abc123` → workspace ID is `mycompany`
-   
-   **Method 3: From OAuth response (automatic)**
-   - The workspace ID is automatically provided in the OAuth response when users connect through Tamamo
-   - Check server logs during OAuth connection to see the workspace ID
-2. **Configure Restriction**: Set the `TAMAMO_NOTION_ALLOWED_WORKSPACES` environment variable with comma-separated workspace IDs
-3. **Behavior**:
-   - **Without restriction**: Any Notion workspace can connect (default)
-   - **With restriction**: Only specified workspace IDs are allowed to connect
-   - **Access denied**: Users from non-allowed workspaces receive an error message during OAuth
-
-**Example workspace restriction**:
-```bash
-# Only allow specific Notion workspaces
-export TAMAMO_NOTION_ALLOWED_WORKSPACES="b1234567-89ab-cdef-1234-567890abcdef,c2345678-90ab-cdef-2345-678901abcdef"
-```
-
-### 6. CLI Flags (Alternative)
+### 5. CLI Flags (Alternative)
 
 You can also use CLI flags instead of environment variables:
 
 ```bash
 tamamo serve \
   --notion-client-id "your-client-id" \
-  --notion-client-secret "your-client-secret" \
-  --notion-allowed-workspaces "workspace-id-1,workspace-id-2"
+  --notion-client-secret "your-client-secret"
 ```
 
 **Note**: The `--frontend-url` flag is a general application setting (see [General Configuration](#general-configuration)) and is required for Notion OAuth to work.

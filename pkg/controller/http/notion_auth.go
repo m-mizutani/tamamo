@@ -73,14 +73,6 @@ func (c *NotionAuthController) HandleOAuthCallback(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// Validate workspace access
-	if !c.oauthService.IsWorkspaceAllowed(tokenResponse.WorkspaceID) {
-		errorMsg := fmt.Sprintf("Access denied: This Notion workspace (%s) is not allowed to connect to Tamamo.", tokenResponse.WorkspaceName)
-		redirectURL := fmt.Sprintf("/integrations/notion/error?message=%s", url.QueryEscape(errorMsg))
-		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
-		return
-	}
-
 	// Save the integration through the use case
 	err = c.notionUseCases.SaveIntegration(r.Context(), userID,
 		tokenResponse.WorkspaceID,

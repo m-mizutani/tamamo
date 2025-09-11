@@ -16,10 +16,9 @@ import (
 )
 
 type OAuthConfig struct {
-	ClientID            string
-	ClientSecret        string
-	RedirectURI         string
-	AllowedWorkspaceIDs []string
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
 }
 
 type OAuthService struct {
@@ -161,22 +160,6 @@ func (s *OAuthService) ClearOAuthStateCookie(w http.ResponseWriter) {
 	})
 }
 
-// IsWorkspaceAllowed checks if the workspace ID is in the allowed list
-func (s *OAuthService) IsWorkspaceAllowed(workspaceID string) bool {
-	// If no workspace restrictions are configured, allow all workspaces
-	if len(s.config.AllowedWorkspaceIDs) == 0 {
-		return true
-	}
-
-	// Check if the workspace ID is in the allowed list
-	for _, allowedID := range s.config.AllowedWorkspaceIDs {
-		if allowedID == workspaceID {
-			return true
-		}
-	}
-
-	return false
-}
 
 // ExchangeCodeForToken exchanges the authorization code for an access token
 func (s *OAuthService) ExchangeCodeForToken(code string) (*TokenResponse, error) {

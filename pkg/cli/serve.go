@@ -333,7 +333,7 @@ func cmdServe() *cli.Command {
 
 				notionOAuthConfig := notionCfg.BuildOAuthConfig(appCfg.FrontendURL)
 				notionOAuthService := notion.NewOAuthService(notionOAuthConfig)
-				notionUseCases = usecase.NewNotionIntegrationUseCases(userRepo, notionOAuthService, slackSvc)
+				notionUseCases = usecase.NewNotionIntegrationUseCases(userRepo, notionOAuthService)
 				notionAuthController = server.NewNotionAuthController(notionUseCases, notionOAuthService)
 
 				logger.Info("Notion integration enabled",

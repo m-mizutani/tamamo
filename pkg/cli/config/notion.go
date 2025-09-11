@@ -9,9 +9,8 @@ import (
 )
 
 type Notion struct {
-	ClientID            string
-	ClientSecret        string
-	AllowedWorkspaceIDs []string // List of allowed Notion workspace IDs
+	ClientID     string
+	ClientSecret string
 }
 
 // Flags returns CLI flags for Notion configuration
@@ -28,12 +27,6 @@ func (n *Notion) Flags() []cli.Flag {
 			Sources:     cli.EnvVars("TAMAMO_NOTION_CLIENT_SECRET"),
 			Usage:       "Notion OAuth Client Secret",
 			Destination: &n.ClientSecret,
-		},
-		&cli.StringSliceFlag{
-			Name:        "notion-allowed-workspaces",
-			Sources:     cli.EnvVars("TAMAMO_NOTION_ALLOWED_WORKSPACES"),
-			Usage:       "Comma-separated list of allowed Notion workspace IDs",
-			Destination: &n.AllowedWorkspaceIDs,
 		},
 	}
 }
@@ -55,31 +48,14 @@ func (n *Notion) IsEnabled() bool {
 	return n.ClientID != "" && n.ClientSecret != ""
 }
 
-// IsWorkspaceAllowed checks if a workspace ID is in the allowed list
-func (n *Notion) IsWorkspaceAllowed(workspaceID string) bool {
-	// If no workspace restrictions are configured, allow all workspaces
-	if len(n.AllowedWorkspaceIDs) == 0 {
-		return true
-	}
-
-	// Check if the workspace ID is in the allowed list
-	for _, allowedID := range n.AllowedWorkspaceIDs {
-		if allowedID == workspaceID {
-			return true
-		}
-	}
-
-	return false
-}
 
 // BuildOAuthConfig creates a notion.OAuthConfig from the configuration
 func (n *Notion) BuildOAuthConfig(frontendURL string) notion.OAuthConfig {
 	redirectURI := fmt.Sprintf("%s/api/auth/notion/callback", frontendURL)
 
 	return notion.OAuthConfig{
-		ClientID:            n.ClientID,
-		ClientSecret:        n.ClientSecret,
-		RedirectURI:         redirectURI,
-		AllowedWorkspaceIDs: n.AllowedWorkspaceIDs,
+		ClientID:     n.ClientID,
+		ClientSecret: n.ClientSecret,
+		RedirectURI:  redirectURI,
 	}
 }
