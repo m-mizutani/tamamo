@@ -1,10 +1,13 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 
+	"github.com/m-mizutani/goerr/v2"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 	"github.com/m-mizutani/tamamo/pkg/service/notion"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
 )
@@ -86,12 +89,15 @@ func (c *NotionAuthController) HandleOAuthCallback(w http.ResponseWriter, r *htt
 		tokenResponse.BotID,
 		tokenResponse.AccessToken)
 	if err != nil {
-		// Check if error is related to workspace membership
-		if err.Error() == "user is not a member of the Slack workspace" {
-			errorMsg := "Access denied: You must be a member of the Slack workspace to connect Notion."
-			redirectURL := fmt.Sprintf("/integrations/notion/error?message=%s", url.QueryEscape(errorMsg))
-			http.Redirect(w, r, redirectURL, http.StatusSeeOther)
-			return
+		// Check if error is related to workspace membership using typed error
+		var gErr *goerr.Error
+		if errors.As(err, &gErr) {
+			if errors.Is(gErr.Unwrap(), auth.ErrNotWorkspaceMember) {
+				errorMsg := "Access denied: You must be a member of the Slack workspace to connect Notion."
+				redirectURL := fmt.Sprintf("/integrations/notion/error?message=%s", url.QueryEscape(errorMsg))
+				http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+				return
+			}
 		}
 
 		errorMsg := fmt.Sprintf("Failed to save integration: %v", err)

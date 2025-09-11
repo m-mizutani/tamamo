@@ -58,6 +58,25 @@ func testLogSlackMessageSuccess(t *testing.T) {
 		return nil
 	}
 
+	// Mock GetChannelInfo function
+	mockClient.GetChannelInfoFunc = func(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+		return &slack.ChannelInfo{
+			ID:   channelID,
+			Name: "test-channel",
+			Type: slack.ChannelTypePublic,
+		}, nil
+	}
+
+	// Mock GetUserInfo function
+	mockClient.GetUserInfoFunc = func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+		return &interfaces.SlackUserInfo{
+			ID:          userID,
+			Name:        "testuser",
+			DisplayName: "Test User",
+			RealName:    "Test User",
+		}, nil
+	}
+
 	// Create use case
 	uc := usecase.New(
 		usecase.WithSlackClient(mockClient),
@@ -100,6 +119,25 @@ func testLogSlackMessageRepositoryError(t *testing.T) {
 		return errors.New("repository error")
 	}
 
+	// Mock GetChannelInfo function
+	mockClient.GetChannelInfoFunc = func(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+		return &slack.ChannelInfo{
+			ID:   channelID,
+			Name: "test-channel",
+			Type: slack.ChannelTypePublic,
+		}, nil
+	}
+
+	// Mock GetUserInfo function
+	mockClient.GetUserInfoFunc = func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+		return &interfaces.SlackUserInfo{
+			ID:          userID,
+			Name:        "testuser",
+			DisplayName: "Test User",
+			RealName:    "Test User",
+		}, nil
+	}
+
 	// Create use case
 	uc := usecase.New(
 		usecase.WithSlackClient(mockClient),
@@ -136,6 +174,16 @@ func testLogSlackMessageChannelInfoError(t *testing.T) {
 	// Mock channel info error
 	mockClient.GetChannelInfoFunc = func(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
 		return nil, errors.New("channel info error")
+	}
+
+	// Mock GetUserInfo function
+	mockClient.GetUserInfoFunc = func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+		return &interfaces.SlackUserInfo{
+			ID:          userID,
+			Name:        "testuser",
+			DisplayName: "Test User",
+			RealName:    "Test User",
+		}, nil
 	}
 
 	// Create use case
@@ -181,6 +229,15 @@ func testLogSlackMessageUserInfoError(t *testing.T) {
 		return nil, errors.New("user info error")
 	}
 
+	// Mock GetChannelInfo function
+	mockClient.GetChannelInfoFunc = func(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+		return &slack.ChannelInfo{
+			ID:   channelID,
+			Name: "test-channel",
+			Type: slack.ChannelTypePublic,
+		}, nil
+	}
+
 	// Create use case
 	uc := usecase.New(
 		usecase.WithSlackClient(mockClient),
@@ -216,6 +273,25 @@ func testLogSlackMessageBot(t *testing.T) {
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
 		storedMessage = messageLog
 		return nil
+	}
+
+	// Mock GetChannelInfo function
+	mockClient.GetChannelInfoFunc = func(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+		return &slack.ChannelInfo{
+			ID:   channelID,
+			Name: "test-channel",
+			Type: slack.ChannelTypePublic,
+		}, nil
+	}
+
+	// Mock GetUserInfo function
+	mockClient.GetUserInfoFunc = func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+		return &interfaces.SlackUserInfo{
+			ID:          userID,
+			Name:        "testuser",
+			DisplayName: "Test User",
+			RealName:    "Test User",
+		}, nil
 	}
 
 	// Create use case
@@ -257,6 +333,25 @@ func testLogSlackMessageThread(t *testing.T) {
 		return nil
 	}
 
+	// Mock GetChannelInfo function
+	mockClient.GetChannelInfoFunc = func(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+		return &slack.ChannelInfo{
+			ID:   channelID,
+			Name: "test-channel",
+			Type: slack.ChannelTypePublic,
+		}, nil
+	}
+
+	// Mock GetUserInfo function
+	mockClient.GetUserInfoFunc = func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+		return &interfaces.SlackUserInfo{
+			ID:          userID,
+			Name:        "testuser",
+			DisplayName: "Test User",
+			RealName:    "Test User",
+		}, nil
+	}
+
 	// Create use case
 	uc := usecase.New(
 		usecase.WithSlackClient(mockClient),
@@ -293,6 +388,25 @@ func testLogSlackMessageWithFiles(t *testing.T) {
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
 		storedMessage = messageLog
 		return nil
+	}
+
+	// Mock GetChannelInfo function
+	mockClient.GetChannelInfoFunc = func(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+		return &slack.ChannelInfo{
+			ID:   channelID,
+			Name: "test-channel",
+			Type: slack.ChannelTypePublic,
+		}, nil
+	}
+
+	// Mock GetUserInfo function
+	mockClient.GetUserInfoFunc = func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+		return &interfaces.SlackUserInfo{
+			ID:          userID,
+			Name:        "testuser",
+			DisplayName: "Test User",
+			RealName:    "Test User",
+		}, nil
 	}
 
 	// Create use case
@@ -362,6 +476,25 @@ func TestSlackMessageLoggingUseCase_LogSlackAppMentionMessage(t *testing.T) {
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
 		storedMessage = messageLog
 		return nil
+	}
+
+	// Mock GetChannelInfo function
+	mockClient.GetChannelInfoFunc = func(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
+		return &slack.ChannelInfo{
+			ID:   channelID,
+			Name: "test-channel",
+			Type: slack.ChannelTypePublic,
+		}, nil
+	}
+
+	// Mock GetUserInfo function
+	mockClient.GetUserInfoFunc = func(ctx context.Context, userID string) (*interfaces.SlackUserInfo, error) {
+		return &interfaces.SlackUserInfo{
+			ID:          userID,
+			Name:        "testuser",
+			DisplayName: "Test User",
+			RealName:    "Test User",
+		}, nil
 	}
 
 	// Create use case

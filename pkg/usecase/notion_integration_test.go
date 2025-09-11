@@ -2,11 +2,17 @@ package usecase_test
 
 import (
 	"context"
+	"errors"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/gt"
+	"github.com/m-mizutani/tamamo/pkg/domain/mock"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/auth"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/integration"
+	"github.com/m-mizutani/tamamo/pkg/domain/model/user"
+	"github.com/m-mizutani/tamamo/pkg/domain/types"
 	"github.com/m-mizutani/tamamo/pkg/repository/database/memory"
 	"github.com/m-mizutani/tamamo/pkg/service/notion"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
@@ -21,7 +27,16 @@ func TestNotionIntegrationUseCases(t *testing.T) {
 		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
 	}
 	oauthService := notion.NewOAuthService(oauthConfig)
-	uc := usecase.NewNotionIntegrationUseCases(userRepo, oauthService)
+	
+	// Create mock SlackClient
+	mockSlackClient := &mock.SlackClientMock{
+		IsWorkspaceMemberFunc: func(ctx context.Context, email string) (bool, error) {
+			// By default, allow all members for tests
+			return true, nil
+		},
+	}
+	
+	uc := usecase.NewNotionIntegrationUseCases(userRepo, oauthService, mockSlackClient)
 
 	ctx := context.Background()
 
@@ -108,8 +123,14 @@ func TestNotionIntegrationUseCases(t *testing.T) {
 		botID := "bot-789"
 		accessToken := "access-token-123"
 
-		// Save integration (workspace validation is done at controller level)
-		err := uc.SaveIntegration(ctx, userID, workspaceID, workspaceName, workspaceIcon, botID, accessToken)
+		// Create a user first (required for workspace validation)
+		testUser := user.NewUser("slack-user-1", "slackname1", "Test User", "test@example.com", "team-1")
+		testUser.ID = types.UserID(userID) // Override ID to match our test
+		err := userRepo.Create(ctx, testUser)
+		gt.NoError(t, err)
+
+		// Save integration (workspace validation checks the user)
+		err = uc.SaveIntegration(ctx, userID, workspaceID, workspaceName, workspaceIcon, botID, accessToken)
 		gt.NoError(t, err)
 
 		// Verify it was saved correctly
@@ -128,8 +149,14 @@ func TestNotionIntegrationUseCases(t *testing.T) {
 		ctx := context.Background()
 		userID := "550e8400-e29b-41d4-a716-446655440001" // Valid UUID
 
-		// Save first integration (workspace validation is done at controller level)
-		err := uc.SaveIntegration(ctx, userID, "ws-1", "Workspace 1", "icon1.png", "bot-1", "token1")
+		// Create a user first (required for workspace validation)
+		testUser := user.NewUser("slack-user-2", "slackname2", "Test User 2", "test2@example.com", "team-1")
+		testUser.ID = types.UserID(userID) // Override ID to match our test
+		err := userRepo.Create(ctx, testUser)
+		gt.NoError(t, err)
+
+		// Save first integration
+		err = uc.SaveIntegration(ctx, userID, "ws-1", "Workspace 1", "icon1.png", "bot-1", "token1")
 		gt.NoError(t, err)
 
 		// Save second integration (should overwrite)
@@ -143,5 +170,43 @@ func TestNotionIntegrationUseCases(t *testing.T) {
 		gt.V(t, savedIntegration.WorkspaceID).Equal("ws-2")
 		gt.V(t, savedIntegration.WorkspaceName).Equal("Workspace 2")
 		gt.V(t, savedIntegration.AccessToken).Equal("token2")
+	})
+
+	t.Run("SaveIntegration denies non-Slack workspace members", func(t *testing.T) {
+		ctx := context.Background()
+		userID := "550e8400-e29b-41d4-a716-446655440002" // Valid UUID
+
+		// Create a user first
+		testUser := user.NewUser("slack-user-3", "slackname3", "Test User 3", "nonmember@example.com", "team-1")
+		testUser.ID = types.UserID(userID)
+		err := userRepo.Create(ctx, testUser)
+		gt.NoError(t, err)
+
+		// Create a new mock client that denies this user
+		mockSlackClientDeny := &mock.SlackClientMock{
+			IsWorkspaceMemberFunc: func(ctx context.Context, email string) (bool, error) {
+				if email == "nonmember@example.com" {
+					return false, nil // Not a workspace member
+				}
+				return true, nil
+			},
+		}
+
+		// Create use case with deny client
+		ucDeny := usecase.NewNotionIntegrationUseCases(userRepo, oauthService, mockSlackClientDeny)
+
+		// Try to save integration (should fail)
+		err = ucDeny.SaveIntegration(ctx, userID, "ws-3", "Workspace 3", "icon3.png", "bot-3", "token3")
+		gt.Error(t, err)
+		
+		// Check that it's the correct typed error
+		var gErr *goerr.Error
+		gt.B(t, errors.As(err, &gErr)).True()
+		gt.B(t, errors.Is(gErr.Unwrap(), auth.ErrNotWorkspaceMember)).True()
+
+		// Verify integration was not saved
+		savedIntegration, err := ucDeny.GetIntegration(ctx, userID)
+		gt.NoError(t, err)
+		gt.Nil(t, savedIntegration)
 	})
 }
