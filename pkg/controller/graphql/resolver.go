@@ -19,6 +19,7 @@ type Resolver struct {
 	imageProcessor *image.Processor
 	agentImageRepo interfaces.AgentImageRepository
 	jiraUseCases   usecase.JiraIntegrationUseCases
+	notionUseCases usecase.NotionIntegrationUseCases
 }
 
 // NewResolver creates a new resolver instance
@@ -30,6 +31,7 @@ func NewResolver(
 	imageProcessor *image.Processor,
 	agentImageRepo interfaces.AgentImageRepository,
 	jiraUseCases usecase.JiraIntegrationUseCases,
+	notionUseCases usecase.NotionIntegrationUseCases,
 ) *Resolver {
 	return &Resolver{
 		threadRepo:     threadRepo,
@@ -39,5 +41,6 @@ func NewResolver(
 		imageProcessor: imageProcessor,
 		agentImageRepo: agentImageRepo,
 		jiraUseCases:   jiraUseCases,
+		notionUseCases: notionUseCases,
 	}
 }

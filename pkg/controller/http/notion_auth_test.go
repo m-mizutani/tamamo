@@ -12,42 +12,42 @@ import (
 	server "github.com/m-mizutani/tamamo/pkg/controller/http"
 	"github.com/m-mizutani/tamamo/pkg/domain/mock"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/integration"
-	"github.com/m-mizutani/tamamo/pkg/service/jira"
+	"github.com/m-mizutani/tamamo/pkg/service/notion"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
 )
 
-func TestJiraAuthController_HandleOAuthCallback(t *testing.T) {
+func TestNotionAuthController_HandleOAuthCallback(t *testing.T) {
 	// Setup test dependencies
 	mockUserRepo := &mock.UserRepositoryMock{
-		SaveJiraIntegrationFunc: func(ctx context.Context, integration *integration.JiraIntegration) error {
+		SaveNotionIntegrationFunc: func(ctx context.Context, integration *integration.NotionIntegration) error {
 			return nil
 		},
 	}
 
-	oauthConfig := jira.OAuthConfig{
+	oauthConfig := notion.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/jira/callback",
+		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
 	}
-	oauthService := jira.NewOAuthService(oauthConfig)
-	jiraUseCases := usecase.NewJiraIntegrationUseCases(mockUserRepo, oauthService)
+	oauthService := notion.NewOAuthService(oauthConfig)
+	notionUseCases := usecase.NewNotionIntegrationUseCases(mockUserRepo, oauthService)
 
 	// Create controller
-	controller := server.NewJiraAuthController(jiraUseCases, oauthService)
+	controller := server.NewNotionAuthController(notionUseCases, oauthService)
 
 	t.Run("OAuth error response", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/auth/jira/callback?error=access_denied&error_description=User%20denied%20access", nil)
+		req := httptest.NewRequest("GET", "/api/auth/notion/callback?error=access_denied&error_description=User%20denied%20access", nil)
 		rec := httptest.NewRecorder()
 
 		controller.HandleOAuthCallback(rec, req)
 
 		gt.Equal(t, rec.Code, http.StatusSeeOther)
-		gt.S(t, rec.Header().Get("Location")).Contains("/integrations/jira/error")
+		gt.S(t, rec.Header().Get("Location")).Contains("/integrations/notion/error")
 		gt.S(t, rec.Header().Get("Location")).Contains("OAuth+Error")
 	})
 
 	t.Run("missing authorization code", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/auth/jira/callback", nil)
+		req := httptest.NewRequest("GET", "/api/auth/notion/callback", nil)
 		rec := httptest.NewRecorder()
 
 		controller.HandleOAuthCallback(rec, req)
@@ -57,7 +57,7 @@ func TestJiraAuthController_HandleOAuthCallback(t *testing.T) {
 	})
 
 	t.Run("missing state parameter", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/auth/jira/callback?code=test-code", nil)
+		req := httptest.NewRequest("GET", "/api/auth/notion/callback?code=test-code", nil)
 		rec := httptest.NewRecorder()
 
 		controller.HandleOAuthCallback(rec, req)
@@ -67,7 +67,7 @@ func TestJiraAuthController_HandleOAuthCallback(t *testing.T) {
 	})
 
 	t.Run("missing state cookie", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/auth/jira/callback?code=test-code&state=test-state", nil)
+		req := httptest.NewRequest("GET", "/api/auth/notion/callback?code=test-code&state=test-state", nil)
 		rec := httptest.NewRecorder()
 
 		controller.HandleOAuthCallback(rec, req)
@@ -77,23 +77,23 @@ func TestJiraAuthController_HandleOAuthCallback(t *testing.T) {
 	})
 }
 
-func TestJiraIntegrationUseCases_IntegrationFlow(t *testing.T) {
+func TestNotionIntegrationUseCases_IntegrationFlow(t *testing.T) {
 	ctx := context.Background()
 
 	// Mock repository
-	savedIntegration := (*integration.JiraIntegration)(nil)
+	savedIntegration := (*integration.NotionIntegration)(nil)
 	mockUserRepo := &mock.UserRepositoryMock{
-		SaveJiraIntegrationFunc: func(ctx context.Context, integration *integration.JiraIntegration) error {
+		SaveNotionIntegrationFunc: func(ctx context.Context, integration *integration.NotionIntegration) error {
 			savedIntegration = integration
 			return nil
 		},
-		GetJiraIntegrationFunc: func(ctx context.Context, userID string) (*integration.JiraIntegration, error) {
+		GetNotionIntegrationFunc: func(ctx context.Context, userID string) (*integration.NotionIntegration, error) {
 			if savedIntegration != nil && savedIntegration.UserID == userID {
 				return savedIntegration, nil
 			}
 			return nil, goerr.New("not found")
 		},
-		DeleteJiraIntegrationFunc: func(ctx context.Context, userID string) error {
+		DeleteNotionIntegrationFunc: func(ctx context.Context, userID string) error {
 			if savedIntegration != nil && savedIntegration.UserID == userID {
 				savedIntegration = nil
 				return nil
@@ -102,14 +102,14 @@ func TestJiraIntegrationUseCases_IntegrationFlow(t *testing.T) {
 		},
 	}
 
-	oauthConfig := jira.OAuthConfig{
+	oauthConfig := notion.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/jira/callback",
+		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
 	}
-	oauthService := jira.NewOAuthService(oauthConfig)
+	oauthService := notion.NewOAuthService(oauthConfig)
 
-	useCases := usecase.NewJiraIntegrationUseCases(mockUserRepo, oauthService)
+	useCases := usecase.NewNotionIntegrationUseCases(mockUserRepo, oauthService)
 
 	testUserID := "test-user-123"
 
@@ -117,25 +117,26 @@ func TestJiraIntegrationUseCases_IntegrationFlow(t *testing.T) {
 		rec := httptest.NewRecorder()
 		oauthURL, err := useCases.InitiateOAuth(ctx, rec, testUserID)
 		gt.NoError(t, err)
-		gt.S(t, oauthURL).Contains("https://auth.atlassian.com/authorize")
+		gt.S(t, oauthURL).Contains("https://api.notion.com/v1/oauth/authorize")
 		gt.S(t, oauthURL).Contains("client_id=test-client-id")
+		gt.S(t, oauthURL).Contains("owner=user") // Notion-specific parameter
 	})
 
 	t.Run("simulate successful integration save", func(t *testing.T) {
 		// Simulate saving an integration (normally done by OAuth callback)
-		testIntegration := &integration.JiraIntegration{
-			UserID:         testUserID,
-			CloudID:        "test-cloud-id",
-			SiteURL:        "test.atlassian.net",
-			AccessToken:    "test-access-token",
-			RefreshToken:   "test-refresh-token",
-			TokenExpiresAt: time.Now().Add(1 * time.Hour),
-			Scopes:         []string{"read:jira-user", "read:jira-work"},
-			CreatedAt:      time.Now(),
-			UpdatedAt:      time.Now(),
+		testIntegration := &integration.NotionIntegration{
+			UserID:        testUserID,
+			WorkspaceID:   "test-workspace-id",
+			WorkspaceName: "Test Workspace",
+			WorkspaceIcon: "https://example.com/icon.png",
+			BotID:         "test-bot-id",
+			AccessToken:   "test-access-token",
+			// No RefreshToken or TokenExpiresAt for Notion
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 
-		err := mockUserRepo.SaveJiraIntegration(ctx, testIntegration)
+		err := mockUserRepo.SaveNotionIntegration(ctx, testIntegration)
 		gt.NoError(t, err)
 	})
 
@@ -144,7 +145,8 @@ func TestJiraIntegrationUseCases_IntegrationFlow(t *testing.T) {
 		gt.NoError(t, err)
 		gt.V(t, integration).NotNil()
 		gt.Equal(t, integration.UserID, testUserID)
-		gt.Equal(t, integration.SiteURL, "test.atlassian.net")
+		gt.Equal(t, integration.WorkspaceName, "Test Workspace")
+		gt.Equal(t, integration.WorkspaceID, "test-workspace-id")
 	})
 
 	t.Run("disconnect integration", func(t *testing.T) {

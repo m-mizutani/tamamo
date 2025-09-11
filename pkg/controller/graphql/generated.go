@@ -132,17 +132,31 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ArchiveAgent       func(childComplexity int, id string) int
-		CreateAgent        func(childComplexity int, input graphql1.CreateAgentInput) int
-		CreateAgentVersion func(childComplexity int, input graphql1.CreateAgentVersionInput) int
-		DeleteAgent        func(childComplexity int, id string) int
-		DisconnectJira     func(childComplexity int) int
-		InitiateJiraOAuth  func(childComplexity int) int
-		UnarchiveAgent     func(childComplexity int, id string) int
-		UpdateAgent        func(childComplexity int, id string, input graphql1.UpdateAgentInput) int
-		UpdateDefaultLlm   func(childComplexity int, provider string, model string) int
-		UpdateFallbackLlm  func(childComplexity int, enabled bool, provider *string, model *string) int
-		UploadAgentImage   func(childComplexity int, agentID string, file graphql.Upload) int
+		ArchiveAgent        func(childComplexity int, id string) int
+		CreateAgent         func(childComplexity int, input graphql1.CreateAgentInput) int
+		CreateAgentVersion  func(childComplexity int, input graphql1.CreateAgentVersionInput) int
+		DeleteAgent         func(childComplexity int, id string) int
+		DisconnectJira      func(childComplexity int) int
+		DisconnectNotion    func(childComplexity int) int
+		InitiateJiraOAuth   func(childComplexity int) int
+		InitiateNotionOAuth func(childComplexity int) int
+		UnarchiveAgent      func(childComplexity int, id string) int
+		UpdateAgent         func(childComplexity int, id string, input graphql1.UpdateAgentInput) int
+		UpdateDefaultLlm    func(childComplexity int, provider string, model string) int
+		UpdateFallbackLlm   func(childComplexity int, enabled bool, provider *string, model *string) int
+		UploadAgentImage    func(childComplexity int, agentID string, file graphql.Upload) int
+	}
+
+	NotionIntegration struct {
+		Connected     func(childComplexity int) int
+		ConnectedAt   func(childComplexity int) int
+		ID            func(childComplexity int) int
+		WorkspaceIcon func(childComplexity int) int
+		WorkspaceName func(childComplexity int) int
+	}
+
+	NotionOAuthURL struct {
+		URL func(childComplexity int) int
 	}
 
 	Query struct {
@@ -158,6 +172,7 @@ type ComplexityRoot struct {
 		CurrentUser              func(childComplexity int) int
 		JiraIntegration          func(childComplexity int) int
 		LlmConfig                func(childComplexity int) int
+		NotionIntegration        func(childComplexity int) int
 		Thread                   func(childComplexity int, id string) int
 		Threads                  func(childComplexity int, offset *int, limit *int) int
 		User                     func(childComplexity int, id string) int
@@ -204,6 +219,8 @@ type MutationResolver interface {
 	UpdateFallbackLlm(ctx context.Context, enabled bool, provider *string, model *string) (*graphql1.LLMConfig, error)
 	InitiateJiraOAuth(ctx context.Context) (*graphql1.JiraOAuthURL, error)
 	DisconnectJira(ctx context.Context) (bool, error)
+	InitiateNotionOAuth(ctx context.Context) (*graphql1.NotionOAuthURL, error)
+	DisconnectNotion(ctx context.Context) (bool, error)
 }
 type QueryResolver interface {
 	Thread(ctx context.Context, id string) (*slack.Thread, error)
@@ -221,6 +238,7 @@ type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*user.User, error)
 	LlmConfig(ctx context.Context) (*graphql1.LLMConfig, error)
 	JiraIntegration(ctx context.Context) (*graphql1.JiraIntegration, error)
+	NotionIntegration(ctx context.Context) (*graphql1.NotionIntegration, error)
 }
 type ThreadResolver interface {
 	ID(ctx context.Context, obj *slack.Thread) (string, error)
@@ -653,12 +671,26 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.DisconnectJira(childComplexity), true
 
+	case "Mutation.disconnectNotion":
+		if e.complexity.Mutation.DisconnectNotion == nil {
+			break
+		}
+
+		return e.complexity.Mutation.DisconnectNotion(childComplexity), true
+
 	case "Mutation.initiateJiraOAuth":
 		if e.complexity.Mutation.InitiateJiraOAuth == nil {
 			break
 		}
 
 		return e.complexity.Mutation.InitiateJiraOAuth(childComplexity), true
+
+	case "Mutation.initiateNotionOAuth":
+		if e.complexity.Mutation.InitiateNotionOAuth == nil {
+			break
+		}
+
+		return e.complexity.Mutation.InitiateNotionOAuth(childComplexity), true
 
 	case "Mutation.unarchiveAgent":
 		if e.complexity.Mutation.UnarchiveAgent == nil {
@@ -719,6 +751,48 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.UploadAgentImage(childComplexity, args["agentId"].(string), args["file"].(graphql.Upload)), true
+
+	case "NotionIntegration.connected":
+		if e.complexity.NotionIntegration.Connected == nil {
+			break
+		}
+
+		return e.complexity.NotionIntegration.Connected(childComplexity), true
+
+	case "NotionIntegration.connectedAt":
+		if e.complexity.NotionIntegration.ConnectedAt == nil {
+			break
+		}
+
+		return e.complexity.NotionIntegration.ConnectedAt(childComplexity), true
+
+	case "NotionIntegration.id":
+		if e.complexity.NotionIntegration.ID == nil {
+			break
+		}
+
+		return e.complexity.NotionIntegration.ID(childComplexity), true
+
+	case "NotionIntegration.workspaceIcon":
+		if e.complexity.NotionIntegration.WorkspaceIcon == nil {
+			break
+		}
+
+		return e.complexity.NotionIntegration.WorkspaceIcon(childComplexity), true
+
+	case "NotionIntegration.workspaceName":
+		if e.complexity.NotionIntegration.WorkspaceName == nil {
+			break
+		}
+
+		return e.complexity.NotionIntegration.WorkspaceName(childComplexity), true
+
+	case "NotionOAuthURL.url":
+		if e.complexity.NotionOAuthURL.URL == nil {
+			break
+		}
+
+		return e.complexity.NotionOAuthURL.URL(childComplexity), true
 
 	case "Query.agent":
 		if e.complexity.Query.Agent == nil {
@@ -848,6 +922,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.LlmConfig(childComplexity), true
+
+	case "Query.notionIntegration":
+		if e.complexity.Query.NotionIntegration == nil {
+			break
+		}
+
+		return e.complexity.Query.NotionIntegration(childComplexity), true
 
 	case "Query.thread":
 		if e.complexity.Query.Thread == nil {
@@ -1227,6 +1308,18 @@ type JiraOAuthURL {
   url: String!
 }
 
+type NotionIntegration {
+  id: ID!
+  connected: Boolean!
+  workspaceName: String
+  workspaceIcon: String
+  connectedAt: Time
+}
+
+type NotionOAuthURL {
+  url: String!
+}
+
 input CreateAgentInput {
   agentId: String!
   name: String!
@@ -1275,6 +1368,7 @@ type Query {
   llmConfig: LLMConfig!
   
   jiraIntegration: JiraIntegration
+  notionIntegration: NotionIntegration
 }
 
 type Mutation {
@@ -1292,6 +1386,9 @@ type Mutation {
   
   initiateJiraOAuth: JiraOAuthURL!
   disconnectJira: Boolean!
+  
+  initiateNotionOAuth: NotionOAuthURL!
+  disconnectNotion: Boolean!
 }
 
 schema {
@@ -4686,6 +4783,353 @@ func (ec *executionContext) fieldContext_Mutation_disconnectJira(_ context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_initiateNotionOAuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_initiateNotionOAuth(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().InitiateNotionOAuth(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.NotionOAuthURL)
+	fc.Result = res
+	return ec.marshalNNotionOAuthURL2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐNotionOAuthURL(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_initiateNotionOAuth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "url":
+				return ec.fieldContext_NotionOAuthURL_url(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NotionOAuthURL", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_disconnectNotion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_disconnectNotion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DisconnectNotion(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_disconnectNotion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotionIntegration_id(ctx context.Context, field graphql.CollectedField, obj *graphql1.NotionIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotionIntegration_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotionIntegration_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotionIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotionIntegration_connected(ctx context.Context, field graphql.CollectedField, obj *graphql1.NotionIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotionIntegration_connected(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Connected, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotionIntegration_connected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotionIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotionIntegration_workspaceName(ctx context.Context, field graphql.CollectedField, obj *graphql1.NotionIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotionIntegration_workspaceName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkspaceName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotionIntegration_workspaceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotionIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotionIntegration_workspaceIcon(ctx context.Context, field graphql.CollectedField, obj *graphql1.NotionIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotionIntegration_workspaceIcon(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkspaceIcon, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotionIntegration_workspaceIcon(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotionIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotionIntegration_connectedAt(ctx context.Context, field graphql.CollectedField, obj *graphql1.NotionIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotionIntegration_connectedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConnectedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotionIntegration_connectedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotionIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotionOAuthURL_url(ctx context.Context, field graphql.CollectedField, obj *graphql1.NotionOAuthURL) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NotionOAuthURL_url(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NotionOAuthURL_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotionOAuthURL",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_thread(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_thread(ctx, field)
 	if err != nil {
@@ -5657,6 +6101,59 @@ func (ec *executionContext) fieldContext_Query_jiraIntegration(_ context.Context
 				return ec.fieldContext_JiraIntegration_connectedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type JiraIntegration", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_notionIntegration(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_notionIntegration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NotionIntegration(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.NotionIntegration)
+	fc.Result = res
+	return ec.marshalONotionIntegration2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐNotionIntegration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_notionIntegration(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_NotionIntegration_id(ctx, field)
+			case "connected":
+				return ec.fieldContext_NotionIntegration_connected(ctx, field)
+			case "workspaceName":
+				return ec.fieldContext_NotionIntegration_workspaceName(ctx, field)
+			case "workspaceIcon":
+				return ec.fieldContext_NotionIntegration_workspaceIcon(ctx, field)
+			case "connectedAt":
+				return ec.fieldContext_NotionIntegration_connectedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NotionIntegration", field.Name)
 		},
 	}
 	return fc, nil
@@ -9315,6 +9812,109 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "initiateNotionOAuth":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_initiateNotionOAuth(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "disconnectNotion":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_disconnectNotion(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var notionIntegrationImplementors = []string{"NotionIntegration"}
+
+func (ec *executionContext) _NotionIntegration(ctx context.Context, sel ast.SelectionSet, obj *graphql1.NotionIntegration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notionIntegrationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NotionIntegration")
+		case "id":
+			out.Values[i] = ec._NotionIntegration_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "connected":
+			out.Values[i] = ec._NotionIntegration_connected(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "workspaceName":
+			out.Values[i] = ec._NotionIntegration_workspaceName(ctx, field, obj)
+		case "workspaceIcon":
+			out.Values[i] = ec._NotionIntegration_workspaceIcon(ctx, field, obj)
+		case "connectedAt":
+			out.Values[i] = ec._NotionIntegration_connectedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var notionOAuthURLImplementors = []string{"NotionOAuthURL"}
+
+func (ec *executionContext) _NotionOAuthURL(ctx context.Context, sel ast.SelectionSet, obj *graphql1.NotionOAuthURL) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notionOAuthURLImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NotionOAuthURL")
+		case "url":
+			out.Values[i] = ec._NotionOAuthURL_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9654,6 +10254,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_jiraIntegration(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "notionIntegration":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_notionIntegration(ctx, field)
 				return res
 			}
 
@@ -10662,6 +11281,20 @@ func (ec *executionContext) marshalNLLMProviderInfo2ᚖgithubᚗcomᚋmᚑmizuta
 	return ec._LLMProviderInfo(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNNotionOAuthURL2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐNotionOAuthURL(ctx context.Context, sel ast.SelectionSet, v graphql1.NotionOAuthURL) graphql.Marshaler {
+	return ec._NotionOAuthURL(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNNotionOAuthURL2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐNotionOAuthURL(ctx context.Context, sel ast.SelectionSet, v *graphql1.NotionOAuthURL) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._NotionOAuthURL(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -11190,6 +11823,13 @@ func (ec *executionContext) marshalOLLMProvider2ᚖgithubᚗcomᚋmᚑmizutani�
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalONotionIntegration2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐNotionIntegration(ctx context.Context, sel ast.SelectionSet, v *graphql1.NotionIntegration) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NotionIntegration(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) (string, error) {

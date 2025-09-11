@@ -210,6 +210,51 @@ func (c *Client) DeleteJiraIntegration(ctx context.Context, userID string) error
 	return nil
 }
 
+// SaveNotionIntegration saves a Notion integration to Firestore
+func (c *Client) SaveNotionIntegration(ctx context.Context, integration *integration.NotionIntegration) error {
+	if integration == nil {
+		return goerr.New("integration is nil")
+	}
+
+	docPath := c.client.Collection("users").Doc(integration.UserID).Collection("integrations").Doc("notion")
+	_, err := docPath.Set(ctx, integration)
+	if err != nil {
+		return goerr.Wrap(err, "failed to save Notion integration", goerr.V("user_id", integration.UserID))
+	}
+	return nil
+}
+
+// GetNotionIntegration retrieves a Notion integration from Firestore
+func (c *Client) GetNotionIntegration(ctx context.Context, userID string) (*integration.NotionIntegration, error) {
+	docPath := c.client.Collection("users").Doc(userID).Collection("integrations").Doc("notion")
+	doc, err := docPath.Get(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, nil // Integration doesn't exist
+		}
+		return nil, goerr.Wrap(err, "failed to get Notion integration", goerr.V("user_id", userID))
+	}
+
+	var integration integration.NotionIntegration
+	if err := doc.DataTo(&integration); err != nil {
+		return nil, goerr.Wrap(err, "failed to unmarshal Notion integration", goerr.V("user_id", userID))
+	}
+
+	return &integration, nil
+}
+
+// DeleteNotionIntegration deletes a Notion integration from Firestore
+func (c *Client) DeleteNotionIntegration(ctx context.Context, userID string) error {
+	_, err := c.client.Collection("users").Doc(userID).Collection("integrations").Doc("notion").Delete(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil // Already deleted
+		}
+		return goerr.Wrap(err, "failed to delete Notion integration", goerr.V("user_id", userID))
+	}
+	return nil
+}
+
 // NewUserRepository creates a new user repository using Firestore client
 func NewUserRepository(client *firestore.Client) interfaces.UserRepository {
 	return &Client{

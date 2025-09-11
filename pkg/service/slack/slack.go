@@ -286,3 +286,28 @@ func (s *Service) NewThread(channelID, threadTS string) *ThreadService {
 func (t *ThreadService) Reply(ctx context.Context, text string) error {
 	return t.service.PostMessage(ctx, t.channelID, t.threadTS, text)
 }
+
+// IsWorkspaceMember checks if a user with the given email is a member of the Slack workspace
+func (s *Service) IsWorkspaceMember(ctx context.Context, email string) (bool, error) {
+	if email == "" {
+		return false, goerr.New("email cannot be empty")
+	}
+
+	// Get user by email
+	user, err := s.client.GetUserByEmailContext(ctx, email)
+	if err != nil {
+		// If user not found by email, they're not a workspace member
+		if err.Error() == "users_not_found" || err.Error() == "user_not_found" {
+			return false, nil
+		}
+		return false, goerr.Wrap(err, "failed to get user by email from Slack", goerr.V("email", email))
+	}
+
+	// Check if user is deleted or a bot
+	if user.Deleted || user.IsBot {
+		return false, nil
+	}
+
+	// User exists and is active
+	return true, nil
+}

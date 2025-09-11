@@ -8,6 +8,7 @@ import (
 
 	"github.com/m-mizutani/gt"
 	"github.com/m-mizutani/tamamo/pkg/domain/interfaces"
+	"github.com/m-mizutani/tamamo/pkg/domain/mock"
 	"github.com/m-mizutani/tamamo/pkg/domain/model/slack"
 	"github.com/m-mizutani/tamamo/pkg/usecase"
 	slackapi "github.com/slack-go/slack"
@@ -49,7 +50,7 @@ func testLogSlackMessageSuccess(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	var storedMessage *slack.SlackMessageLog
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
@@ -92,7 +93,7 @@ func testLogSlackMessageRepositoryError(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	// Mock repository error
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
@@ -124,7 +125,7 @@ func testLogSlackMessageChannelInfoError(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	var storedMessage *slack.SlackMessageLog
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
@@ -167,7 +168,7 @@ func testLogSlackMessageUserInfoError(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	var storedMessage *slack.SlackMessageLog
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
@@ -209,7 +210,7 @@ func testLogSlackMessageBot(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	var storedMessage *slack.SlackMessageLog
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
@@ -248,7 +249,7 @@ func testLogSlackMessageThread(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	var storedMessage *slack.SlackMessageLog
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
@@ -286,7 +287,7 @@ func testLogSlackMessageWithFiles(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	var storedMessage *slack.SlackMessageLog
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
@@ -355,7 +356,7 @@ func TestSlackMessageLoggingUseCase_LogSlackAppMentionMessage(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	var storedMessage *slack.SlackMessageLog
 	mockRepo.PutSlackMessageLogFunc = func(ctx context.Context, messageLog *slack.SlackMessageLog) error {
@@ -411,7 +412,7 @@ func testGetMessageLogsByChannelFilter(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	// Prepare test data
 	testLogs := []*slack.SlackMessageLog{
@@ -455,7 +456,7 @@ func testGetMessageLogs(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	// Prepare test data
 	testLogs := []*slack.SlackMessageLog{
@@ -494,7 +495,7 @@ func testGetMessageLogsWithPagination(t *testing.T) {
 
 	// Setup mocks
 	mockRepo := &SlackMessageLogRepositoryMock{}
-	mockClient := &SlackClientMock{}
+	mockClient := &mock.SlackClientMock{}
 
 	// Prepare test data
 	allLogs := make([]*slack.SlackMessageLog, 5)

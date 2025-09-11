@@ -120,6 +120,18 @@ type JiraOAuthURL {
   url: String!
 }
 
+type NotionIntegration {
+  id: ID!
+  connected: Boolean!
+  workspaceName: String
+  workspaceIcon: String
+  connectedAt: Time
+}
+
+type NotionOAuthURL {
+  url: String!
+}
+
 input CreateAgentInput {
   agentId: String!
   name: String!
@@ -168,6 +180,7 @@ type Query {
   llmConfig: LLMConfig!
   
   jiraIntegration: JiraIntegration
+  notionIntegration: NotionIntegration
 }
 
 type Mutation {
@@ -185,6 +198,9 @@ type Mutation {
   
   initiateJiraOAuth: JiraOAuthURL!
   disconnectJira: Boolean!
+  
+  initiateNotionOAuth: NotionOAuthURL!
+  disconnectNotion: Boolean!
 }
 
 schema {

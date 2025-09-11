@@ -84,7 +84,7 @@ func TestQueryResolver_LLMConfig(t *testing.T) {
 		gt.NoError(t, err)
 
 		// Create resolver with factory
-		resolver := graphql.NewResolver(nil, nil, nil, factory, nil, nil, nil)
+		resolver := graphql.NewResolver(nil, nil, nil, factory, nil, nil, nil, nil)
 		queryResolver := resolver.Query()
 
 		// Execute query
@@ -146,7 +146,7 @@ func TestQueryResolver_LLMConfig(t *testing.T) {
 
 	t.Run("Get LLM configuration without factory", func(t *testing.T) {
 		// Create resolver without factory
-		resolver := graphql.NewResolver(nil, nil, nil, nil, nil, nil, nil)
+		resolver := graphql.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil)
 		queryResolver := resolver.Query()
 
 		// Execute query
@@ -182,7 +182,7 @@ func TestQueryResolver_LLMConfig(t *testing.T) {
 		gt.NoError(t, err)
 
 		// Create resolver with factory
-		resolver := graphql.NewResolver(nil, nil, nil, factory, nil, nil, nil)
+		resolver := graphql.NewResolver(nil, nil, nil, factory, nil, nil, nil, nil)
 		queryResolver := resolver.Query()
 
 		// Execute query

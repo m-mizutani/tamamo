@@ -52,6 +52,7 @@ type SlackClient interface {
 	GetUserInfo(ctx context.Context, userID string) (*SlackUserInfo, error)
 	GetBotInfo(ctx context.Context, botID string) (*SlackBotInfo, error)
 	GetChannelInfo(ctx context.Context, channelID string) (*slack.ChannelInfo, error)
+	IsWorkspaceMember(ctx context.Context, email string) (bool, error)
 }
 
 // UserAvatarService manages user avatar data retrieval

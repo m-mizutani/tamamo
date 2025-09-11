@@ -580,3 +580,38 @@ export const DISCONNECT_JIRA = `
     disconnectJira
   }
 `;
+
+// Notion Integration queries and mutations
+export const GET_NOTION_INTEGRATION = `
+  query GetNotionIntegration {
+    notionIntegration {
+      id
+      connected
+      workspaceName
+      connectedAt
+    }
+  }
+`;
+
+export const INITIATE_NOTION_OAUTH = `
+  mutation InitiateNotionOAuth {
+    initiateNotionOAuth {
+      url
+    }
+  }
+`;
+
+export const DISCONNECT_NOTION = `
+  mutation DisconnectNotion {
+    disconnectNotion
+  }
+`;
+
+// Enhanced GraphQL client utility for better error handling
+export async function executeGraphQL<T>(
+  query: string,
+  variables?: Record<string, any>,
+  signal?: AbortSignal
+): Promise<T> {
+  return graphqlRequest<T>(query, variables, signal);
+}

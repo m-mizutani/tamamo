@@ -12,7 +12,7 @@ import (
 type Jira struct {
 	ClientID     string
 	ClientSecret string
-	BaseURL      string // Application base URL for generating redirect URI
+	FrontendURL  string // Application frontend URL for generating redirect URI
 }
 
 // Flags returns CLI flags for Jira configuration
@@ -31,11 +31,11 @@ func (j *Jira) Flags() []cli.Flag {
 			Destination: &j.ClientSecret,
 		},
 		&cli.StringFlag{
-			Name:        "base-url",
-			Sources:     cli.EnvVars("TAMAMO_BASE_URL"),
-			Usage:       "Application base URL (e.g., https://app.example.com)",
+			Name:        "frontend-url",
+			Sources:     cli.EnvVars("TAMAMO_FRONTEND_URL"),
+			Usage:       "Application frontend URL (e.g., https://app.example.com)",
 			Value:       "http://localhost:8080",
-			Destination: &j.BaseURL,
+			Destination: &j.FrontendURL,
 		},
 	}
 }
@@ -48,14 +48,14 @@ func (j *Jira) Validate() error {
 	if j.ClientSecret == "" {
 		return goerr.New("Jira Client Secret is required")
 	}
-	if j.BaseURL == "" {
-		return goerr.New("Base URL is required")
+	if j.FrontendURL == "" {
+		return goerr.New("Frontend URL is required")
 	}
 
-	// Validate base URL format
-	_, err := url.Parse(j.BaseURL)
+	// Validate frontend URL format
+	_, err := url.Parse(j.FrontendURL)
 	if err != nil {
-		return goerr.Wrap(err, "invalid base URL format")
+		return goerr.Wrap(err, "invalid frontend URL format")
 	}
 
 	return nil
@@ -68,7 +68,7 @@ func (j *Jira) IsEnabled() bool {
 
 // BuildOAuthConfig creates a jira.OAuthConfig from the configuration
 func (j *Jira) BuildOAuthConfig() jira.OAuthConfig {
-	redirectURI := fmt.Sprintf("%s/api/auth/jira/callback", j.BaseURL)
+	redirectURI := fmt.Sprintf("%s/api/auth/jira/callback", j.FrontendURL)
 
 	return jira.OAuthConfig{
 		ClientID:     j.ClientID,

@@ -111,6 +111,7 @@ type Server struct {
 	userCtrl       *UserController
 	imageCtrl      *ImageController
 	jiraAuthCtrl   *JiraAuthController
+	notionAuthCtrl *NotionAuthController
 	authUseCase    interfaces.AuthUseCases
 	enableGraphiQL bool
 	slackVerifier  slack.PayloadVerifier
@@ -166,6 +167,13 @@ func WithImageController(ctrl *ImageController) Options {
 func WithJiraAuthController(ctrl *JiraAuthController) Options {
 	return func(s *Server) {
 		s.jiraAuthCtrl = ctrl
+	}
+}
+
+// WithNotionAuthController sets the Notion auth controller
+func WithNotionAuthController(ctrl *NotionAuthController) Options {
+	return func(s *Server) {
+		s.notionAuthCtrl = ctrl
 	}
 }
 
@@ -234,6 +242,11 @@ func New(opts ...Options) *Server {
 			r.Route("/jira", func(r chi.Router) {
 				if s.jiraAuthCtrl != nil {
 					r.Get("/callback", s.jiraAuthCtrl.HandleOAuthCallback)
+				}
+			})
+			r.Route("/notion", func(r chi.Router) {
+				if s.notionAuthCtrl != nil {
+					r.Get("/callback", s.notionAuthCtrl.HandleOAuthCallback)
 				}
 			})
 		})

@@ -45,6 +45,10 @@ func (m *mockSlackClientForCache) GetBotInfo(ctx context.Context, botID string) 
 	return nil, nil
 }
 
+func (m *mockSlackClientForCache) IsWorkspaceMember(ctx context.Context, email string) (bool, error) {
+	return true, nil
+}
+
 func (m *mockSlackClientForCache) GetChannelInfo(ctx context.Context, channelID string) (*slack.ChannelInfo, error) {
 	m.mu.Lock()
 	m.callCount++

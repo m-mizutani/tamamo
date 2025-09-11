@@ -13,27 +13,30 @@ import (
 
 // userStorage holds user data in memory
 type userStorage struct {
-	users            map[types.UserID]*user.User
-	slackIDIndex     map[string]map[string]types.UserID      // slackID -> teamID -> userID
-	jiraIntegrations map[string]*integration.JiraIntegration // userID -> JiraIntegration
-	mu               sync.RWMutex
+	users              map[types.UserID]*user.User
+	slackIDIndex       map[string]map[string]types.UserID        // slackID -> teamID -> userID
+	jiraIntegrations   map[string]*integration.JiraIntegration   // userID -> JiraIntegration
+	notionIntegrations map[string]*integration.NotionIntegration // userID -> NotionIntegration
+	mu                 sync.RWMutex
 }
 
 // NewUserRepository creates a new user repository
 func NewUserRepository() interfaces.UserRepository {
 	return &userStorage{
-		users:            make(map[types.UserID]*user.User),
-		slackIDIndex:     make(map[string]map[string]types.UserID),
-		jiraIntegrations: make(map[string]*integration.JiraIntegration),
+		users:              make(map[types.UserID]*user.User),
+		slackIDIndex:       make(map[string]map[string]types.UserID),
+		jiraIntegrations:   make(map[string]*integration.JiraIntegration),
+		notionIntegrations: make(map[string]*integration.NotionIntegration),
 	}
 }
 
 // newUserStorage creates a new user storage
 func newUserStorage() *userStorage {
 	return &userStorage{
-		users:            make(map[types.UserID]*user.User),
-		slackIDIndex:     make(map[string]map[string]types.UserID),
-		jiraIntegrations: make(map[string]*integration.JiraIntegration),
+		users:              make(map[types.UserID]*user.User),
+		slackIDIndex:       make(map[string]map[string]types.UserID),
+		jiraIntegrations:   make(map[string]*integration.JiraIntegration),
+		notionIntegrations: make(map[string]*integration.NotionIntegration),
 	}
 }
 
@@ -183,5 +186,45 @@ func (s *userStorage) DeleteJiraIntegration(ctx context.Context, userID string) 
 	defer s.mu.Unlock()
 
 	delete(s.jiraIntegrations, userID)
+	return nil
+}
+
+// SaveNotionIntegration saves a Notion integration to memory
+func (s *userStorage) SaveNotionIntegration(ctx context.Context, integration *integration.NotionIntegration) error {
+	if integration == nil {
+		return goerr.New("integration is nil")
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Create a copy to prevent external modification
+	copy := *integration
+	s.notionIntegrations[integration.UserID] = &copy
+	return nil
+}
+
+// GetNotionIntegration retrieves a Notion integration from memory
+func (s *userStorage) GetNotionIntegration(ctx context.Context, userID string) (*integration.NotionIntegration, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	integration, exists := s.notionIntegrations[userID]
+	if !exists {
+		// Return nil when not found (not an error)
+		return nil, nil
+	}
+
+	// Return a copy to prevent external modification
+	copy := *integration
+	return &copy, nil
+}
+
+// DeleteNotionIntegration deletes a Notion integration from memory
+func (s *userStorage) DeleteNotionIntegration(ctx context.Context, userID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.notionIntegrations, userID)
 	return nil
 }
