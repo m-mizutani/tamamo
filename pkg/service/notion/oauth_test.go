@@ -159,4 +159,3 @@ func TestOAuthService_GenerateMultipleStates(t *testing.T) {
 		}
 	})
 }
-

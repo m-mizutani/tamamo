@@ -39,6 +39,14 @@ var (
 	TokenCountKey  = goerr.NewTypedKey[int]("token_count")
 )
 
+// Search Config related keys
+var (
+	SearchConfigIDKey = goerr.NewTypedKey[string]("search_config_id")
+	ProjectKeyKey     = goerr.NewTypedKey[string]("project_key")
+	DatabaseIDKey     = goerr.NewTypedKey[string]("database_id")
+	WorkspaceIDKey    = goerr.NewTypedKey[string]("workspace_id")
+)
+
 // Firestore related keys
 var (
 	CollectionKey = goerr.NewTypedKey[string]("collection")

@@ -21,7 +21,7 @@ func TestNotionIntegrationUseCases(t *testing.T) {
 		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
 	}
 	oauthService := notion.NewOAuthService(oauthConfig)
-	
+
 	uc := usecase.NewNotionIntegrationUseCases(userRepo, oauthService)
 
 	ctx := context.Background()

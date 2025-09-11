@@ -12,14 +12,17 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	threadRepo     interfaces.ThreadRepository
-	agentUseCase   interfaces.AgentUseCases
-	userUseCase    interfaces.UserUseCases
-	llmFactory     *llm.Factory
-	imageProcessor *image.Processor
-	agentImageRepo interfaces.AgentImageRepository
-	jiraUseCases   usecase.JiraIntegrationUseCases
-	notionUseCases usecase.NotionIntegrationUseCases
+	threadRepo                 interfaces.ThreadRepository
+	agentUseCase               interfaces.AgentUseCases
+	userUseCase                interfaces.UserUseCases
+	llmFactory                 *llm.Factory
+	imageProcessor             *image.Processor
+	agentImageRepo             interfaces.AgentImageRepository
+	jiraUseCases               usecase.JiraIntegrationUseCases
+	notionUseCases             usecase.NotionIntegrationUseCases
+	slackSearchConfigUseCases  interfaces.SlackSearchConfigUseCases
+	jiraSearchConfigUseCases   interfaces.JiraSearchConfigUseCases
+	notionSearchConfigUseCases interfaces.NotionSearchConfigUseCases
 }
 
 // NewResolver creates a new resolver instance
@@ -32,15 +35,21 @@ func NewResolver(
 	agentImageRepo interfaces.AgentImageRepository,
 	jiraUseCases usecase.JiraIntegrationUseCases,
 	notionUseCases usecase.NotionIntegrationUseCases,
+	slackSearchConfigUseCases interfaces.SlackSearchConfigUseCases,
+	jiraSearchConfigUseCases interfaces.JiraSearchConfigUseCases,
+	notionSearchConfigUseCases interfaces.NotionSearchConfigUseCases,
 ) *Resolver {
 	return &Resolver{
-		threadRepo:     threadRepo,
-		agentUseCase:   agentUseCase,
-		userUseCase:    userUseCase,
-		llmFactory:     llmFactory,
-		imageProcessor: imageProcessor,
-		agentImageRepo: agentImageRepo,
-		jiraUseCases:   jiraUseCases,
-		notionUseCases: notionUseCases,
+		threadRepo:                 threadRepo,
+		agentUseCase:               agentUseCase,
+		userUseCase:                userUseCase,
+		llmFactory:                 llmFactory,
+		imageProcessor:             imageProcessor,
+		agentImageRepo:             agentImageRepo,
+		jiraUseCases:               jiraUseCases,
+		notionUseCases:             notionUseCases,
+		slackSearchConfigUseCases:  slackSearchConfigUseCases,
+		jiraSearchConfigUseCases:   jiraSearchConfigUseCases,
+		notionSearchConfigUseCases: notionSearchConfigUseCases,
 	}
 }

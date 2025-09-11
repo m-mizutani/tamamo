@@ -132,6 +132,92 @@ type NotionOAuthURL {
   url: String!
 }
 
+# Agent search configuration types
+type AgentSlackSearchConfig {
+  id: ID!
+  agentId: ID!
+  channelId: String!
+  channelName: String!
+  description: String
+  enabled: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type AgentJiraSearchConfig {
+  id: ID!
+  agentId: ID!
+  projectKey: String!
+  projectName: String!
+  boardId: String
+  boardName: String
+  description: String
+  enabled: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type AgentNotionSearchConfig {
+  id: ID!
+  agentId: ID!
+  databaseId: String!
+  databaseName: String!
+  workspaceId: String!
+  description: String
+  enabled: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Input types for search configurations
+input CreateSlackSearchConfigInput {
+  agentId: ID!
+  channelId: String!
+  channelName: String!
+  description: String
+  enabled: Boolean!
+}
+
+input UpdateSlackSearchConfigInput {
+  channelName: String!
+  description: String
+  enabled: Boolean!
+}
+
+input CreateJiraSearchConfigInput {
+  agentId: ID!
+  projectKey: String!
+  projectName: String!
+  boardId: String
+  boardName: String
+  description: String
+  enabled: Boolean!
+}
+
+input UpdateJiraSearchConfigInput {
+  projectName: String!
+  boardId: String
+  boardName: String
+  description: String
+  enabled: Boolean!
+}
+
+input CreateNotionSearchConfigInput {
+  agentId: ID!
+  databaseId: String!
+  databaseName: String!
+  workspaceId: String!
+  description: String
+  enabled: Boolean!
+}
+
+input UpdateNotionSearchConfigInput {
+  databaseName: String!
+  workspaceId: String!
+  description: String
+  enabled: Boolean!
+}
+
 input CreateAgentInput {
   agentId: String!
   name: String!
@@ -181,6 +267,11 @@ type Query {
   
   jiraIntegration: JiraIntegration
   notionIntegration: NotionIntegration
+  
+  # Search configuration queries
+  agentSlackSearchConfigs(agentId: ID!): [AgentSlackSearchConfig!]!
+  agentJiraSearchConfigs(agentId: ID!): [AgentJiraSearchConfig!]!
+  agentNotionSearchConfigs(agentId: ID!): [AgentNotionSearchConfig!]!
 }
 
 type Mutation {
@@ -201,6 +292,19 @@ type Mutation {
   
   initiateNotionOAuth: NotionOAuthURL!
   disconnectNotion: Boolean!
+  
+  # Search configuration mutations
+  createSlackSearchConfig(input: CreateSlackSearchConfigInput!): AgentSlackSearchConfig!
+  updateSlackSearchConfig(id: ID!, input: UpdateSlackSearchConfigInput!): AgentSlackSearchConfig!
+  deleteSlackSearchConfig(id: ID!): Boolean!
+  
+  createJiraSearchConfig(input: CreateJiraSearchConfigInput!): AgentJiraSearchConfig!
+  updateJiraSearchConfig(id: ID!, input: UpdateJiraSearchConfigInput!): AgentJiraSearchConfig!
+  deleteJiraSearchConfig(id: ID!): Boolean!
+  
+  createNotionSearchConfig(input: CreateNotionSearchConfigInput!): AgentNotionSearchConfig!
+  updateNotionSearchConfig(id: ID!, input: UpdateNotionSearchConfigInput!): AgentNotionSearchConfig!
+  deleteNotionSearchConfig(id: ID!): Boolean!
 }
 
 schema {

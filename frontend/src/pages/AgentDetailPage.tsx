@@ -41,6 +41,7 @@ import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { CreateVersionDialog } from '@/components/agents/CreateVersionDialog'
 import { UserDisplay } from '@/components/UserDisplay'
+import { AgentSearchConfigSection } from '@/components/agent/search-config/AgentSearchConfigSection'
 
 // Helper functions to get display names
 function getProviderDisplayName(providerId: string | undefined, llmConfig: LLMConfig | null): string {
@@ -588,6 +589,8 @@ export function AgentDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          <AgentSearchConfigSection agentId={agent.id} canEdit={true} />
         </div>
 
         <div className="space-y-6">

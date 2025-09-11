@@ -102,7 +102,7 @@ func TestMutationResolver_CreateAgent_LLMValidation(t *testing.T) {
 		},
 	}
 
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, mockUserUseCase, factory, nil, nil, nil, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, mockUserUseCase, factory, nil, nil, nil, nil, nil, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	t.Run("Valid provider and model", func(t *testing.T) {
@@ -276,7 +276,7 @@ func TestMutationResolver_UpdateAgent_LLMValidation(t *testing.T) {
 		},
 	}
 
-	resolver := graphql.NewResolver(nil, mockAgentUseCase, mockUserUseCase, factory, nil, nil, nil, nil)
+	resolver := graphql.NewResolver(nil, mockAgentUseCase, mockUserUseCase, factory, nil, nil, nil, nil, nil, nil, nil)
 	mutationResolver := resolver.Mutation()
 
 	t.Run("Valid provider and model update", func(t *testing.T) {

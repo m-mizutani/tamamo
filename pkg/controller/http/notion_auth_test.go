@@ -24,7 +24,6 @@ func TestNotionAuthController_HandleOAuthCallback(t *testing.T) {
 		},
 	}
 
-
 	oauthConfig := notion.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
@@ -102,7 +101,6 @@ func TestNotionIntegrationUseCases_IntegrationFlow(t *testing.T) {
 			return goerr.New("not found")
 		},
 	}
-
 
 	oauthConfig := notion.OAuthConfig{
 		ClientID:     "test-client-id",

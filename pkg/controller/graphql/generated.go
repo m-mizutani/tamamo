@@ -84,9 +84,45 @@ type ComplexityRoot struct {
 		Width       func(childComplexity int) int
 	}
 
+	AgentJiraSearchConfig struct {
+		AgentID     func(childComplexity int) int
+		BoardID     func(childComplexity int) int
+		BoardName   func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		Description func(childComplexity int) int
+		Enabled     func(childComplexity int) int
+		ID          func(childComplexity int) int
+		ProjectKey  func(childComplexity int) int
+		ProjectName func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+	}
+
 	AgentListResponse struct {
 		Agents     func(childComplexity int) int
 		TotalCount func(childComplexity int) int
+	}
+
+	AgentNotionSearchConfig struct {
+		AgentID      func(childComplexity int) int
+		CreatedAt    func(childComplexity int) int
+		DatabaseID   func(childComplexity int) int
+		DatabaseName func(childComplexity int) int
+		Description  func(childComplexity int) int
+		Enabled      func(childComplexity int) int
+		ID           func(childComplexity int) int
+		UpdatedAt    func(childComplexity int) int
+		WorkspaceID  func(childComplexity int) int
+	}
+
+	AgentSlackSearchConfig struct {
+		AgentID     func(childComplexity int) int
+		ChannelID   func(childComplexity int) int
+		ChannelName func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		Description func(childComplexity int) int
+		Enabled     func(childComplexity int) int
+		ID          func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
 	}
 
 	AgentVersion struct {
@@ -132,19 +168,28 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ArchiveAgent        func(childComplexity int, id string) int
-		CreateAgent         func(childComplexity int, input graphql1.CreateAgentInput) int
-		CreateAgentVersion  func(childComplexity int, input graphql1.CreateAgentVersionInput) int
-		DeleteAgent         func(childComplexity int, id string) int
-		DisconnectJira      func(childComplexity int) int
-		DisconnectNotion    func(childComplexity int) int
-		InitiateJiraOAuth   func(childComplexity int) int
-		InitiateNotionOAuth func(childComplexity int) int
-		UnarchiveAgent      func(childComplexity int, id string) int
-		UpdateAgent         func(childComplexity int, id string, input graphql1.UpdateAgentInput) int
-		UpdateDefaultLlm    func(childComplexity int, provider string, model string) int
-		UpdateFallbackLlm   func(childComplexity int, enabled bool, provider *string, model *string) int
-		UploadAgentImage    func(childComplexity int, agentID string, file graphql.Upload) int
+		ArchiveAgent             func(childComplexity int, id string) int
+		CreateAgent              func(childComplexity int, input graphql1.CreateAgentInput) int
+		CreateAgentVersion       func(childComplexity int, input graphql1.CreateAgentVersionInput) int
+		CreateJiraSearchConfig   func(childComplexity int, input graphql1.CreateJiraSearchConfigInput) int
+		CreateNotionSearchConfig func(childComplexity int, input graphql1.CreateNotionSearchConfigInput) int
+		CreateSlackSearchConfig  func(childComplexity int, input graphql1.CreateSlackSearchConfigInput) int
+		DeleteAgent              func(childComplexity int, id string) int
+		DeleteJiraSearchConfig   func(childComplexity int, id string) int
+		DeleteNotionSearchConfig func(childComplexity int, id string) int
+		DeleteSlackSearchConfig  func(childComplexity int, id string) int
+		DisconnectJira           func(childComplexity int) int
+		DisconnectNotion         func(childComplexity int) int
+		InitiateJiraOAuth        func(childComplexity int) int
+		InitiateNotionOAuth      func(childComplexity int) int
+		UnarchiveAgent           func(childComplexity int, id string) int
+		UpdateAgent              func(childComplexity int, id string, input graphql1.UpdateAgentInput) int
+		UpdateDefaultLlm         func(childComplexity int, provider string, model string) int
+		UpdateFallbackLlm        func(childComplexity int, enabled bool, provider *string, model *string) int
+		UpdateJiraSearchConfig   func(childComplexity int, id string, input graphql1.UpdateJiraSearchConfigInput) int
+		UpdateNotionSearchConfig func(childComplexity int, id string, input graphql1.UpdateNotionSearchConfigInput) int
+		UpdateSlackSearchConfig  func(childComplexity int, id string, input graphql1.UpdateSlackSearchConfigInput) int
+		UploadAgentImage         func(childComplexity int, agentID string, file graphql.Upload) int
 	}
 
 	NotionIntegration struct {
@@ -164,6 +209,9 @@ type ComplexityRoot struct {
 		AgentByAgentID           func(childComplexity int, agentID string) int
 		AgentImage               func(childComplexity int, id string) int
 		AgentImageByAgentID      func(childComplexity int, agentID string) int
+		AgentJiraSearchConfigs   func(childComplexity int, agentID string) int
+		AgentNotionSearchConfigs func(childComplexity int, agentID string) int
+		AgentSlackSearchConfigs  func(childComplexity int, agentID string) int
 		AgentVersions            func(childComplexity int, agentUUID string) int
 		Agents                   func(childComplexity int, offset *int, limit *int) int
 		AgentsByStatus           func(childComplexity int, status graphql1.AgentStatus, offset *int, limit *int) int
@@ -221,6 +269,15 @@ type MutationResolver interface {
 	DisconnectJira(ctx context.Context) (bool, error)
 	InitiateNotionOAuth(ctx context.Context) (*graphql1.NotionOAuthURL, error)
 	DisconnectNotion(ctx context.Context) (bool, error)
+	CreateSlackSearchConfig(ctx context.Context, input graphql1.CreateSlackSearchConfigInput) (*graphql1.AgentSlackSearchConfig, error)
+	UpdateSlackSearchConfig(ctx context.Context, id string, input graphql1.UpdateSlackSearchConfigInput) (*graphql1.AgentSlackSearchConfig, error)
+	DeleteSlackSearchConfig(ctx context.Context, id string) (bool, error)
+	CreateJiraSearchConfig(ctx context.Context, input graphql1.CreateJiraSearchConfigInput) (*graphql1.AgentJiraSearchConfig, error)
+	UpdateJiraSearchConfig(ctx context.Context, id string, input graphql1.UpdateJiraSearchConfigInput) (*graphql1.AgentJiraSearchConfig, error)
+	DeleteJiraSearchConfig(ctx context.Context, id string) (bool, error)
+	CreateNotionSearchConfig(ctx context.Context, input graphql1.CreateNotionSearchConfigInput) (*graphql1.AgentNotionSearchConfig, error)
+	UpdateNotionSearchConfig(ctx context.Context, id string, input graphql1.UpdateNotionSearchConfigInput) (*graphql1.AgentNotionSearchConfig, error)
+	DeleteNotionSearchConfig(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
 	Thread(ctx context.Context, id string) (*slack.Thread, error)
@@ -239,6 +296,9 @@ type QueryResolver interface {
 	LlmConfig(ctx context.Context) (*graphql1.LLMConfig, error)
 	JiraIntegration(ctx context.Context) (*graphql1.JiraIntegration, error)
 	NotionIntegration(ctx context.Context) (*graphql1.NotionIntegration, error)
+	AgentSlackSearchConfigs(ctx context.Context, agentID string) ([]*graphql1.AgentSlackSearchConfig, error)
+	AgentJiraSearchConfigs(ctx context.Context, agentID string) ([]*graphql1.AgentJiraSearchConfig, error)
+	AgentNotionSearchConfigs(ctx context.Context, agentID string) ([]*graphql1.AgentNotionSearchConfig, error)
 }
 type ThreadResolver interface {
 	ID(ctx context.Context, obj *slack.Thread) (string, error)
@@ -434,6 +494,76 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.AgentImage.Width(childComplexity), true
 
+	case "AgentJiraSearchConfig.agentId":
+		if e.complexity.AgentJiraSearchConfig.AgentID == nil {
+			break
+		}
+
+		return e.complexity.AgentJiraSearchConfig.AgentID(childComplexity), true
+
+	case "AgentJiraSearchConfig.boardId":
+		if e.complexity.AgentJiraSearchConfig.BoardID == nil {
+			break
+		}
+
+		return e.complexity.AgentJiraSearchConfig.BoardID(childComplexity), true
+
+	case "AgentJiraSearchConfig.boardName":
+		if e.complexity.AgentJiraSearchConfig.BoardName == nil {
+			break
+		}
+
+		return e.complexity.AgentJiraSearchConfig.BoardName(childComplexity), true
+
+	case "AgentJiraSearchConfig.createdAt":
+		if e.complexity.AgentJiraSearchConfig.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.AgentJiraSearchConfig.CreatedAt(childComplexity), true
+
+	case "AgentJiraSearchConfig.description":
+		if e.complexity.AgentJiraSearchConfig.Description == nil {
+			break
+		}
+
+		return e.complexity.AgentJiraSearchConfig.Description(childComplexity), true
+
+	case "AgentJiraSearchConfig.enabled":
+		if e.complexity.AgentJiraSearchConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.AgentJiraSearchConfig.Enabled(childComplexity), true
+
+	case "AgentJiraSearchConfig.id":
+		if e.complexity.AgentJiraSearchConfig.ID == nil {
+			break
+		}
+
+		return e.complexity.AgentJiraSearchConfig.ID(childComplexity), true
+
+	case "AgentJiraSearchConfig.projectKey":
+		if e.complexity.AgentJiraSearchConfig.ProjectKey == nil {
+			break
+		}
+
+		return e.complexity.AgentJiraSearchConfig.ProjectKey(childComplexity), true
+
+	case "AgentJiraSearchConfig.projectName":
+		if e.complexity.AgentJiraSearchConfig.ProjectName == nil {
+			break
+		}
+
+		return e.complexity.AgentJiraSearchConfig.ProjectName(childComplexity), true
+
+	case "AgentJiraSearchConfig.updatedAt":
+		if e.complexity.AgentJiraSearchConfig.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.AgentJiraSearchConfig.UpdatedAt(childComplexity), true
+
 	case "AgentListResponse.agents":
 		if e.complexity.AgentListResponse.Agents == nil {
 			break
@@ -447,6 +577,125 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AgentListResponse.TotalCount(childComplexity), true
+
+	case "AgentNotionSearchConfig.agentId":
+		if e.complexity.AgentNotionSearchConfig.AgentID == nil {
+			break
+		}
+
+		return e.complexity.AgentNotionSearchConfig.AgentID(childComplexity), true
+
+	case "AgentNotionSearchConfig.createdAt":
+		if e.complexity.AgentNotionSearchConfig.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.AgentNotionSearchConfig.CreatedAt(childComplexity), true
+
+	case "AgentNotionSearchConfig.databaseId":
+		if e.complexity.AgentNotionSearchConfig.DatabaseID == nil {
+			break
+		}
+
+		return e.complexity.AgentNotionSearchConfig.DatabaseID(childComplexity), true
+
+	case "AgentNotionSearchConfig.databaseName":
+		if e.complexity.AgentNotionSearchConfig.DatabaseName == nil {
+			break
+		}
+
+		return e.complexity.AgentNotionSearchConfig.DatabaseName(childComplexity), true
+
+	case "AgentNotionSearchConfig.description":
+		if e.complexity.AgentNotionSearchConfig.Description == nil {
+			break
+		}
+
+		return e.complexity.AgentNotionSearchConfig.Description(childComplexity), true
+
+	case "AgentNotionSearchConfig.enabled":
+		if e.complexity.AgentNotionSearchConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.AgentNotionSearchConfig.Enabled(childComplexity), true
+
+	case "AgentNotionSearchConfig.id":
+		if e.complexity.AgentNotionSearchConfig.ID == nil {
+			break
+		}
+
+		return e.complexity.AgentNotionSearchConfig.ID(childComplexity), true
+
+	case "AgentNotionSearchConfig.updatedAt":
+		if e.complexity.AgentNotionSearchConfig.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.AgentNotionSearchConfig.UpdatedAt(childComplexity), true
+
+	case "AgentNotionSearchConfig.workspaceId":
+		if e.complexity.AgentNotionSearchConfig.WorkspaceID == nil {
+			break
+		}
+
+		return e.complexity.AgentNotionSearchConfig.WorkspaceID(childComplexity), true
+
+	case "AgentSlackSearchConfig.agentId":
+		if e.complexity.AgentSlackSearchConfig.AgentID == nil {
+			break
+		}
+
+		return e.complexity.AgentSlackSearchConfig.AgentID(childComplexity), true
+
+	case "AgentSlackSearchConfig.channelId":
+		if e.complexity.AgentSlackSearchConfig.ChannelID == nil {
+			break
+		}
+
+		return e.complexity.AgentSlackSearchConfig.ChannelID(childComplexity), true
+
+	case "AgentSlackSearchConfig.channelName":
+		if e.complexity.AgentSlackSearchConfig.ChannelName == nil {
+			break
+		}
+
+		return e.complexity.AgentSlackSearchConfig.ChannelName(childComplexity), true
+
+	case "AgentSlackSearchConfig.createdAt":
+		if e.complexity.AgentSlackSearchConfig.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.AgentSlackSearchConfig.CreatedAt(childComplexity), true
+
+	case "AgentSlackSearchConfig.description":
+		if e.complexity.AgentSlackSearchConfig.Description == nil {
+			break
+		}
+
+		return e.complexity.AgentSlackSearchConfig.Description(childComplexity), true
+
+	case "AgentSlackSearchConfig.enabled":
+		if e.complexity.AgentSlackSearchConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.AgentSlackSearchConfig.Enabled(childComplexity), true
+
+	case "AgentSlackSearchConfig.id":
+		if e.complexity.AgentSlackSearchConfig.ID == nil {
+			break
+		}
+
+		return e.complexity.AgentSlackSearchConfig.ID(childComplexity), true
+
+	case "AgentSlackSearchConfig.updatedAt":
+		if e.complexity.AgentSlackSearchConfig.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.AgentSlackSearchConfig.UpdatedAt(childComplexity), true
 
 	case "AgentVersion.agentUuid":
 		if e.complexity.AgentVersion.AgentUUID == nil {
@@ -652,6 +901,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.CreateAgentVersion(childComplexity, args["input"].(graphql1.CreateAgentVersionInput)), true
 
+	case "Mutation.createJiraSearchConfig":
+		if e.complexity.Mutation.CreateJiraSearchConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createJiraSearchConfig_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateJiraSearchConfig(childComplexity, args["input"].(graphql1.CreateJiraSearchConfigInput)), true
+
+	case "Mutation.createNotionSearchConfig":
+		if e.complexity.Mutation.CreateNotionSearchConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createNotionSearchConfig_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateNotionSearchConfig(childComplexity, args["input"].(graphql1.CreateNotionSearchConfigInput)), true
+
+	case "Mutation.createSlackSearchConfig":
+		if e.complexity.Mutation.CreateSlackSearchConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createSlackSearchConfig_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateSlackSearchConfig(childComplexity, args["input"].(graphql1.CreateSlackSearchConfigInput)), true
+
 	case "Mutation.deleteAgent":
 		if e.complexity.Mutation.DeleteAgent == nil {
 			break
@@ -663,6 +948,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.DeleteAgent(childComplexity, args["id"].(string)), true
+
+	case "Mutation.deleteJiraSearchConfig":
+		if e.complexity.Mutation.DeleteJiraSearchConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteJiraSearchConfig_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteJiraSearchConfig(childComplexity, args["id"].(string)), true
+
+	case "Mutation.deleteNotionSearchConfig":
+		if e.complexity.Mutation.DeleteNotionSearchConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteNotionSearchConfig_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteNotionSearchConfig(childComplexity, args["id"].(string)), true
+
+	case "Mutation.deleteSlackSearchConfig":
+		if e.complexity.Mutation.DeleteSlackSearchConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteSlackSearchConfig_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteSlackSearchConfig(childComplexity, args["id"].(string)), true
 
 	case "Mutation.disconnectJira":
 		if e.complexity.Mutation.DisconnectJira == nil {
@@ -739,6 +1060,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.UpdateFallbackLlm(childComplexity, args["enabled"].(bool), args["provider"].(*string), args["model"].(*string)), true
+
+	case "Mutation.updateJiraSearchConfig":
+		if e.complexity.Mutation.UpdateJiraSearchConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateJiraSearchConfig_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateJiraSearchConfig(childComplexity, args["id"].(string), args["input"].(graphql1.UpdateJiraSearchConfigInput)), true
+
+	case "Mutation.updateNotionSearchConfig":
+		if e.complexity.Mutation.UpdateNotionSearchConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateNotionSearchConfig_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateNotionSearchConfig(childComplexity, args["id"].(string), args["input"].(graphql1.UpdateNotionSearchConfigInput)), true
+
+	case "Mutation.updateSlackSearchConfig":
+		if e.complexity.Mutation.UpdateSlackSearchConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateSlackSearchConfig_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateSlackSearchConfig(childComplexity, args["id"].(string), args["input"].(graphql1.UpdateSlackSearchConfigInput)), true
 
 	case "Mutation.uploadAgentImage":
 		if e.complexity.Mutation.UploadAgentImage == nil {
@@ -841,6 +1198,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.AgentImageByAgentID(childComplexity, args["agentId"].(string)), true
+
+	case "Query.agentJiraSearchConfigs":
+		if e.complexity.Query.AgentJiraSearchConfigs == nil {
+			break
+		}
+
+		args, err := ec.field_Query_agentJiraSearchConfigs_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AgentJiraSearchConfigs(childComplexity, args["agentId"].(string)), true
+
+	case "Query.agentNotionSearchConfigs":
+		if e.complexity.Query.AgentNotionSearchConfigs == nil {
+			break
+		}
+
+		args, err := ec.field_Query_agentNotionSearchConfigs_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AgentNotionSearchConfigs(childComplexity, args["agentId"].(string)), true
+
+	case "Query.agentSlackSearchConfigs":
+		if e.complexity.Query.AgentSlackSearchConfigs == nil {
+			break
+		}
+
+		args, err := ec.field_Query_agentSlackSearchConfigs_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AgentSlackSearchConfigs(childComplexity, args["agentId"].(string)), true
 
 	case "Query.agentVersions":
 		if e.complexity.Query.AgentVersions == nil {
@@ -1088,7 +1481,13 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCreateAgentInput,
 		ec.unmarshalInputCreateAgentVersionInput,
+		ec.unmarshalInputCreateJiraSearchConfigInput,
+		ec.unmarshalInputCreateNotionSearchConfigInput,
+		ec.unmarshalInputCreateSlackSearchConfigInput,
 		ec.unmarshalInputUpdateAgentInput,
+		ec.unmarshalInputUpdateJiraSearchConfigInput,
+		ec.unmarshalInputUpdateNotionSearchConfigInput,
+		ec.unmarshalInputUpdateSlackSearchConfigInput,
 	)
 	first := true
 
@@ -1320,6 +1719,92 @@ type NotionOAuthURL {
   url: String!
 }
 
+# Agent search configuration types
+type AgentSlackSearchConfig {
+  id: ID!
+  agentId: ID!
+  channelId: String!
+  channelName: String!
+  description: String
+  enabled: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type AgentJiraSearchConfig {
+  id: ID!
+  agentId: ID!
+  projectKey: String!
+  projectName: String!
+  boardId: String
+  boardName: String
+  description: String
+  enabled: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type AgentNotionSearchConfig {
+  id: ID!
+  agentId: ID!
+  databaseId: String!
+  databaseName: String!
+  workspaceId: String!
+  description: String
+  enabled: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Input types for search configurations
+input CreateSlackSearchConfigInput {
+  agentId: ID!
+  channelId: String!
+  channelName: String!
+  description: String
+  enabled: Boolean!
+}
+
+input UpdateSlackSearchConfigInput {
+  channelName: String!
+  description: String
+  enabled: Boolean!
+}
+
+input CreateJiraSearchConfigInput {
+  agentId: ID!
+  projectKey: String!
+  projectName: String!
+  boardId: String
+  boardName: String
+  description: String
+  enabled: Boolean!
+}
+
+input UpdateJiraSearchConfigInput {
+  projectName: String!
+  boardId: String
+  boardName: String
+  description: String
+  enabled: Boolean!
+}
+
+input CreateNotionSearchConfigInput {
+  agentId: ID!
+  databaseId: String!
+  databaseName: String!
+  workspaceId: String!
+  description: String
+  enabled: Boolean!
+}
+
+input UpdateNotionSearchConfigInput {
+  databaseName: String!
+  workspaceId: String!
+  description: String
+  enabled: Boolean!
+}
+
 input CreateAgentInput {
   agentId: String!
   name: String!
@@ -1369,6 +1854,11 @@ type Query {
   
   jiraIntegration: JiraIntegration
   notionIntegration: NotionIntegration
+  
+  # Search configuration queries
+  agentSlackSearchConfigs(agentId: ID!): [AgentSlackSearchConfig!]!
+  agentJiraSearchConfigs(agentId: ID!): [AgentJiraSearchConfig!]!
+  agentNotionSearchConfigs(agentId: ID!): [AgentNotionSearchConfig!]!
 }
 
 type Mutation {
@@ -1389,6 +1879,19 @@ type Mutation {
   
   initiateNotionOAuth: NotionOAuthURL!
   disconnectNotion: Boolean!
+  
+  # Search configuration mutations
+  createSlackSearchConfig(input: CreateSlackSearchConfigInput!): AgentSlackSearchConfig!
+  updateSlackSearchConfig(id: ID!, input: UpdateSlackSearchConfigInput!): AgentSlackSearchConfig!
+  deleteSlackSearchConfig(id: ID!): Boolean!
+  
+  createJiraSearchConfig(input: CreateJiraSearchConfigInput!): AgentJiraSearchConfig!
+  updateJiraSearchConfig(id: ID!, input: UpdateJiraSearchConfigInput!): AgentJiraSearchConfig!
+  deleteJiraSearchConfig(id: ID!): Boolean!
+  
+  createNotionSearchConfig(input: CreateNotionSearchConfigInput!): AgentNotionSearchConfig!
+  updateNotionSearchConfig(id: ID!, input: UpdateNotionSearchConfigInput!): AgentNotionSearchConfig!
+  deleteNotionSearchConfig(id: ID!): Boolean!
 }
 
 schema {
@@ -1435,7 +1938,73 @@ func (ec *executionContext) field_Mutation_createAgent_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createJiraSearchConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateJiraSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐCreateJiraSearchConfigInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createNotionSearchConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateNotionSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐCreateNotionSearchConfigInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createSlackSearchConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateSlackSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐCreateSlackSearchConfigInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteAgent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteJiraSearchConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteNotionSearchConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteSlackSearchConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
@@ -1510,6 +2079,54 @@ func (ec *executionContext) field_Mutation_updateFallbackLLM_args(ctx context.Co
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateJiraSearchConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateJiraSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐUpdateJiraSearchConfigInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateNotionSearchConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateNotionSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐUpdateNotionSearchConfigInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateSlackSearchConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateSlackSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐUpdateSlackSearchConfigInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_uploadAgentImage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1567,6 +2184,39 @@ func (ec *executionContext) field_Query_agentImage_args(ctx context.Context, raw
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_agentJiraSearchConfigs_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "agentId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["agentId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_agentNotionSearchConfigs_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "agentId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["agentId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_agentSlackSearchConfigs_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "agentId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["agentId"] = arg0
 	return args, nil
 }
 
@@ -2848,6 +3498,437 @@ func (ec *executionContext) fieldContext_AgentImage_updatedAt(_ context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _AgentJiraSearchConfig_id(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentJiraSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentJiraSearchConfig_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentJiraSearchConfig_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentJiraSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentJiraSearchConfig_agentId(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentJiraSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentJiraSearchConfig_agentId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentJiraSearchConfig_agentId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentJiraSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentJiraSearchConfig_projectKey(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentJiraSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentJiraSearchConfig_projectKey(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProjectKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentJiraSearchConfig_projectKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentJiraSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentJiraSearchConfig_projectName(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentJiraSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentJiraSearchConfig_projectName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProjectName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentJiraSearchConfig_projectName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentJiraSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentJiraSearchConfig_boardId(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentJiraSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentJiraSearchConfig_boardId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BoardID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentJiraSearchConfig_boardId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentJiraSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentJiraSearchConfig_boardName(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentJiraSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentJiraSearchConfig_boardName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BoardName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentJiraSearchConfig_boardName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentJiraSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentJiraSearchConfig_description(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentJiraSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentJiraSearchConfig_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentJiraSearchConfig_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentJiraSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentJiraSearchConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentJiraSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentJiraSearchConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentJiraSearchConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentJiraSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentJiraSearchConfig_createdAt(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentJiraSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentJiraSearchConfig_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentJiraSearchConfig_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentJiraSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentJiraSearchConfig_updatedAt(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentJiraSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentJiraSearchConfig_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentJiraSearchConfig_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentJiraSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AgentListResponse_agents(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentListResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AgentListResponse_agents(ctx, field)
 	if err != nil {
@@ -2957,6 +4038,748 @@ func (ec *executionContext) fieldContext_AgentListResponse_totalCount(_ context.
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentNotionSearchConfig_id(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentNotionSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentNotionSearchConfig_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentNotionSearchConfig_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentNotionSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentNotionSearchConfig_agentId(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentNotionSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentNotionSearchConfig_agentId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentNotionSearchConfig_agentId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentNotionSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentNotionSearchConfig_databaseId(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentNotionSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentNotionSearchConfig_databaseId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DatabaseID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentNotionSearchConfig_databaseId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentNotionSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentNotionSearchConfig_databaseName(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentNotionSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentNotionSearchConfig_databaseName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DatabaseName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentNotionSearchConfig_databaseName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentNotionSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentNotionSearchConfig_workspaceId(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentNotionSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentNotionSearchConfig_workspaceId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkspaceID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentNotionSearchConfig_workspaceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentNotionSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentNotionSearchConfig_description(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentNotionSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentNotionSearchConfig_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentNotionSearchConfig_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentNotionSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentNotionSearchConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentNotionSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentNotionSearchConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentNotionSearchConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentNotionSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentNotionSearchConfig_createdAt(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentNotionSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentNotionSearchConfig_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentNotionSearchConfig_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentNotionSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentNotionSearchConfig_updatedAt(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentNotionSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentNotionSearchConfig_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentNotionSearchConfig_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentNotionSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentSlackSearchConfig_id(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentSlackSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentSlackSearchConfig_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentSlackSearchConfig_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentSlackSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentSlackSearchConfig_agentId(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentSlackSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentSlackSearchConfig_agentId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentSlackSearchConfig_agentId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentSlackSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentSlackSearchConfig_channelId(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentSlackSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentSlackSearchConfig_channelId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChannelID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentSlackSearchConfig_channelId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentSlackSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentSlackSearchConfig_channelName(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentSlackSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentSlackSearchConfig_channelName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChannelName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentSlackSearchConfig_channelName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentSlackSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentSlackSearchConfig_description(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentSlackSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentSlackSearchConfig_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentSlackSearchConfig_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentSlackSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentSlackSearchConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentSlackSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentSlackSearchConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentSlackSearchConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentSlackSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentSlackSearchConfig_createdAt(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentSlackSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentSlackSearchConfig_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentSlackSearchConfig_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentSlackSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentSlackSearchConfig_updatedAt(ctx context.Context, field graphql.CollectedField, obj *graphql1.AgentSlackSearchConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentSlackSearchConfig_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentSlackSearchConfig_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentSlackSearchConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4875,6 +6698,621 @@ func (ec *executionContext) fieldContext_Mutation_disconnectNotion(_ context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createSlackSearchConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createSlackSearchConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateSlackSearchConfig(rctx, fc.Args["input"].(graphql1.CreateSlackSearchConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentSlackSearchConfig)
+	fc.Result = res
+	return ec.marshalNAgentSlackSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentSlackSearchConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createSlackSearchConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentSlackSearchConfig_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentSlackSearchConfig_agentId(ctx, field)
+			case "channelId":
+				return ec.fieldContext_AgentSlackSearchConfig_channelId(ctx, field)
+			case "channelName":
+				return ec.fieldContext_AgentSlackSearchConfig_channelName(ctx, field)
+			case "description":
+				return ec.fieldContext_AgentSlackSearchConfig_description(ctx, field)
+			case "enabled":
+				return ec.fieldContext_AgentSlackSearchConfig_enabled(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentSlackSearchConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentSlackSearchConfig_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentSlackSearchConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createSlackSearchConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateSlackSearchConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateSlackSearchConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateSlackSearchConfig(rctx, fc.Args["id"].(string), fc.Args["input"].(graphql1.UpdateSlackSearchConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentSlackSearchConfig)
+	fc.Result = res
+	return ec.marshalNAgentSlackSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentSlackSearchConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateSlackSearchConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentSlackSearchConfig_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentSlackSearchConfig_agentId(ctx, field)
+			case "channelId":
+				return ec.fieldContext_AgentSlackSearchConfig_channelId(ctx, field)
+			case "channelName":
+				return ec.fieldContext_AgentSlackSearchConfig_channelName(ctx, field)
+			case "description":
+				return ec.fieldContext_AgentSlackSearchConfig_description(ctx, field)
+			case "enabled":
+				return ec.fieldContext_AgentSlackSearchConfig_enabled(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentSlackSearchConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentSlackSearchConfig_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentSlackSearchConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateSlackSearchConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteSlackSearchConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteSlackSearchConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteSlackSearchConfig(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteSlackSearchConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteSlackSearchConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createJiraSearchConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createJiraSearchConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateJiraSearchConfig(rctx, fc.Args["input"].(graphql1.CreateJiraSearchConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentJiraSearchConfig)
+	fc.Result = res
+	return ec.marshalNAgentJiraSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentJiraSearchConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createJiraSearchConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentJiraSearchConfig_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentJiraSearchConfig_agentId(ctx, field)
+			case "projectKey":
+				return ec.fieldContext_AgentJiraSearchConfig_projectKey(ctx, field)
+			case "projectName":
+				return ec.fieldContext_AgentJiraSearchConfig_projectName(ctx, field)
+			case "boardId":
+				return ec.fieldContext_AgentJiraSearchConfig_boardId(ctx, field)
+			case "boardName":
+				return ec.fieldContext_AgentJiraSearchConfig_boardName(ctx, field)
+			case "description":
+				return ec.fieldContext_AgentJiraSearchConfig_description(ctx, field)
+			case "enabled":
+				return ec.fieldContext_AgentJiraSearchConfig_enabled(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentJiraSearchConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentJiraSearchConfig_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentJiraSearchConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createJiraSearchConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateJiraSearchConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateJiraSearchConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateJiraSearchConfig(rctx, fc.Args["id"].(string), fc.Args["input"].(graphql1.UpdateJiraSearchConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentJiraSearchConfig)
+	fc.Result = res
+	return ec.marshalNAgentJiraSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentJiraSearchConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateJiraSearchConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentJiraSearchConfig_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentJiraSearchConfig_agentId(ctx, field)
+			case "projectKey":
+				return ec.fieldContext_AgentJiraSearchConfig_projectKey(ctx, field)
+			case "projectName":
+				return ec.fieldContext_AgentJiraSearchConfig_projectName(ctx, field)
+			case "boardId":
+				return ec.fieldContext_AgentJiraSearchConfig_boardId(ctx, field)
+			case "boardName":
+				return ec.fieldContext_AgentJiraSearchConfig_boardName(ctx, field)
+			case "description":
+				return ec.fieldContext_AgentJiraSearchConfig_description(ctx, field)
+			case "enabled":
+				return ec.fieldContext_AgentJiraSearchConfig_enabled(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentJiraSearchConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentJiraSearchConfig_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentJiraSearchConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateJiraSearchConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteJiraSearchConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteJiraSearchConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteJiraSearchConfig(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteJiraSearchConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteJiraSearchConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createNotionSearchConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createNotionSearchConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateNotionSearchConfig(rctx, fc.Args["input"].(graphql1.CreateNotionSearchConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentNotionSearchConfig)
+	fc.Result = res
+	return ec.marshalNAgentNotionSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentNotionSearchConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createNotionSearchConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentNotionSearchConfig_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentNotionSearchConfig_agentId(ctx, field)
+			case "databaseId":
+				return ec.fieldContext_AgentNotionSearchConfig_databaseId(ctx, field)
+			case "databaseName":
+				return ec.fieldContext_AgentNotionSearchConfig_databaseName(ctx, field)
+			case "workspaceId":
+				return ec.fieldContext_AgentNotionSearchConfig_workspaceId(ctx, field)
+			case "description":
+				return ec.fieldContext_AgentNotionSearchConfig_description(ctx, field)
+			case "enabled":
+				return ec.fieldContext_AgentNotionSearchConfig_enabled(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentNotionSearchConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentNotionSearchConfig_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentNotionSearchConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createNotionSearchConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateNotionSearchConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateNotionSearchConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateNotionSearchConfig(rctx, fc.Args["id"].(string), fc.Args["input"].(graphql1.UpdateNotionSearchConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.AgentNotionSearchConfig)
+	fc.Result = res
+	return ec.marshalNAgentNotionSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentNotionSearchConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateNotionSearchConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentNotionSearchConfig_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentNotionSearchConfig_agentId(ctx, field)
+			case "databaseId":
+				return ec.fieldContext_AgentNotionSearchConfig_databaseId(ctx, field)
+			case "databaseName":
+				return ec.fieldContext_AgentNotionSearchConfig_databaseName(ctx, field)
+			case "workspaceId":
+				return ec.fieldContext_AgentNotionSearchConfig_workspaceId(ctx, field)
+			case "description":
+				return ec.fieldContext_AgentNotionSearchConfig_description(ctx, field)
+			case "enabled":
+				return ec.fieldContext_AgentNotionSearchConfig_enabled(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentNotionSearchConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentNotionSearchConfig_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentNotionSearchConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateNotionSearchConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteNotionSearchConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteNotionSearchConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteNotionSearchConfig(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteNotionSearchConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteNotionSearchConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NotionIntegration_id(ctx context.Context, field graphql.CollectedField, obj *graphql1.NotionIntegration) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NotionIntegration_id(ctx, field)
 	if err != nil {
@@ -6155,6 +8593,231 @@ func (ec *executionContext) fieldContext_Query_notionIntegration(_ context.Conte
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NotionIntegration", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_agentSlackSearchConfigs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_agentSlackSearchConfigs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AgentSlackSearchConfigs(rctx, fc.Args["agentId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*graphql1.AgentSlackSearchConfig)
+	fc.Result = res
+	return ec.marshalNAgentSlackSearchConfig2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentSlackSearchConfigᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_agentSlackSearchConfigs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentSlackSearchConfig_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentSlackSearchConfig_agentId(ctx, field)
+			case "channelId":
+				return ec.fieldContext_AgentSlackSearchConfig_channelId(ctx, field)
+			case "channelName":
+				return ec.fieldContext_AgentSlackSearchConfig_channelName(ctx, field)
+			case "description":
+				return ec.fieldContext_AgentSlackSearchConfig_description(ctx, field)
+			case "enabled":
+				return ec.fieldContext_AgentSlackSearchConfig_enabled(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentSlackSearchConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentSlackSearchConfig_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentSlackSearchConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_agentSlackSearchConfigs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_agentJiraSearchConfigs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_agentJiraSearchConfigs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AgentJiraSearchConfigs(rctx, fc.Args["agentId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*graphql1.AgentJiraSearchConfig)
+	fc.Result = res
+	return ec.marshalNAgentJiraSearchConfig2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentJiraSearchConfigᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_agentJiraSearchConfigs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentJiraSearchConfig_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentJiraSearchConfig_agentId(ctx, field)
+			case "projectKey":
+				return ec.fieldContext_AgentJiraSearchConfig_projectKey(ctx, field)
+			case "projectName":
+				return ec.fieldContext_AgentJiraSearchConfig_projectName(ctx, field)
+			case "boardId":
+				return ec.fieldContext_AgentJiraSearchConfig_boardId(ctx, field)
+			case "boardName":
+				return ec.fieldContext_AgentJiraSearchConfig_boardName(ctx, field)
+			case "description":
+				return ec.fieldContext_AgentJiraSearchConfig_description(ctx, field)
+			case "enabled":
+				return ec.fieldContext_AgentJiraSearchConfig_enabled(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentJiraSearchConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentJiraSearchConfig_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentJiraSearchConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_agentJiraSearchConfigs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_agentNotionSearchConfigs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_agentNotionSearchConfigs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AgentNotionSearchConfigs(rctx, fc.Args["agentId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*graphql1.AgentNotionSearchConfig)
+	fc.Result = res
+	return ec.marshalNAgentNotionSearchConfig2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentNotionSearchConfigᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_agentNotionSearchConfigs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AgentNotionSearchConfig_id(ctx, field)
+			case "agentId":
+				return ec.fieldContext_AgentNotionSearchConfig_agentId(ctx, field)
+			case "databaseId":
+				return ec.fieldContext_AgentNotionSearchConfig_databaseId(ctx, field)
+			case "databaseName":
+				return ec.fieldContext_AgentNotionSearchConfig_databaseName(ctx, field)
+			case "workspaceId":
+				return ec.fieldContext_AgentNotionSearchConfig_workspaceId(ctx, field)
+			case "description":
+				return ec.fieldContext_AgentNotionSearchConfig_description(ctx, field)
+			case "enabled":
+				return ec.fieldContext_AgentNotionSearchConfig_enabled(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AgentNotionSearchConfig_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_AgentNotionSearchConfig_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentNotionSearchConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_agentNotionSearchConfigs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -9080,6 +11743,192 @@ func (ec *executionContext) unmarshalInputCreateAgentVersionInput(ctx context.Co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateJiraSearchConfigInput(ctx context.Context, obj any) (graphql1.CreateJiraSearchConfigInput, error) {
+	var it graphql1.CreateJiraSearchConfigInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"agentId", "projectKey", "projectName", "boardId", "boardName", "description", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "agentId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("agentId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AgentID = data
+		case "projectKey":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectKey"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProjectKey = data
+		case "projectName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProjectName = data
+		case "boardId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("boardId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BoardID = data
+		case "boardName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("boardName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BoardName = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateNotionSearchConfigInput(ctx context.Context, obj any) (graphql1.CreateNotionSearchConfigInput, error) {
+	var it graphql1.CreateNotionSearchConfigInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"agentId", "databaseId", "databaseName", "workspaceId", "description", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "agentId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("agentId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AgentID = data
+		case "databaseId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("databaseId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DatabaseID = data
+		case "databaseName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("databaseName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DatabaseName = data
+		case "workspaceId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workspaceId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WorkspaceID = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateSlackSearchConfigInput(ctx context.Context, obj any) (graphql1.CreateSlackSearchConfigInput, error) {
+	var it graphql1.CreateSlackSearchConfigInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"agentId", "channelId", "channelName", "description", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "agentId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("agentId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AgentID = data
+		case "channelId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelID = data
+		case "channelName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelName = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateAgentInput(ctx context.Context, obj any) (graphql1.UpdateAgentInput, error) {
 	var it graphql1.UpdateAgentInput
 	asMap := map[string]any{}
@@ -9136,6 +11985,150 @@ func (ec *executionContext) unmarshalInputUpdateAgentInput(ctx context.Context, 
 				return it, err
 			}
 			it.LlmModel = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateJiraSearchConfigInput(ctx context.Context, obj any) (graphql1.UpdateJiraSearchConfigInput, error) {
+	var it graphql1.UpdateJiraSearchConfigInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"projectName", "boardId", "boardName", "description", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "projectName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProjectName = data
+		case "boardId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("boardId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BoardID = data
+		case "boardName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("boardName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BoardName = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateNotionSearchConfigInput(ctx context.Context, obj any) (graphql1.UpdateNotionSearchConfigInput, error) {
+	var it graphql1.UpdateNotionSearchConfigInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"databaseName", "workspaceId", "description", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "databaseName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("databaseName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DatabaseName = data
+		case "workspaceId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workspaceId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WorkspaceID = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateSlackSearchConfigInput(ctx context.Context, obj any) (graphql1.UpdateSlackSearchConfigInput, error) {
+	var it graphql1.UpdateSlackSearchConfigInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"channelName", "description", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "channelName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channelName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChannelName = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
 		}
 	}
 
@@ -9360,6 +12353,81 @@ func (ec *executionContext) _AgentImage(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var agentJiraSearchConfigImplementors = []string{"AgentJiraSearchConfig"}
+
+func (ec *executionContext) _AgentJiraSearchConfig(ctx context.Context, sel ast.SelectionSet, obj *graphql1.AgentJiraSearchConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, agentJiraSearchConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AgentJiraSearchConfig")
+		case "id":
+			out.Values[i] = ec._AgentJiraSearchConfig_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "agentId":
+			out.Values[i] = ec._AgentJiraSearchConfig_agentId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "projectKey":
+			out.Values[i] = ec._AgentJiraSearchConfig_projectKey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "projectName":
+			out.Values[i] = ec._AgentJiraSearchConfig_projectName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "boardId":
+			out.Values[i] = ec._AgentJiraSearchConfig_boardId(ctx, field, obj)
+		case "boardName":
+			out.Values[i] = ec._AgentJiraSearchConfig_boardName(ctx, field, obj)
+		case "description":
+			out.Values[i] = ec._AgentJiraSearchConfig_description(ctx, field, obj)
+		case "enabled":
+			out.Values[i] = ec._AgentJiraSearchConfig_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._AgentJiraSearchConfig_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._AgentJiraSearchConfig_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var agentListResponseImplementors = []string{"AgentListResponse"}
 
 func (ec *executionContext) _AgentListResponse(ctx context.Context, sel ast.SelectionSet, obj *graphql1.AgentListResponse) graphql.Marshaler {
@@ -9378,6 +12446,153 @@ func (ec *executionContext) _AgentListResponse(ctx context.Context, sel ast.Sele
 			}
 		case "totalCount":
 			out.Values[i] = ec._AgentListResponse_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var agentNotionSearchConfigImplementors = []string{"AgentNotionSearchConfig"}
+
+func (ec *executionContext) _AgentNotionSearchConfig(ctx context.Context, sel ast.SelectionSet, obj *graphql1.AgentNotionSearchConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, agentNotionSearchConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AgentNotionSearchConfig")
+		case "id":
+			out.Values[i] = ec._AgentNotionSearchConfig_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "agentId":
+			out.Values[i] = ec._AgentNotionSearchConfig_agentId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "databaseId":
+			out.Values[i] = ec._AgentNotionSearchConfig_databaseId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "databaseName":
+			out.Values[i] = ec._AgentNotionSearchConfig_databaseName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "workspaceId":
+			out.Values[i] = ec._AgentNotionSearchConfig_workspaceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._AgentNotionSearchConfig_description(ctx, field, obj)
+		case "enabled":
+			out.Values[i] = ec._AgentNotionSearchConfig_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._AgentNotionSearchConfig_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._AgentNotionSearchConfig_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var agentSlackSearchConfigImplementors = []string{"AgentSlackSearchConfig"}
+
+func (ec *executionContext) _AgentSlackSearchConfig(ctx context.Context, sel ast.SelectionSet, obj *graphql1.AgentSlackSearchConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, agentSlackSearchConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AgentSlackSearchConfig")
+		case "id":
+			out.Values[i] = ec._AgentSlackSearchConfig_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "agentId":
+			out.Values[i] = ec._AgentSlackSearchConfig_agentId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "channelId":
+			out.Values[i] = ec._AgentSlackSearchConfig_channelId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "channelName":
+			out.Values[i] = ec._AgentSlackSearchConfig_channelName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._AgentSlackSearchConfig_description(ctx, field, obj)
+		case "enabled":
+			out.Values[i] = ec._AgentSlackSearchConfig_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._AgentSlackSearchConfig_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._AgentSlackSearchConfig_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -9822,6 +13037,69 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "disconnectNotion":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_disconnectNotion(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createSlackSearchConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createSlackSearchConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateSlackSearchConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateSlackSearchConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteSlackSearchConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteSlackSearchConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createJiraSearchConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createJiraSearchConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateJiraSearchConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateJiraSearchConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteJiraSearchConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteJiraSearchConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createNotionSearchConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createNotionSearchConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateNotionSearchConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateNotionSearchConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteNotionSearchConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteNotionSearchConfig(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -10273,6 +13551,72 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_notionIntegration(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "agentSlackSearchConfigs":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_agentSlackSearchConfigs(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "agentJiraSearchConfigs":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_agentJiraSearchConfigs(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "agentNotionSearchConfigs":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_agentNotionSearchConfigs(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -10995,6 +14339,64 @@ func (ec *executionContext) marshalNAgentIdAvailability2ᚖgithubᚗcomᚋmᚑmi
 	return ec._AgentIdAvailability(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNAgentJiraSearchConfig2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentJiraSearchConfig(ctx context.Context, sel ast.SelectionSet, v graphql1.AgentJiraSearchConfig) graphql.Marshaler {
+	return ec._AgentJiraSearchConfig(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAgentJiraSearchConfig2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentJiraSearchConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql1.AgentJiraSearchConfig) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAgentJiraSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentJiraSearchConfig(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAgentJiraSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentJiraSearchConfig(ctx context.Context, sel ast.SelectionSet, v *graphql1.AgentJiraSearchConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AgentJiraSearchConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNAgentListResponse2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentListResponse(ctx context.Context, sel ast.SelectionSet, v graphql1.AgentListResponse) graphql.Marshaler {
 	return ec._AgentListResponse(ctx, sel, &v)
 }
@@ -11007,6 +14409,122 @@ func (ec *executionContext) marshalNAgentListResponse2ᚖgithubᚗcomᚋmᚑmizu
 		return graphql.Null
 	}
 	return ec._AgentListResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAgentNotionSearchConfig2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentNotionSearchConfig(ctx context.Context, sel ast.SelectionSet, v graphql1.AgentNotionSearchConfig) graphql.Marshaler {
+	return ec._AgentNotionSearchConfig(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAgentNotionSearchConfig2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentNotionSearchConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql1.AgentNotionSearchConfig) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAgentNotionSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentNotionSearchConfig(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAgentNotionSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentNotionSearchConfig(ctx context.Context, sel ast.SelectionSet, v *graphql1.AgentNotionSearchConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AgentNotionSearchConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAgentSlackSearchConfig2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentSlackSearchConfig(ctx context.Context, sel ast.SelectionSet, v graphql1.AgentSlackSearchConfig) graphql.Marshaler {
+	return ec._AgentSlackSearchConfig(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAgentSlackSearchConfig2ᚕᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentSlackSearchConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql1.AgentSlackSearchConfig) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAgentSlackSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentSlackSearchConfig(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAgentSlackSearchConfig2ᚖgithubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentSlackSearchConfig(ctx context.Context, sel ast.SelectionSet, v *graphql1.AgentSlackSearchConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AgentSlackSearchConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNAgentStatus2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐAgentStatus(ctx context.Context, v any) (graphql1.AgentStatus, error) {
@@ -11100,6 +14618,21 @@ func (ec *executionContext) unmarshalNCreateAgentInput2githubᚗcomᚋmᚑmizuta
 
 func (ec *executionContext) unmarshalNCreateAgentVersionInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐCreateAgentVersionInput(ctx context.Context, v any) (graphql1.CreateAgentVersionInput, error) {
 	res, err := ec.unmarshalInputCreateAgentVersionInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateJiraSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐCreateJiraSearchConfigInput(ctx context.Context, v any) (graphql1.CreateJiraSearchConfigInput, error) {
+	res, err := ec.unmarshalInputCreateJiraSearchConfigInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateNotionSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐCreateNotionSearchConfigInput(ctx context.Context, v any) (graphql1.CreateNotionSearchConfigInput, error) {
+	res, err := ec.unmarshalInputCreateNotionSearchConfigInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateSlackSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐCreateSlackSearchConfigInput(ctx context.Context, v any) (graphql1.CreateSlackSearchConfigInput, error) {
+	res, err := ec.unmarshalInputCreateSlackSearchConfigInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -11451,6 +14984,21 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 
 func (ec *executionContext) unmarshalNUpdateAgentInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐUpdateAgentInput(ctx context.Context, v any) (graphql1.UpdateAgentInput, error) {
 	res, err := ec.unmarshalInputUpdateAgentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateJiraSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐUpdateJiraSearchConfigInput(ctx context.Context, v any) (graphql1.UpdateJiraSearchConfigInput, error) {
+	res, err := ec.unmarshalInputUpdateJiraSearchConfigInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateNotionSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐUpdateNotionSearchConfigInput(ctx context.Context, v any) (graphql1.UpdateNotionSearchConfigInput, error) {
+	res, err := ec.unmarshalInputUpdateNotionSearchConfigInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateSlackSearchConfigInput2githubᚗcomᚋmᚑmizutaniᚋtamamoᚋpkgᚋdomainᚋmodelᚋgraphqlᚐUpdateSlackSearchConfigInput(ctx context.Context, v any) (graphql1.UpdateSlackSearchConfigInput, error) {
+	res, err := ec.unmarshalInputUpdateSlackSearchConfigInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

@@ -153,6 +153,9 @@ func cmdServe() *cli.Command {
 			var userRepo interfaces.UserRepository
 			var agentImageRepo interfaces.AgentImageRepository
 			var slackMessageLogRepo interfaces.SlackMessageLogRepository
+			var slackSearchConfigRepo interfaces.SlackSearchConfigRepository
+			var jiraSearchConfigRepo interfaces.JiraSearchConfigRepository
+			var notionSearchConfigRepo interfaces.NotionSearchConfigRepository
 			firestoreCfg.SetDefaults()
 
 			// Validate Firestore configuration
@@ -189,6 +192,9 @@ func cmdServe() *cli.Command {
 				userRepo = firestore.NewUserRepository(client.GetClient())
 				agentImageRepo = client.NewAgentImageRepository()
 				slackMessageLogRepo = client
+				slackSearchConfigRepo = firestore.NewSlackSearchConfigRepository(client.GetClient())
+				jiraSearchConfigRepo = firestore.NewJiraSearchConfigRepository(client.GetClient())
+				notionSearchConfigRepo = firestore.NewNotionSearchConfigRepository(client.GetClient())
 			} else {
 				// Use memory repository as fallback
 				logger.Warn("using in-memory repository (data will be lost on restart)")
@@ -199,6 +205,9 @@ func cmdServe() *cli.Command {
 				userRepo = memory.NewUserRepository()
 				agentImageRepo = memory.NewAgentImageRepository()
 				slackMessageLogRepo = memoryClient
+				slackSearchConfigRepo = memory.NewSlackSearchConfigRepository()
+				jiraSearchConfigRepo = memory.NewJiraSearchConfigRepository()
+				notionSearchConfigRepo = memory.NewNotionSearchConfigRepository()
 			}
 
 			logger.Info("starting server",
@@ -302,6 +311,20 @@ func cmdServe() *cli.Command {
 			// Create agent use case
 			agentUseCase := usecase.NewAgentUseCases(agentRepo)
 
+			// Create search config use cases
+			slackSearchConfigUseCases := usecase.NewSlackSearchConfig(
+				usecase.WithSlackSearchConfigRepository(slackSearchConfigRepo),
+				usecase.WithSlackSearchConfigAgentRepository(agentRepo),
+			)
+			jiraSearchConfigUseCases := usecase.NewJiraSearchConfig(
+				usecase.WithJiraSearchConfigRepository(jiraSearchConfigRepo),
+				usecase.WithJiraSearchConfigAgentRepository(agentRepo),
+			)
+			notionSearchConfigUseCases := usecase.NewNotionSearchConfig(
+				usecase.WithNotionSearchConfigRepository(notionSearchConfigRepo),
+				usecase.WithNotionSearchConfigAgentRepository(agentRepo),
+			)
+
 			// Create Jira integration components (if configured)
 			var jiraUseCases usecase.JiraIntegrationUseCases
 			var jiraAuthController *server.JiraAuthController
@@ -344,7 +367,7 @@ func cmdServe() *cli.Command {
 				logger.Info("Notion integration disabled (missing configuration)")
 			}
 
-			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase, userUseCase, llmFactory, imageProcessor, agentImageRepo, jiraUseCases, notionUseCases)
+			graphqlCtrl := graphql_controller.NewResolver(repo, agentUseCase, userUseCase, llmFactory, imageProcessor, agentImageRepo, jiraUseCases, notionUseCases, slackSearchConfigUseCases, jiraSearchConfigUseCases, notionSearchConfigUseCases)
 
 			// Create user controller
 			userCtrl := server.NewUserController(userUseCase)

@@ -160,7 +160,6 @@ func (s *OAuthService) ClearOAuthStateCookie(w http.ResponseWriter) {
 	})
 }
 
-
 // ExchangeCodeForToken exchanges the authorization code for an access token
 func (s *OAuthService) ExchangeCodeForToken(code string) (*TokenResponse, error) {
 	tokenURL := "https://api.notion.com/v1/oauth/token"
