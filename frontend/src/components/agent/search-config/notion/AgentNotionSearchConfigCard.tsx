@@ -39,6 +39,14 @@ export function AgentNotionSearchConfigCard({ agentId, canEdit }: Props) {
     await deleteConfig(id)
   }
 
+  const onFormSubmit = async (data: Omit<CreateNotionSearchConfigInput, 'agentId'> | UpdateNotionSearchConfigInput) => {
+    if (editingConfig) {
+      await handleUpdate(editingConfig.id, data as UpdateNotionSearchConfigInput)
+    } else {
+      await handleCreate(data as Omit<CreateNotionSearchConfigInput, 'agentId'>)
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -62,10 +70,7 @@ export function AgentNotionSearchConfigCard({ agentId, canEdit }: Props) {
         {(showForm || editingConfig) && (
           <NotionSearchConfigForm
             config={editingConfig}
-            onSubmit={editingConfig ? 
-              (data) => handleUpdate(editingConfig.id, data as UpdateNotionSearchConfigInput) : 
-              (data) => handleCreate(data as Omit<CreateNotionSearchConfigInput, 'agentId'>)
-            }
+            onSubmit={onFormSubmit}
             onCancel={() => {
               setShowForm(false)
               setEditingConfig(null)

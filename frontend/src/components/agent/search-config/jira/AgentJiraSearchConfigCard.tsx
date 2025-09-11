@@ -39,6 +39,14 @@ export function AgentJiraSearchConfigCard({ agentId, canEdit }: Props) {
     await deleteConfig(id)
   }
 
+  const onFormSubmit = async (data: Omit<CreateJiraSearchConfigInput, 'agentId'> | UpdateJiraSearchConfigInput) => {
+    if (editingConfig) {
+      await handleUpdate(editingConfig.id, data as UpdateJiraSearchConfigInput)
+    } else {
+      await handleCreate(data as Omit<CreateJiraSearchConfigInput, 'agentId'>)
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -62,10 +70,7 @@ export function AgentJiraSearchConfigCard({ agentId, canEdit }: Props) {
         {(showForm || editingConfig) && (
           <JiraSearchConfigForm
             config={editingConfig}
-            onSubmit={editingConfig ? 
-              (data) => handleUpdate(editingConfig.id, data as UpdateJiraSearchConfigInput) : 
-              (data) => handleCreate(data as Omit<CreateJiraSearchConfigInput, 'agentId'>)
-            }
+            onSubmit={onFormSubmit}
             onCancel={() => {
               setShowForm(false)
               setEditingConfig(null)
