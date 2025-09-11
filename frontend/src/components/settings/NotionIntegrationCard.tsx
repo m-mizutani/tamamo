@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { executeGraphQL, GET_NOTION_INTEGRATION, INITIATE_NOTION_OAUTH, DISCONNECT_NOTION } from '@/lib/graphql'
+import { graphqlRequest, GET_NOTION_INTEGRATION, INITIATE_NOTION_OAUTH, DISCONNECT_NOTION } from '@/lib/graphql'
 import { toast } from 'sonner'
 import { ExternalLink, Link, Unlink, RefreshCw } from 'lucide-react'
 
@@ -24,7 +24,7 @@ export function NotionIntegrationCard() {
   const loadIntegration = async () => {
     try {
       setLoading(true)
-      const data = await executeGraphQL(GET_NOTION_INTEGRATION)
+      const data = await graphqlRequest<{notionIntegration: NotionIntegration}>(GET_NOTION_INTEGRATION)
       setIntegration(data.notionIntegration)
     } catch (error) {
       console.error('Failed to load Notion integration:', error)
@@ -49,7 +49,7 @@ export function NotionIntegrationCard() {
   const handleConnect = async () => {
     try {
       setActionLoading(true)
-      const data = await executeGraphQL(INITIATE_NOTION_OAUTH, {})
+      const data = await graphqlRequest<{initiateNotionOAuth: {url: string}}>(INITIATE_NOTION_OAUTH, {})
       
       if (data.initiateNotionOAuth?.url) {
         // Open OAuth URL in new window
@@ -98,7 +98,7 @@ export function NotionIntegrationCard() {
   const handleDisconnect = async () => {
     try {
       setActionLoading(true)
-      await executeGraphQL(DISCONNECT_NOTION, {})
+      await graphqlRequest<{disconnectNotion: boolean}>(DISCONNECT_NOTION, {})
       toast.success('Successfully disconnected from Notion')
       setShowDisconnectDialog(false)
       await loadIntegration()
@@ -222,7 +222,6 @@ export function NotionIntegrationCard() {
         description="Are you sure you want to disconnect from Notion? This will remove access to your Notion workspace and any related integrations will stop working."
         confirmText="Disconnect"
         confirmVariant="destructive"
-        loading={actionLoading}
       />
     </>
   )

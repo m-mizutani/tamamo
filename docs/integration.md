@@ -2,6 +2,27 @@
 
 This guide explains how to set up integrations with external services for Tamamo. Each integration requires service-side configuration and environment variables.
 
+## General Configuration
+
+Before setting up specific integrations, configure the general application settings:
+
+### Frontend URL
+
+The frontend URL is used by all OAuth-based integrations (JIRA and Notion) for redirect URIs. Set this once:
+
+```bash
+# Application frontend URL (required for OAuth integrations)
+export TAMAMO_FRONTEND_URL="https://your-domain.com"
+```
+
+Or use the CLI flag:
+
+```bash
+tamamo serve --frontend-url "https://your-domain.com"
+```
+
+**Note**: This setting is shared across all integrations and must be configured before enabling JIRA or Notion integrations.
+
 ## Slack Integration
 
 ### 1. Create Slack App
@@ -122,9 +143,6 @@ export TAMAMO_JIRA_CLIENT_ID="your-client-id"
 
 # JIRA OAuth Client Secret
 export TAMAMO_JIRA_CLIENT_SECRET="your-client-secret"
-
-# Frontend URL for your application (used for OAuth redirects)
-export TAMAMO_FRONTEND_URL="https://your-domain.com"
 ```
 
 ### 7. CLI Flags (Alternative)
@@ -134,9 +152,10 @@ You can also use CLI flags instead of environment variables:
 ```bash
 tamamo serve \
   --jira-client-id "your-client-id" \
-  --jira-client-secret "your-client-secret" \
-  --frontend-url "https://your-domain.com"
+  --jira-client-secret "your-client-secret"
 ```
+
+**Note**: The `--frontend-url` flag is a general application setting (see [General Configuration](#general-configuration)) and is required for JIRA OAuth to work.
 
 ## Notion Integration
 
@@ -175,9 +194,6 @@ export TAMAMO_NOTION_CLIENT_ID="your-client-id"
 
 # Notion OAuth Client Secret
 export TAMAMO_NOTION_CLIENT_SECRET="your-client-secret"
-
-# Frontend URL for your application (shared with JIRA)
-export TAMAMO_FRONTEND_URL="https://your-domain.com"
 
 # Allowed Notion Workspace IDs (optional - restricts access to specific workspaces)
 export TAMAMO_NOTION_ALLOWED_WORKSPACES="workspace-id-1,workspace-id-2"
@@ -225,9 +241,10 @@ You can also use CLI flags instead of environment variables:
 tamamo serve \
   --notion-client-id "your-client-id" \
   --notion-client-secret "your-client-secret" \
-  --notion-allowed-workspaces "workspace-id-1,workspace-id-2" \
-  --frontend-url "https://your-domain.com"
+  --notion-allowed-workspaces "workspace-id-1,workspace-id-2"
 ```
+
+**Note**: The `--frontend-url` flag is a general application setting (see [General Configuration](#general-configuration)) and is required for Notion OAuth to work.
 
 ## Complete Configuration Example
 

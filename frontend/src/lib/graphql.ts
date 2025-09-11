@@ -607,11 +607,3 @@ export const DISCONNECT_NOTION = `
   }
 `;
 
-// Enhanced GraphQL client utility for better error handling
-export async function executeGraphQL<T>(
-  query: string,
-  variables?: Record<string, any>,
-  signal?: AbortSignal
-): Promise<T> {
-  return graphqlRequest<T>(query, variables, signal);
-}

@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"net/url"
 
 	"github.com/m-mizutani/goerr/v2"
 	"github.com/m-mizutani/tamamo/pkg/service/notion"
@@ -12,7 +11,6 @@ import (
 type Notion struct {
 	ClientID            string
 	ClientSecret        string
-	FrontendURL         string   // Application frontend URL for generating redirect URI
 	AllowedWorkspaceIDs []string // List of allowed Notion workspace IDs
 }
 
@@ -37,7 +35,6 @@ func (n *Notion) Flags() []cli.Flag {
 			Usage:       "Comma-separated list of allowed Notion workspace IDs",
 			Destination: &n.AllowedWorkspaceIDs,
 		},
-		// FrontendURL is shared with Jira config, so we don't define it here
 	}
 }
 
@@ -48,15 +45,6 @@ func (n *Notion) Validate() error {
 	}
 	if n.ClientSecret == "" {
 		return goerr.New("Notion Client Secret is required")
-	}
-	if n.FrontendURL == "" {
-		return goerr.New("Frontend URL is required")
-	}
-
-	// Validate frontend URL format
-	_, err := url.Parse(n.FrontendURL)
-	if err != nil {
-		return goerr.Wrap(err, "invalid frontend URL format")
 	}
 
 	return nil
@@ -85,8 +73,8 @@ func (n *Notion) IsWorkspaceAllowed(workspaceID string) bool {
 }
 
 // BuildOAuthConfig creates a notion.OAuthConfig from the configuration
-func (n *Notion) BuildOAuthConfig() notion.OAuthConfig {
-	redirectURI := fmt.Sprintf("%s/api/auth/notion/callback", n.FrontendURL)
+func (n *Notion) BuildOAuthConfig(frontendURL string) notion.OAuthConfig {
+	redirectURI := fmt.Sprintf("%s/api/auth/notion/callback", frontendURL)
 
 	return notion.OAuthConfig{
 		ClientID:            n.ClientID,

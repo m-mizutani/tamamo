@@ -34,6 +34,7 @@ import (
 func cmdServe() *cli.Command {
 	var (
 		addr           string
+		appCfg         config.App
 		slackCfg       config.Slack
 		firestoreCfg   config.Firestore
 		authCfg        config.Auth
@@ -60,6 +61,7 @@ func cmdServe() *cli.Command {
 			Destination: &enableGraphiQL,
 		},
 	}
+	flags = append(flags, appCfg.Flags()...)
 	flags = append(flags, slackCfg.Flags()...)
 	flags = append(flags, firestoreCfg.Flags()...)
 	flags = append(flags, authCfg.Flags()...)
@@ -75,6 +77,11 @@ func cmdServe() *cli.Command {
 		Flags:   flags,
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			logger := ctxlog.From(ctx)
+
+			// Validate application configuration
+			if err := appCfg.Validate(); err != nil {
+				return goerr.Wrap(err, "invalid application configuration")
+			}
 
 			// Validate authentication configuration
 			if err := authCfg.Validate(); err != nil {
@@ -303,7 +310,7 @@ func cmdServe() *cli.Command {
 					return goerr.Wrap(err, "invalid Jira configuration")
 				}
 
-				jiraOAuthConfig := jiraCfg.BuildOAuthConfig()
+				jiraOAuthConfig := jiraCfg.BuildOAuthConfig(appCfg.FrontendURL)
 				jiraOAuthService := jira.NewOAuthService(jiraOAuthConfig)
 				jiraUseCases = usecase.NewJiraIntegrationUseCases(userRepo, jiraOAuthService)
 				jiraAuthController = server.NewJiraAuthController(jiraUseCases, jiraOAuthService)
@@ -320,14 +327,11 @@ func cmdServe() *cli.Command {
 			var notionUseCases usecase.NotionIntegrationUseCases
 			var notionAuthController *server.NotionAuthController
 			if notionCfg.IsEnabled() {
-				// Share FrontendURL from jiraCfg (they use the same frontend URL)
-				notionCfg.FrontendURL = jiraCfg.FrontendURL
-
 				if err := notionCfg.Validate(); err != nil {
 					return goerr.Wrap(err, "invalid Notion configuration")
 				}
 
-				notionOAuthConfig := notionCfg.BuildOAuthConfig()
+				notionOAuthConfig := notionCfg.BuildOAuthConfig(appCfg.FrontendURL)
 				notionOAuthService := notion.NewOAuthService(notionOAuthConfig)
 				notionUseCases = usecase.NewNotionIntegrationUseCases(userRepo, notionOAuthService, slackSvc)
 				notionAuthController = server.NewNotionAuthController(notionUseCases, notionOAuthService)

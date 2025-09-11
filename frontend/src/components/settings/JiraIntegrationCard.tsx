@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { executeGraphQL, GET_JIRA_INTEGRATION, INITIATE_JIRA_OAUTH, DISCONNECT_JIRA } from '@/lib/graphql'
+import { graphqlRequest, GET_JIRA_INTEGRATION, INITIATE_JIRA_OAUTH, DISCONNECT_JIRA } from '@/lib/graphql'
 import { toast } from 'sonner'
 import { ExternalLink, Link, Unlink, RefreshCw } from 'lucide-react'
 
@@ -24,7 +24,7 @@ export function JiraIntegrationCard() {
   const loadIntegration = async () => {
     try {
       setLoading(true)
-      const data = await executeGraphQL(GET_JIRA_INTEGRATION)
+      const data = await graphqlRequest<{jiraIntegration: JiraIntegration}>(GET_JIRA_INTEGRATION)
       setIntegration(data.jiraIntegration)
     } catch (error) {
       console.error('Failed to load Jira integration:', error)
@@ -49,7 +49,7 @@ export function JiraIntegrationCard() {
   const handleConnect = async () => {
     try {
       setActionLoading(true)
-      const data = await executeGraphQL(INITIATE_JIRA_OAUTH, {})
+      const data = await graphqlRequest<{initiateJiraOAuth: {url: string}}>(INITIATE_JIRA_OAUTH, {})
       
       if (data.initiateJiraOAuth?.url) {
         // Open OAuth URL in new window
@@ -98,7 +98,7 @@ export function JiraIntegrationCard() {
   const handleDisconnect = async () => {
     try {
       setActionLoading(true)
-      await executeGraphQL(DISCONNECT_JIRA, {})
+      await graphqlRequest<{disconnectJira: boolean}>(DISCONNECT_JIRA, {})
       toast.success('Successfully disconnected from Jira')
       setShowDisconnectDialog(false)
       await loadIntegration()
@@ -222,7 +222,6 @@ export function JiraIntegrationCard() {
         description="Are you sure you want to disconnect from Jira? This will remove access to your Jira account and any related integrations will stop working."
         confirmText="Disconnect"
         confirmVariant="destructive"
-        loading={actionLoading}
       />
     </>
   )
