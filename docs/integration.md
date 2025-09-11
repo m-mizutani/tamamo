@@ -127,7 +127,7 @@ export TAMAMO_JIRA_CLIENT_SECRET="your-client-secret"
 export TAMAMO_FRONTEND_URL="https://your-domain.com"
 ```
 
-### 6. CLI Flags (Alternative)
+### 7. CLI Flags (Alternative)
 
 You can also use CLI flags instead of environment variables:
 
