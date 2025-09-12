@@ -17,7 +17,7 @@ func TestJiraIntegrationUseCases(t *testing.T) {
 	oauthService := jira.NewOAuthService(jira.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/jira/callback",
+		RedirectURI:  "http://localhost:8080/api/oauth/jira/callback",
 	})
 	uc := usecase.NewJiraIntegrationUseCases(userRepo, oauthService)
 

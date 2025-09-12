@@ -15,7 +15,7 @@ func TestOAuthService_GenerateOAuthURL(t *testing.T) {
 	config := notion.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
+		RedirectURI:  "http://localhost:8080/api/oauth/notion/callback",
 	}
 	oauthService := notion.NewOAuthService(config)
 
@@ -36,7 +36,7 @@ func TestOAuthService_GenerateOAuthURL(t *testing.T) {
 		params := parsedURL.Query()
 		gt.V(t, params.Get("owner")).Equal("user") // Notion-specific parameter
 		gt.V(t, params.Get("client_id")).Equal("test-client-id")
-		gt.V(t, params.Get("redirect_uri")).Equal("http://localhost:8080/api/auth/notion/callback")
+		gt.V(t, params.Get("redirect_uri")).Equal("http://localhost:8080/api/oauth/notion/callback")
 		gt.V(t, params.Get("response_type")).Equal("code")
 		gt.V(t, params.Get("state")).Equal(state)
 
@@ -60,7 +60,7 @@ func TestOAuthService_StateCookie(t *testing.T) {
 	config := notion.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
+		RedirectURI:  "http://localhost:8080/api/oauth/notion/callback",
 	}
 	oauthService := notion.NewOAuthService(config)
 
@@ -134,7 +134,7 @@ func TestOAuthService_GenerateMultipleStates(t *testing.T) {
 	config := notion.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
+		RedirectURI:  "http://localhost:8080/api/oauth/notion/callback",
 	}
 	oauthService := notion.NewOAuthService(config)
 

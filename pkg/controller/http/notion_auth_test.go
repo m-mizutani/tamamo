@@ -27,7 +27,7 @@ func TestNotionAuthController_HandleOAuthCallback(t *testing.T) {
 	oauthConfig := notion.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
+		RedirectURI:  "http://localhost:8080/api/oauth/notion/callback",
 	}
 	oauthService := notion.NewOAuthService(oauthConfig)
 	notionUseCases := usecase.NewNotionIntegrationUseCases(mockUserRepo, oauthService)
@@ -36,7 +36,7 @@ func TestNotionAuthController_HandleOAuthCallback(t *testing.T) {
 	controller := server.NewNotionAuthController(notionUseCases, oauthService)
 
 	t.Run("OAuth error response", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/auth/notion/callback?error=access_denied&error_description=User%20denied%20access", nil)
+		req := httptest.NewRequest("GET", "/api/oauth/notion/callback?error=access_denied&error_description=User%20denied%20access", nil)
 		rec := httptest.NewRecorder()
 
 		controller.HandleOAuthCallback(rec, req)
@@ -47,7 +47,7 @@ func TestNotionAuthController_HandleOAuthCallback(t *testing.T) {
 	})
 
 	t.Run("missing authorization code", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/auth/notion/callback", nil)
+		req := httptest.NewRequest("GET", "/api/oauth/notion/callback", nil)
 		rec := httptest.NewRecorder()
 
 		controller.HandleOAuthCallback(rec, req)
@@ -57,7 +57,7 @@ func TestNotionAuthController_HandleOAuthCallback(t *testing.T) {
 	})
 
 	t.Run("missing state parameter", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/auth/notion/callback?code=test-code", nil)
+		req := httptest.NewRequest("GET", "/api/oauth/notion/callback?code=test-code", nil)
 		rec := httptest.NewRecorder()
 
 		controller.HandleOAuthCallback(rec, req)
@@ -67,7 +67,7 @@ func TestNotionAuthController_HandleOAuthCallback(t *testing.T) {
 	})
 
 	t.Run("missing state cookie", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/auth/notion/callback?code=test-code&state=test-state", nil)
+		req := httptest.NewRequest("GET", "/api/oauth/notion/callback?code=test-code&state=test-state", nil)
 		rec := httptest.NewRecorder()
 
 		controller.HandleOAuthCallback(rec, req)
@@ -105,7 +105,7 @@ func TestNotionIntegrationUseCases_IntegrationFlow(t *testing.T) {
 	oauthConfig := notion.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
+		RedirectURI:  "http://localhost:8080/api/oauth/notion/callback",
 	}
 	oauthService := notion.NewOAuthService(oauthConfig)
 

@@ -238,7 +238,7 @@ func New(opts ...Options) *Server {
 
 	// API routes
 	r.Route("/api", func(r chi.Router) {
-		r.Route("/auth", func(r chi.Router) {
+		r.Route("/oauth", func(r chi.Router) {
 			r.Route("/jira", func(r chi.Router) {
 				if s.jiraAuthCtrl != nil {
 					r.Get("/callback", s.jiraAuthCtrl.HandleOAuthCallback)

@@ -50,7 +50,7 @@ func (n *Notion) IsEnabled() bool {
 
 // BuildOAuthConfig creates a notion.OAuthConfig from the configuration
 func (n *Notion) BuildOAuthConfig(frontendURL string) notion.OAuthConfig {
-	redirectURI := fmt.Sprintf("%s/api/auth/notion/callback", frontendURL)
+	redirectURI := fmt.Sprintf("%s/api/oauth/notion/callback", frontendURL)
 
 	return notion.OAuthConfig{
 		ClientID:     n.ClientID,
