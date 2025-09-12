@@ -15,7 +15,7 @@ func TestNewResolver(t *testing.T) {
 	agentRepo := memory.NewAgentMemoryClient()
 	agentUseCase := usecase.NewAgentUseCases(agentRepo)
 	mockUserUseCase := &mock.UserUseCasesMock{}
-	resolver := graphql.NewResolver(mockRepo, agentUseCase, mockUserUseCase, nil, nil, nil, nil, nil) // nil factory and integrations for tests
+	resolver := graphql.NewResolver(mockRepo, agentUseCase, mockUserUseCase, nil, nil, nil, nil, nil, nil, nil, nil) // nil factory, integrations and search configs for tests
 
 	gt.V(t, resolver).NotNil()
 }
@@ -25,7 +25,7 @@ func TestResolver_DependencyInjection(t *testing.T) {
 	agentRepo := memory.NewAgentMemoryClient()
 	agentUseCase := usecase.NewAgentUseCases(agentRepo)
 	mockUserUseCase := &mock.UserUseCasesMock{}
-	resolver := graphql.NewResolver(mockRepo, agentUseCase, mockUserUseCase, nil, nil, nil, nil, nil) // nil factory and integrations for tests
+	resolver := graphql.NewResolver(mockRepo, agentUseCase, mockUserUseCase, nil, nil, nil, nil, nil, nil, nil, nil) // nil factory, integrations and search configs for tests
 
 	// Verify that resolver can be created with mock repository
 	gt.V(t, resolver).NotNil()

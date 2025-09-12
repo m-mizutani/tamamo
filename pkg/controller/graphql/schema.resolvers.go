@@ -280,6 +280,87 @@ func (r *mutationResolver) DisconnectNotion(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+// CreateSlackSearchConfig is the resolver for the createSlackSearchConfig field.
+func (r *mutationResolver) CreateSlackSearchConfig(ctx context.Context, input graphql1.CreateSlackSearchConfigInput) (*graphql1.AgentSlackSearchConfig, error) {
+	config, err := r.slackSearchConfigUseCases.CreateSlackSearchConfig(ctx, input.AgentID, input.ChannelID, input.ChannelName, input.Description, input.Enabled)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to create Slack search config")
+	}
+	return convertSlackSearchConfigToGraphQL(config), nil
+}
+
+// UpdateSlackSearchConfig is the resolver for the updateSlackSearchConfig field.
+func (r *mutationResolver) UpdateSlackSearchConfig(ctx context.Context, id string, input graphql1.UpdateSlackSearchConfigInput) (*graphql1.AgentSlackSearchConfig, error) {
+	config, err := r.slackSearchConfigUseCases.UpdateSlackSearchConfig(ctx, id, input.ChannelName, input.Description, input.Enabled)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to update Slack search config")
+	}
+	return convertSlackSearchConfigToGraphQL(config), nil
+}
+
+// DeleteSlackSearchConfig is the resolver for the deleteSlackSearchConfig field.
+func (r *mutationResolver) DeleteSlackSearchConfig(ctx context.Context, id string) (bool, error) {
+	err := r.slackSearchConfigUseCases.DeleteSlackSearchConfig(ctx, id)
+	if err != nil {
+		return false, goerr.Wrap(err, "failed to delete Slack search config")
+	}
+	return true, nil
+}
+
+// CreateJiraSearchConfig is the resolver for the createJiraSearchConfig field.
+func (r *mutationResolver) CreateJiraSearchConfig(ctx context.Context, input graphql1.CreateJiraSearchConfigInput) (*graphql1.AgentJiraSearchConfig, error) {
+	config, err := r.jiraSearchConfigUseCases.CreateJiraSearchConfig(ctx, input.AgentID, input.ProjectKey, input.ProjectName, input.BoardID, input.BoardName, input.Description, input.Enabled)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to create Jira search config")
+	}
+	return convertJiraSearchConfigToGraphQL(config), nil
+}
+
+// UpdateJiraSearchConfig is the resolver for the updateJiraSearchConfig field.
+func (r *mutationResolver) UpdateJiraSearchConfig(ctx context.Context, id string, input graphql1.UpdateJiraSearchConfigInput) (*graphql1.AgentJiraSearchConfig, error) {
+	config, err := r.jiraSearchConfigUseCases.UpdateJiraSearchConfig(ctx, id, input.ProjectName, input.BoardID, input.BoardName, input.Description, input.Enabled)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to update Jira search config")
+	}
+	return convertJiraSearchConfigToGraphQL(config), nil
+}
+
+// DeleteJiraSearchConfig is the resolver for the deleteJiraSearchConfig field.
+func (r *mutationResolver) DeleteJiraSearchConfig(ctx context.Context, id string) (bool, error) {
+	err := r.jiraSearchConfigUseCases.DeleteJiraSearchConfig(ctx, id)
+	if err != nil {
+		return false, goerr.Wrap(err, "failed to delete Jira search config")
+	}
+	return true, nil
+}
+
+// CreateNotionSearchConfig is the resolver for the createNotionSearchConfig field.
+func (r *mutationResolver) CreateNotionSearchConfig(ctx context.Context, input graphql1.CreateNotionSearchConfigInput) (*graphql1.AgentNotionSearchConfig, error) {
+	config, err := r.notionSearchConfigUseCases.CreateNotionSearchConfig(ctx, input.AgentID, input.DatabaseID, input.DatabaseName, input.WorkspaceID, input.Description, input.Enabled)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to create Notion search config")
+	}
+	return convertNotionSearchConfigToGraphQL(config), nil
+}
+
+// UpdateNotionSearchConfig is the resolver for the updateNotionSearchConfig field.
+func (r *mutationResolver) UpdateNotionSearchConfig(ctx context.Context, id string, input graphql1.UpdateNotionSearchConfigInput) (*graphql1.AgentNotionSearchConfig, error) {
+	config, err := r.notionSearchConfigUseCases.UpdateNotionSearchConfig(ctx, id, input.DatabaseName, input.WorkspaceID, input.Description, input.Enabled)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to update Notion search config")
+	}
+	return convertNotionSearchConfigToGraphQL(config), nil
+}
+
+// DeleteNotionSearchConfig is the resolver for the deleteNotionSearchConfig field.
+func (r *mutationResolver) DeleteNotionSearchConfig(ctx context.Context, id string) (bool, error) {
+	err := r.notionSearchConfigUseCases.DeleteNotionSearchConfig(ctx, id)
+	if err != nil {
+		return false, goerr.Wrap(err, "failed to delete Notion search config")
+	}
+	return true, nil
+}
+
 // Thread is the resolver for the thread field.
 func (r *queryResolver) Thread(ctx context.Context, id string) (*slack.Thread, error) {
 	threadID := types.ThreadID(id)
@@ -635,6 +716,33 @@ func (r *queryResolver) NotionIntegration(ctx context.Context) (*graphql1.Notion
 
 	// Convert to GraphQL response
 	return convertNotionIntegrationToGraphQL(notionIntegration), nil
+}
+
+// AgentSlackSearchConfigs is the resolver for the agentSlackSearchConfigs field.
+func (r *queryResolver) AgentSlackSearchConfigs(ctx context.Context, agentID string) ([]*graphql1.AgentSlackSearchConfig, error) {
+	configs, err := r.slackSearchConfigUseCases.GetSlackSearchConfigs(ctx, agentID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get Slack search configs")
+	}
+	return convertSlackSearchConfigsToGraphQL(configs), nil
+}
+
+// AgentJiraSearchConfigs is the resolver for the agentJiraSearchConfigs field.
+func (r *queryResolver) AgentJiraSearchConfigs(ctx context.Context, agentID string) ([]*graphql1.AgentJiraSearchConfig, error) {
+	configs, err := r.jiraSearchConfigUseCases.GetJiraSearchConfigs(ctx, agentID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get Jira search configs")
+	}
+	return convertJiraSearchConfigsToGraphQL(configs), nil
+}
+
+// AgentNotionSearchConfigs is the resolver for the agentNotionSearchConfigs field.
+func (r *queryResolver) AgentNotionSearchConfigs(ctx context.Context, agentID string) ([]*graphql1.AgentNotionSearchConfig, error) {
+	configs, err := r.notionSearchConfigUseCases.GetNotionSearchConfigs(ctx, agentID)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to get Notion search configs")
+	}
+	return convertNotionSearchConfigsToGraphQL(configs), nil
 }
 
 // ID is the resolver for the id field.

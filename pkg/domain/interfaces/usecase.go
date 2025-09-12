@@ -135,3 +135,66 @@ type ImageUseCases interface {
 	// Get agent image metadata
 	GetAgentImageInfo(ctx context.Context, agentID types.UUID) (*image.AgentImage, error)
 }
+
+// SlackSearchConfigUseCases handles Slack search configuration management
+type SlackSearchConfigUseCases interface {
+	// Create a new Slack search configuration
+	CreateSlackSearchConfig(ctx context.Context, agentID, channelID, channelName string, description *string, enabled bool) (*agent.SlackSearchConfig, error)
+
+	// Get all Slack search configurations for an agent
+	GetSlackSearchConfigs(ctx context.Context, agentID string) ([]*agent.SlackSearchConfig, error)
+
+	// Get a specific Slack search configuration by ID
+	GetSlackSearchConfig(ctx context.Context, id string) (*agent.SlackSearchConfig, error)
+
+	// Update a Slack search configuration
+	UpdateSlackSearchConfig(ctx context.Context, id, channelName string, description *string, enabled bool) (*agent.SlackSearchConfig, error)
+
+	// Delete a Slack search configuration
+	DeleteSlackSearchConfig(ctx context.Context, id string) error
+
+	// Get enabled Slack search configurations for an agent
+	GetEnabledSlackSearchConfigs(ctx context.Context, agentID string) ([]*agent.SlackSearchConfig, error)
+}
+
+// JiraSearchConfigUseCases handles Jira search configuration management
+type JiraSearchConfigUseCases interface {
+	// Create a new Jira search configuration
+	CreateJiraSearchConfig(ctx context.Context, agentID, projectKey, projectName string, boardID, boardName, description *string, enabled bool) (*agent.JiraSearchConfig, error)
+
+	// Get all Jira search configurations for an agent
+	GetJiraSearchConfigs(ctx context.Context, agentID string) ([]*agent.JiraSearchConfig, error)
+
+	// Get a specific Jira search configuration by ID
+	GetJiraSearchConfig(ctx context.Context, id string) (*agent.JiraSearchConfig, error)
+
+	// Update a Jira search configuration
+	UpdateJiraSearchConfig(ctx context.Context, id, projectName string, boardID, boardName, description *string, enabled bool) (*agent.JiraSearchConfig, error)
+
+	// Delete a Jira search configuration
+	DeleteJiraSearchConfig(ctx context.Context, id string) error
+
+	// Get enabled Jira search configurations for an agent
+	GetEnabledJiraSearchConfigs(ctx context.Context, agentID string) ([]*agent.JiraSearchConfig, error)
+}
+
+// NotionSearchConfigUseCases handles Notion search configuration management
+type NotionSearchConfigUseCases interface {
+	// Create a new Notion search configuration
+	CreateNotionSearchConfig(ctx context.Context, agentID, databaseID, databaseName, workspaceID string, description *string, enabled bool) (*agent.NotionSearchConfig, error)
+
+	// Get all Notion search configurations for an agent
+	GetNotionSearchConfigs(ctx context.Context, agentID string) ([]*agent.NotionSearchConfig, error)
+
+	// Get a specific Notion search configuration by ID
+	GetNotionSearchConfig(ctx context.Context, id string) (*agent.NotionSearchConfig, error)
+
+	// Update a Notion search configuration
+	UpdateNotionSearchConfig(ctx context.Context, id, databaseName, workspaceID string, description *string, enabled bool) (*agent.NotionSearchConfig, error)
+
+	// Delete a Notion search configuration
+	DeleteNotionSearchConfig(ctx context.Context, id string) error
+
+	// Get enabled Notion search configurations for an agent
+	GetEnabledNotionSearchConfigs(ctx context.Context, agentID string) ([]*agent.NotionSearchConfig, error)
+}

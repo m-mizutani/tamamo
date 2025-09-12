@@ -1,5 +1,91 @@
 // GraphQL queries and mutations for Agent management
 
+// Search Configuration Types
+export interface AgentSlackSearchConfig {
+  id: string
+  agentId: string
+  channelId: string
+  channelName: string
+  description?: string
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AgentJiraSearchConfig {
+  id: string
+  agentId: string
+  projectKey: string
+  projectName: string
+  boardId?: string
+  boardName?: string
+  description?: string
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AgentNotionSearchConfig {
+  id: string
+  agentId: string
+  databaseId: string
+  databaseName: string
+  workspaceId: string
+  description?: string
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// Input types for search configurations
+export interface CreateSlackSearchConfigInput {
+  agentId: string
+  channelId: string
+  channelName: string
+  description?: string
+  enabled: boolean
+}
+
+export interface UpdateSlackSearchConfigInput {
+  channelName: string
+  description?: string
+  enabled: boolean
+}
+
+export interface CreateJiraSearchConfigInput {
+  agentId: string
+  projectKey: string
+  projectName: string
+  boardId?: string
+  boardName?: string
+  description?: string
+  enabled: boolean
+}
+
+export interface UpdateJiraSearchConfigInput {
+  projectName: string
+  boardId?: string
+  boardName?: string
+  description?: string
+  enabled: boolean
+}
+
+export interface CreateNotionSearchConfigInput {
+  agentId: string
+  databaseId: string
+  databaseName: string
+  workspaceId: string
+  description?: string
+  enabled: boolean
+}
+
+export interface UpdateNotionSearchConfigInput {
+  databaseName: string
+  workspaceId: string
+  description?: string
+  enabled: boolean
+}
+
 export const GET_AGENTS = `
   query GetAgents($offset: Int, $limit: Int) {
     agents(offset: $offset, limit: $limit) {
@@ -604,6 +690,171 @@ export const INITIATE_NOTION_OAUTH = `
 export const DISCONNECT_NOTION = `
   mutation DisconnectNotion {
     disconnectNotion
+  }
+`;
+
+// Slack Search Config queries and mutations
+export const GET_AGENT_SLACK_SEARCH_CONFIGS = `
+  query GetAgentSlackSearchConfigs($agentId: ID!) {
+    agentSlackSearchConfigs(agentId: $agentId) {
+      id
+      agentId
+      channelId
+      channelName
+      description
+      enabled
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const CREATE_SLACK_SEARCH_CONFIG = `
+  mutation CreateSlackSearchConfig($input: CreateSlackSearchConfigInput!) {
+    createSlackSearchConfig(input: $input) {
+      id
+      agentId
+      channelId
+      channelName
+      description
+      enabled
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_SLACK_SEARCH_CONFIG = `
+  mutation UpdateSlackSearchConfig($id: ID!, $input: UpdateSlackSearchConfigInput!) {
+    updateSlackSearchConfig(id: $id, input: $input) {
+      id
+      agentId
+      channelId
+      channelName
+      description
+      enabled
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_SLACK_SEARCH_CONFIG = `
+  mutation DeleteSlackSearchConfig($id: ID!) {
+    deleteSlackSearchConfig(id: $id)
+  }
+`;
+
+// Jira Search Config queries and mutations
+export const GET_AGENT_JIRA_SEARCH_CONFIGS = `
+  query GetAgentJiraSearchConfigs($agentId: ID!) {
+    agentJiraSearchConfigs(agentId: $agentId) {
+      id
+      agentId
+      projectKey
+      projectName
+      boardId
+      boardName
+      description
+      enabled
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const CREATE_JIRA_SEARCH_CONFIG = `
+  mutation CreateJiraSearchConfig($input: CreateJiraSearchConfigInput!) {
+    createJiraSearchConfig(input: $input) {
+      id
+      agentId
+      projectKey
+      projectName
+      boardId
+      boardName
+      description
+      enabled
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_JIRA_SEARCH_CONFIG = `
+  mutation UpdateJiraSearchConfig($id: ID!, $input: UpdateJiraSearchConfigInput!) {
+    updateJiraSearchConfig(id: $id, input: $input) {
+      id
+      agentId
+      projectKey
+      projectName
+      boardId
+      boardName
+      description
+      enabled
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_JIRA_SEARCH_CONFIG = `
+  mutation DeleteJiraSearchConfig($id: ID!) {
+    deleteJiraSearchConfig(id: $id)
+  }
+`;
+
+// Notion Search Config queries and mutations
+export const GET_AGENT_NOTION_SEARCH_CONFIGS = `
+  query GetAgentNotionSearchConfigs($agentId: ID!) {
+    agentNotionSearchConfigs(agentId: $agentId) {
+      id
+      agentId
+      databaseId
+      databaseName
+      workspaceId
+      description
+      enabled
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const CREATE_NOTION_SEARCH_CONFIG = `
+  mutation CreateNotionSearchConfig($input: CreateNotionSearchConfigInput!) {
+    createNotionSearchConfig(input: $input) {
+      id
+      agentId
+      databaseId
+      databaseName
+      workspaceId
+      description
+      enabled
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_NOTION_SEARCH_CONFIG = `
+  mutation UpdateNotionSearchConfig($id: ID!, $input: UpdateNotionSearchConfigInput!) {
+    updateNotionSearchConfig(id: $id, input: $input) {
+      id
+      agentId
+      databaseId
+      databaseName
+      workspaceId
+      description
+      enabled
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_NOTION_SEARCH_CONFIG = `
+  mutation DeleteNotionSearchConfig($id: ID!) {
+    deleteNotionSearchConfig(id: $id)
   }
 `;
 

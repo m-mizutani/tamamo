@@ -46,9 +46,45 @@ type AgentImage struct {
 	UpdatedAt   time.Time        `json:"updatedAt"`
 }
 
+type AgentJiraSearchConfig struct {
+	ID          string  `json:"id"`
+	AgentID     string  `json:"agentId"`
+	ProjectKey  string  `json:"projectKey"`
+	ProjectName string  `json:"projectName"`
+	BoardID     *string `json:"boardId,omitempty"`
+	BoardName   *string `json:"boardName,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Enabled     bool    `json:"enabled"`
+	CreatedAt   string  `json:"createdAt"`
+	UpdatedAt   string  `json:"updatedAt"`
+}
+
 type AgentListResponse struct {
 	Agents     []*Agent `json:"agents"`
 	TotalCount int      `json:"totalCount"`
+}
+
+type AgentNotionSearchConfig struct {
+	ID           string  `json:"id"`
+	AgentID      string  `json:"agentId"`
+	DatabaseID   string  `json:"databaseId"`
+	DatabaseName string  `json:"databaseName"`
+	WorkspaceID  string  `json:"workspaceId"`
+	Description  *string `json:"description,omitempty"`
+	Enabled      bool    `json:"enabled"`
+	CreatedAt    string  `json:"createdAt"`
+	UpdatedAt    string  `json:"updatedAt"`
+}
+
+type AgentSlackSearchConfig struct {
+	ID          string  `json:"id"`
+	AgentID     string  `json:"agentId"`
+	ChannelID   string  `json:"channelId"`
+	ChannelName string  `json:"channelName"`
+	Description *string `json:"description,omitempty"`
+	Enabled     bool    `json:"enabled"`
+	CreatedAt   string  `json:"createdAt"`
+	UpdatedAt   string  `json:"updatedAt"`
 }
 
 type AgentVersion struct {
@@ -77,6 +113,33 @@ type CreateAgentVersionInput struct {
 	SystemPrompt *string     `json:"systemPrompt,omitempty"`
 	LlmProvider  LLMProvider `json:"llmProvider"`
 	LlmModel     string      `json:"llmModel"`
+}
+
+type CreateJiraSearchConfigInput struct {
+	AgentID     string  `json:"agentId"`
+	ProjectKey  string  `json:"projectKey"`
+	ProjectName string  `json:"projectName"`
+	BoardID     *string `json:"boardId,omitempty"`
+	BoardName   *string `json:"boardName,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Enabled     bool    `json:"enabled"`
+}
+
+type CreateNotionSearchConfigInput struct {
+	AgentID      string  `json:"agentId"`
+	DatabaseID   string  `json:"databaseId"`
+	DatabaseName string  `json:"databaseName"`
+	WorkspaceID  string  `json:"workspaceId"`
+	Description  *string `json:"description,omitempty"`
+	Enabled      bool    `json:"enabled"`
+}
+
+type CreateSlackSearchConfigInput struct {
+	AgentID     string  `json:"agentId"`
+	ChannelID   string  `json:"channelId"`
+	ChannelName string  `json:"channelName"`
+	Description *string `json:"description,omitempty"`
+	Enabled     bool    `json:"enabled"`
 }
 
 type JiraIntegration struct {
@@ -146,6 +209,27 @@ type UpdateAgentInput struct {
 	SystemPrompt *string      `json:"systemPrompt,omitempty"`
 	LlmProvider  *LLMProvider `json:"llmProvider,omitempty"`
 	LlmModel     *string      `json:"llmModel,omitempty"`
+}
+
+type UpdateJiraSearchConfigInput struct {
+	ProjectName string  `json:"projectName"`
+	BoardID     *string `json:"boardId,omitempty"`
+	BoardName   *string `json:"boardName,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Enabled     bool    `json:"enabled"`
+}
+
+type UpdateNotionSearchConfigInput struct {
+	DatabaseName string  `json:"databaseName"`
+	WorkspaceID  string  `json:"workspaceId"`
+	Description  *string `json:"description,omitempty"`
+	Enabled      bool    `json:"enabled"`
+}
+
+type UpdateSlackSearchConfigInput struct {
+	ChannelName string  `json:"channelName"`
+	Description *string `json:"description,omitempty"`
+	Enabled     bool    `json:"enabled"`
 }
 
 type AgentStatus string
