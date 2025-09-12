@@ -18,7 +18,7 @@ func TestNotionIntegrationUseCases(t *testing.T) {
 	oauthConfig := notion.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/notion/callback",
+		RedirectURI:  "http://localhost:8080/api/oauth/notion/callback",
 	}
 	oauthService := notion.NewOAuthService(oauthConfig)
 

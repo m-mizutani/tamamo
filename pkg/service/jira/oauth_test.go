@@ -15,7 +15,7 @@ func TestOAuthService_GenerateOAuthURL(t *testing.T) {
 	config := jira.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/jira/callback",
+		RedirectURI:  "http://localhost:8080/api/oauth/jira/callback",
 	}
 	oauthService := jira.NewOAuthService(config)
 
@@ -38,7 +38,7 @@ func TestOAuthService_GenerateOAuthURL(t *testing.T) {
 		scope := params.Get("scope")
 		gt.S(t, scope).Contains("read:jira-user")
 		gt.S(t, scope).Contains("read:jira-work")
-		gt.Equal(t, params.Get("redirect_uri"), "http://localhost:8080/api/auth/jira/callback")
+		gt.Equal(t, params.Get("redirect_uri"), "http://localhost:8080/api/oauth/jira/callback")
 		gt.Equal(t, params.Get("state"), state)
 		gt.Equal(t, params.Get("response_type"), "code")
 		gt.Equal(t, params.Get("prompt"), "consent")
@@ -52,7 +52,7 @@ func TestOAuthService_StateCookieOperations(t *testing.T) {
 	config := jira.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/jira/callback",
+		RedirectURI:  "http://localhost:8080/api/oauth/jira/callback",
 	}
 	oauthService := jira.NewOAuthService(config)
 
@@ -115,7 +115,7 @@ func TestOAuthService_GenerateMultipleStates(t *testing.T) {
 	config := jira.OAuthConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
-		RedirectURI:  "http://localhost:8080/api/auth/jira/callback",
+		RedirectURI:  "http://localhost:8080/api/oauth/jira/callback",
 	}
 	oauthService := jira.NewOAuthService(config)
 

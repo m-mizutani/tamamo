@@ -39,6 +39,14 @@ export function AgentSlackSearchConfigCard({ agentId, canEdit }: Props) {
     await deleteConfig(id)
   }
 
+  const onFormSubmit = async (data: Omit<CreateSlackSearchConfigInput, 'agentId'> | UpdateSlackSearchConfigInput) => {
+    if (editingConfig) {
+      await handleUpdate(editingConfig.id, data as UpdateSlackSearchConfigInput)
+    } else {
+      await handleCreate(data as Omit<CreateSlackSearchConfigInput, 'agentId'>)
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -62,10 +70,7 @@ export function AgentSlackSearchConfigCard({ agentId, canEdit }: Props) {
         {(showForm || editingConfig) && (
           <SlackSearchConfigForm
             config={editingConfig}
-            onSubmit={editingConfig ? 
-              (data) => handleUpdate(editingConfig.id, data as UpdateSlackSearchConfigInput) : 
-              (data) => handleCreate(data as Omit<CreateSlackSearchConfigInput, 'agentId'>)
-            }
+            onSubmit={onFormSubmit}
             onCancel={() => {
               setShowForm(false)
               setEditingConfig(null)

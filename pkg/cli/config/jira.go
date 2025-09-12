@@ -50,7 +50,7 @@ func (j *Jira) IsEnabled() bool {
 
 // BuildOAuthConfig creates a jira.OAuthConfig from the configuration
 func (j *Jira) BuildOAuthConfig(frontendURL string) jira.OAuthConfig {
-	redirectURI := fmt.Sprintf("%s/api/auth/jira/callback", frontendURL)
+	redirectURI := fmt.Sprintf("%s/api/oauth/jira/callback", frontendURL)
 
 	return jira.OAuthConfig{
 		ClientID:     j.ClientID,

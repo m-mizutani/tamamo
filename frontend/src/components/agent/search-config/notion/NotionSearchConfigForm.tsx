@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { X, Save } from 'lucide-react'
 import {
   AgentNotionSearchConfig,
@@ -121,13 +122,11 @@ export function NotionSearchConfigForm({ config, onSubmit, onCancel }: Props) {
           </div>
 
           <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
+            <Checkbox
               id="enabled"
               checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
+              onCheckedChange={(checked) => setEnabled(Boolean(checked))}
               disabled={submitting}
-              className="h-4 w-4"
             />
             <Label htmlFor="enabled">Enable search for this database</Label>
           </div>
